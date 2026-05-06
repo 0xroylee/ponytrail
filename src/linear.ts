@@ -340,6 +340,17 @@ export class LinearClient {
 		};
 	}
 
+	private async fetchIssueLabelIds(issueId: string): Promise<string[]> {
+		const issue = await this.client.issue(issueId);
+		if (!issue) {
+			return [];
+		}
+		const labels = await issue.labels();
+		return labels.nodes
+			.map((label) => label.id)
+			.filter((id): id is string => Boolean(id));
+	}
+
 	private mapSdkLabelToRecord(label: LinearSdkIssueLabel): LinearLabelRecord {
 		return {
 			id: label.id,
