@@ -20,6 +20,12 @@ export interface LinearStatusMap {
 	done: string;
 }
 
+export interface LinearLabelMap {
+	pr_created?: string;
+	reviewing?: string;
+	testing?: string;
+}
+
 export type DeepPartial<T> = {
 	[K in keyof T]?: T[K] extends Array<infer U>
 		? Array<DeepPartial<U>>
@@ -42,6 +48,8 @@ export interface ProjectRuntimeConfig {
 		requiredLabel?: string;
 		pollLimit: number;
 		statusMap: LinearStatusMap;
+		labelMap: LinearLabelMap;
+		autoCreateLabels: boolean;
 	};
 	github: {
 		useGhCli: boolean;

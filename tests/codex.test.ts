@@ -25,6 +25,12 @@ const config: ResolvedProjectConfig = {
 			blocked: "g",
 			done: "h",
 		},
+		labelMap: {
+			pr_created: "PR Created",
+			reviewing: "Reviewing",
+			testing: "Testing",
+		},
+		autoCreateLabels: true,
 	},
 	github: { useGhCli: true, defaultBugLabel: "bug" },
 	codex: {

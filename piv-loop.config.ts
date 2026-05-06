@@ -6,7 +6,7 @@ const cwd = process.cwd();
 const config: DeepPartial<PivLoopRootConfig> = {
 	projects: [
 		{
-			id: "default",
+			id: "piv-47ea7f022b5d",
 			name: "Default Project",
 			workspacePath: process.env.PIV_WORKSPACE_PATH ?? cwd,
 		},
@@ -18,15 +18,21 @@ const config: DeepPartial<PivLoopRootConfig> = {
 	},
 	linear: {
 		statusMap: {
-			assigned: process.env.LINEAR_STATUS_ASSIGNED ?? "",
-			planning: process.env.LINEAR_STATUS_PLANNING ?? "",
-			implementing: process.env.LINEAR_STATUS_IMPLEMENTING ?? "",
-			pr_created: process.env.LINEAR_STATUS_PR_CREATED ?? "",
-			reviewing: process.env.LINEAR_STATUS_REVIEWING ?? "",
-			testing: process.env.LINEAR_STATUS_TESTING ?? "",
-			blocked: process.env.LINEAR_STATUS_BLOCKED ?? "",
-			done: process.env.LINEAR_STATUS_DONE ?? "",
+			assigned: process.env.LINEAR_STATUS_ASSIGNED ?? "Todo",
+			planning: process.env.LINEAR_STATUS_PLANNING ?? "In Progress",
+			implementing: process.env.LINEAR_STATUS_IMPLEMENTING ?? "In Progress",
+			pr_created: process.env.LINEAR_STATUS_PR_CREATED ?? "In Review",
+			reviewing: process.env.LINEAR_STATUS_REVIEWING ?? "In Review",
+			testing: process.env.LINEAR_STATUS_TESTING ?? "In Review",
+			blocked: process.env.LINEAR_STATUS_BLOCKED ?? "Canceled",
+			done: process.env.LINEAR_STATUS_DONE ?? "Done",
 		},
+		labelMap: {
+			pr_created: process.env.LINEAR_LABEL_PR_CREATED ?? "PR Created",
+			reviewing: process.env.LINEAR_LABEL_REVIEWING ?? "Reviewing",
+			testing: process.env.LINEAR_LABEL_TESTING ?? "Testing",
+		},
+		autoCreateLabels: process.env.LINEAR_AUTO_CREATE_LABELS !== "0",
 	},
 	skills: {
 		plan: path.join(cwd, "skills", "piv-plan", "SKILL.md"),

@@ -96,6 +96,7 @@ async function runCodex(
 	config: ResolvedProjectConfig,
 	args: string[],
 ): Promise<CodexResult> {
+	await mkdir(config.codex.codexHome, { recursive: true });
 	const outputFile = args[args.indexOf("--output-last-message") + 1] ?? "";
 	const result = await runCommand(config.codex.binary, args, {
 		cwd: config.workspacePath,

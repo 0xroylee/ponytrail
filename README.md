@@ -52,6 +52,10 @@ Set these variables before running:
 - `LINEAR_STATUS_TESTING`
 - `LINEAR_STATUS_BLOCKED`
 - `LINEAR_STATUS_DONE`
+- `LINEAR_LABEL_PR_CREATED` (optional, default `PR Created`)
+- `LINEAR_LABEL_REVIEWING` (optional, default `Reviewing`)
+- `LINEAR_LABEL_TESTING` (optional, default `Testing`)
+- `LINEAR_AUTO_CREATE_LABELS` (optional, default `1`)
 
 Optional:
 
@@ -61,6 +65,25 @@ Optional:
 - `PIV_WORKSPACE_PATH` (default current directory)
 - `PIV_DRY_RUN=1` to avoid Linear/GitHub mutations
 - `CODEX_HOME` to override Codex runtime state directory
+
+`LINEAR_STATUS_*` values may be either Linear workflow state IDs or exact state names (for example `Todo`, `In Progress`, `Done`). Names are resolved to IDs at runtime.
+
+Recommended mapping for your board:
+
+- `assigned`: `Todo`
+- `planning`: `In Progress`
+- `implementing`: `In Progress`
+- `pr_created`: `In Review`
+- `reviewing`: `In Review`
+- `testing`: `In Review`
+- `blocked`: `Canceled`
+- `done`: `Done`
+
+Stage labels are applied automatically for:
+
+- `pr_created` -> `PR Created`
+- `reviewing` -> `Reviewing`
+- `testing` -> `Testing`
 
 ## Quality Commands
 

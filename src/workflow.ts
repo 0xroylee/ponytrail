@@ -175,6 +175,7 @@ async function executeIssue(
 		Object.assign(state, transitionStage(state, "pr_created"));
 		await saveRunState(config.workspacePath, state);
 		await linear.markStage(state.issue.id, "pr_created");
+		await linear.applyStageLabel(state.issue.id, "pr_created");
 		await linear.comment(
 			state.issue.id,
 			`Implementation completed. Draft PR: ${state.pullRequest.url ?? "(created)"}`,
@@ -185,10 +186,12 @@ async function executeIssue(
 		Object.assign(state, transitionStage(state, "reviewing"));
 		await saveRunState(config.workspacePath, state);
 		await linear.markStage(state.issue.id, "reviewing");
+		await linear.applyStageLabel(state.issue.id, "reviewing");
 	}
 
 	if (state.stage === "reviewing" || state.stage === "testing") {
 		await linear.markStage(state.issue.id, "testing");
+		await linear.applyStageLabel(state.issue.id, "testing");
 		Object.assign(state, transitionStage(state, "testing"));
 		await saveRunState(config.workspacePath, state);
 
