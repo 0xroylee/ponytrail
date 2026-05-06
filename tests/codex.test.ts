@@ -37,6 +37,11 @@ const config: ResolvedProjectConfig = {
 	codex: {
 		binary: "codex",
 		model: "gpt-5.4",
+		models: {
+			plan: "gpt-5.5",
+			implement: "gpt-5.3-codex",
+			reviewTest: "gpt-5.3-codex",
+		},
 		sandbox: "workspace-write",
 		codexHome: "/tmp/codex",
 	},
@@ -52,6 +57,27 @@ describe("codex args", () => {
 		expect(args).toContain("--output-last-message");
 		expect(args).toContain("/tmp/out.txt");
 		expect(args).toContain("--sandbox");
+	});
+
+	it("supports stage model overrides", () => {
+		const planArgs = buildCodexExecArgs(
+			config,
+			"plan",
+			"/tmp/out.txt",
+			config.codex.models?.plan,
+		);
+		expect(planArgs).toEqual(expect.arrayContaining(["--model", "gpt-5.5"]));
+
+		const implementArgs = buildCodexResumeArgs(
+			config,
+			"session-123",
+			"implement",
+			"/tmp/out.txt",
+			config.codex.models?.implement,
+		);
+		expect(implementArgs).toEqual(
+			expect.arrayContaining(["--model", "gpt-5.3-codex"]),
+		);
 	});
 
 	it("omits sandbox when not configured", () => {
@@ -80,6 +106,7 @@ describe("codex args", () => {
 			]),
 		);
 		expect(args).not.toContain("--sandbox");
+		expect(args).not.toContain("--cd");
 	});
 
 	it("extracts session id from jsonl", () => {

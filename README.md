@@ -72,6 +72,9 @@ Optional:
 - `PIV_DRY_RUN=1` to avoid Linear/GitHub mutations
 - `PIV_DEV_MODE=1` to stream Codex stdout/stderr logs during runs
 - `CODEX_SANDBOX` (optional; leave empty to disable sandbox, or set `read-only`, `workspace-write`, `danger-full-access`)
+- `CODEX_MODEL_PLAN` (optional; overrides planning model)
+- `CODEX_MODEL_IMPLEMENT` (optional; overrides implementation model)
+- `CODEX_MODEL_REVIEW_TEST` (optional; overrides review/testing model)
 - `CODEX_HOME` to override Codex runtime state directory
 - `PIV_LOG_LEVEL` (optional; default `info`)
 - `PIV_LOG_PRETTY` (optional; default `1` in TTY, `0` otherwise)
@@ -107,3 +110,4 @@ bun test
 
 - Run with authenticated `gh` (`gh auth status`).
 - Codex uses the default CLI home unless you explicitly set `CODEX_HOME`.
+- Linear integration uses the official `@linear/sdk` client.

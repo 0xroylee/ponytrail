@@ -36,6 +36,13 @@ const config: DeepPartial<PivLoopRootConfig> = {
 		},
 		autoCreateLabels: process.env.LINEAR_AUTO_CREATE_LABELS !== "0",
 	},
+	codex: {
+		models: {
+			plan: "gpt-5.5",
+			implement: "gpt-5.3-codex",
+			reviewTest: "gpt-5.3-codex",
+		},
+	},
 	skills: {
 		plan: path.join(cwd, "skills", "piv-plan", "SKILL.md"),
 		implement: path.join(cwd, "skills", "piv-implement", "SKILL.md"),

@@ -78,6 +78,11 @@ function buildEnvBase(cwd: string): ProjectRuntimeConfig {
 		codex: {
 			binary: env.CODEX_BINARY ?? "codex",
 			model: env.CODEX_MODEL,
+			models: {
+				plan: env.CODEX_MODEL_PLAN,
+				implement: env.CODEX_MODEL_IMPLEMENT,
+				reviewTest: env.CODEX_MODEL_REVIEW_TEST,
+			},
 			sandbox,
 			codexHome,
 		},

@@ -65,6 +65,11 @@ export interface ProjectRuntimeConfig {
 	codex: {
 		binary: string;
 		model?: string;
+		models?: {
+			plan?: string;
+			implement?: string;
+			reviewTest?: string;
+		};
 		sandbox?: "read-only" | "workspace-write" | "danger-full-access";
 		codexHome?: string;
 	};
@@ -95,6 +100,10 @@ export interface LinearIssue {
 	identifier: string;
 	title: string;
 	url: string;
+	priority: {
+		value: number;
+		name: string;
+	};
 	state: {
 		id: string;
 		name: string;

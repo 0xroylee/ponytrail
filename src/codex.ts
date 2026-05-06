@@ -13,6 +13,7 @@ export function buildCodexExecArgs(
 	config: ResolvedProjectConfig,
 	prompt: string,
 	outputFile: string,
+	modelOverride?: string,
 ): string[] {
 	const args = [
 		"exec",
@@ -23,8 +24,9 @@ export function buildCodexExecArgs(
 		"--output-last-message",
 		outputFile,
 	];
-	if (config.codex.model) {
-		args.push("--model", config.codex.model);
+	const model = modelOverride ?? config.codex.model;
+	if (model) {
+		args.push("--model", model);
 	}
 	if (config.codex.sandbox) {
 		args.push("--sandbox", config.codex.sandbox);
@@ -38,19 +40,19 @@ export function buildCodexResumeArgs(
 	sessionId: string,
 	prompt: string,
 	outputFile: string,
+	modelOverride?: string,
 ): string[] {
 	const args = [
 		"exec",
 		"resume",
 		"--json",
 		"--skip-git-repo-check",
-		"--cd",
-		config.executionPath,
 		"--output-last-message",
 		outputFile,
 	];
-	if (config.codex.model) {
-		args.push("--model", config.codex.model);
+	const model = modelOverride ?? config.codex.model;
+	if (model) {
+		args.push("--model", model);
 	}
 	args.push(sessionId, prompt);
 	return args;
@@ -60,9 +62,10 @@ export async function runPlanSession(
 	config: ResolvedProjectConfig,
 	prompt: string,
 ): Promise<CodexResult> {
+	const model = config.codex.models?.plan ?? config.codex.model;
 	return runCodex(
 		config,
-		buildCodexExecArgs(config, prompt, await nextOutputFile(config)),
+		buildCodexExecArgs(config, prompt, await nextOutputFile(config), model),
 	);
 }
 
@@ -71,6 +74,7 @@ export async function runResumeSession(
 	sessionId: string,
 	prompt: string,
 ): Promise<CodexResult> {
+	const model = config.codex.models?.implement ?? config.codex.model;
 	return runCodex(
 		config,
 		buildCodexResumeArgs(
@@ -78,6 +82,7 @@ export async function runResumeSession(
 			sessionId,
 			prompt,
 			await nextOutputFile(config),
+			model,
 		),
 	);
 }
@@ -86,7 +91,14 @@ export async function runReviewSession(
 	config: ResolvedProjectConfig,
 	prompt: string,
 ): Promise<CodexResult> {
-	return runPlanSession(config, prompt);
+	const model =
+		config.codex.models?.reviewTest ??
+		config.codex.models?.implement ??
+		config.codex.model;
+	return runCodex(
+		config,
+		buildCodexExecArgs(config, prompt, await nextOutputFile(config), model),
+	);
 }
 
 async function runCodex(

@@ -1,3 +1,9 @@
+import {
+	LinearClient as LinearSdkClient,
+	type Issue as LinearSdkIssue,
+	type IssueLabel as LinearSdkIssueLabel,
+	type WorkflowState as LinearSdkWorkflowState,
+} from "@linear/sdk";
 import { normalizeIssueKey } from "./state";
 import type {
 	LinearIssue,
@@ -5,48 +11,16 @@ import type {
 	WorkflowStage,
 } from "./types";
 
-interface GraphQLResult<T> {
-	data?: T;
-	errors?: Array<{ message: string }>;
-}
-
-interface RawWorkflowState {
-	id: string;
-	name: string;
-	team?: {
-		id: string;
-	};
-}
-
-interface RawIssueLabel {
-	id: string;
-	name: string;
-	team?: {
-		id: string;
-	};
-}
-
-interface RawLinearIssue {
-	id: string;
-	identifier: string;
-	title: string;
-	url: string;
-	state: {
-		id: string;
-		name: string;
-	};
-	labels?: {
-		nodes: Array<{
-			id: string;
-			name: string;
-		}>;
-	};
-}
-
 type WorkflowLabelStage = keyof ResolvedProjectConfig["linear"]["labelMap"];
 
+interface LinearLabelRecord {
+	id: string;
+	name: string;
+	teamId?: string;
+}
+
 export class LinearClient {
-	constructor(private readonly config: ResolvedProjectConfig) {}
+	private readonly client: LinearSdkClient;
 	private resolvedStatusMap:
 		| ResolvedProjectConfig["linear"]["statusMap"]
 		| null = null;
@@ -55,6 +29,13 @@ export class LinearClient {
 	> = {};
 	private workflowLabelIds: string[] = [];
 	private workflowLabelsResolved = false;
+
+	constructor(private readonly config: ResolvedProjectConfig) {
+		this.client = new LinearSdkClient({
+			apiKey: config.linear.apiKey,
+			apiUrl: config.linear.apiUrl,
+		});
+	}
 
 	async fetchWork(issueArg?: string): Promise<LinearIssue[]> {
 		await this.ensureResolvedStatusMap();
@@ -66,46 +47,31 @@ export class LinearClient {
 			return issue ? [issue] : [];
 		}
 
-		const data = await this.graphql<{
-			viewer: {
-				assignedIssues: {
-					nodes: RawLinearIssue[];
-				};
-			};
-		}>(
-			`
-      query AssignedIssues($first: Int!) {
-        viewer {
-          assignedIssues(first: $first) {
-            nodes {
-              id
-              identifier
-              title
-              url
-              state { id name }
-              labels { nodes { id name } }
-            }
-          }
-        }
-      }
-      `,
-			{ first: this.config.linear.pollLimit },
+		const viewer = await this.client.viewer;
+		const assignedIssues = await viewer.assignedIssues({
+			first: this.config.linear.pollLimit,
+		});
+		const includeLabels = Boolean(this.config.linear.requiredLabel);
+		const issues = await Promise.all(
+			assignedIssues.nodes.map((issue) =>
+				this.mapSdkIssueToLinearIssue(issue, includeLabels),
+			),
 		);
 
-		const raw = data.viewer.assignedIssues.nodes;
-		return raw
-			.map(mapRawIssue)
-			.filter((issue) => issue.state.id === this.requiredStatusMap().assigned)
-			.filter((issue) => {
-				if (!this.config.linear.requiredLabel) {
-					return true;
-				}
-				return issue.labels.some(
-					(label) =>
-						label.name.toLowerCase() ===
-						this.config.linear.requiredLabel?.toLowerCase(),
-				);
-			});
+		return sortIssuesByPriority(
+			issues
+				.filter((issue) => issue.state.id === this.requiredStatusMap().assigned)
+				.filter((issue) => {
+					if (!this.config.linear.requiredLabel) {
+						return true;
+					}
+					return issue.labels.some(
+						(label) =>
+							label.name.toLowerCase() ===
+							this.config.linear.requiredLabel?.toLowerCase(),
+					);
+				}),
+		);
 	}
 
 	async markStage(
@@ -117,16 +83,7 @@ export class LinearClient {
 			return;
 		}
 		const stateId = this.requiredStatusMap()[stage];
-		await this.graphql(
-			`
-      mutation UpdateIssueState($id: String!, $stateId: String!) {
-        issueUpdate(id: $id, input: { stateId: $stateId }) {
-          success
-        }
-      }
-      `,
-			{ id: issueId, stateId },
-		);
+		await this.client.updateIssue(issueId, { stateId });
 	}
 
 	async applyStageLabel(issueId: string, stage: WorkflowStage): Promise<void> {
@@ -142,98 +99,44 @@ export class LinearClient {
 		const removedLabelIds = this.workflowLabelIds.filter(
 			(labelId) => labelId !== nextLabelId,
 		);
-		await this.graphql(
-			`
-      mutation UpdateIssueLabels($id: String!, $addedLabelIds: [String!], $removedLabelIds: [String!]) {
-        issueUpdate(id: $id, input: { addedLabelIds: $addedLabelIds, removedLabelIds: $removedLabelIds }) {
-          success
-        }
-      }
-      `,
-			{
-				id: issueId,
-				addedLabelIds: [nextLabelId],
-				removedLabelIds,
-			},
-		);
+		await this.client.updateIssue(issueId, {
+			addedLabelIds: [nextLabelId],
+			removedLabelIds,
+		});
 	}
 
 	async comment(issueId: string, body: string): Promise<void> {
 		if (this.config.dryRun) {
 			return;
 		}
-		await this.graphql(
-			`
-      mutation AddComment($issueId: String!, $body: String!) {
-        commentCreate(input: { issueId: $issueId, body: $body }) {
-          success
-        }
-      }
-      `,
-			{ issueId, body },
-		);
+		await this.client.createComment({
+			issueId,
+			body,
+		});
 	}
 
 	private async findIssueByIdentifier(
 		identifier: string,
 	): Promise<LinearIssue | null> {
-		const data = await this.graphql<{
-			issues: {
-				nodes: RawLinearIssue[];
-			};
-		}>(
-			`
-      query IssueByIdentifier($identifier: String!) {
-        issues(first: 1, filter: { identifier: { eq: $identifier } }) {
-          nodes {
-            id
-            identifier
-            title
-            url
-            state { id name }
-            labels { nodes { id name } }
-          }
-        }
-      }
-      `,
-			{ identifier },
-		);
-		const issue = data.issues.nodes[0];
+		let issue: LinearSdkIssue | undefined;
+		try {
+			issue = await this.client.issue(identifier);
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message.toLowerCase() : String(error);
+			if (
+				message.includes("not found") ||
+				message.includes("invalid") ||
+				message.includes("does not exist")
+			) {
+				return null;
+			}
+			throw error;
+		}
 		if (!issue) {
 			return null;
 		}
-		return mapRawIssue(issue);
-	}
-
-	private async graphql<TData>(
-		query: string,
-		variables: Record<string, unknown>,
-	): Promise<TData> {
-		const response = await fetch(this.config.linear.apiUrl, {
-			method: "POST",
-			headers: {
-				"content-type": "application/json",
-				authorization: this.config.linear.apiKey,
-			},
-			body: JSON.stringify({ query, variables }),
-		});
-
-		if (!response.ok) {
-			throw new Error(
-				`Linear API request failed: ${response.status} ${response.statusText}`,
-			);
-		}
-
-		const payload = (await response.json()) as GraphQLResult<TData>;
-		if (payload.errors?.length) {
-			throw new Error(
-				`Linear GraphQL error: ${payload.errors.map((e) => e.message).join("; ")}`,
-			);
-		}
-		if (!payload.data) {
-			throw new Error("Linear GraphQL response did not include data");
-		}
-		return payload.data;
+		return this.mapSdkIssueToLinearIssue(issue, true);
 	}
 
 	private async ensureResolvedStatusMap(): Promise<void> {
@@ -241,28 +144,12 @@ export class LinearClient {
 			return;
 		}
 
-		const statesData = await this.graphql<{
-			workflowStates: {
-				nodes: RawWorkflowState[];
-			};
-		}>(
-			`
-      query WorkflowStates($first: Int!) {
-        workflowStates(first: $first) {
-          nodes {
-            id
-            name
-            team { id }
-          }
-        }
-      }
-      `,
-			{ first: 250 },
-		);
-
-		const states = statesData.workflowStates.nodes.filter((state) =>
+		const workflowStates = await this.client.workflowStates({
+			first: 250,
+		});
+		const states = workflowStates.nodes.filter((state) =>
 			this.config.linear.teamId
-				? state.team?.id === this.config.linear.teamId
+				? state.teamId === this.config.linear.teamId
 				: true,
 		);
 
@@ -309,26 +196,12 @@ export class LinearClient {
 			return;
 		}
 
-		const labelsData = await this.graphql<{
-			issueLabels: {
-				nodes: RawIssueLabel[];
-			};
-		}>(
-			`
-      query IssueLabels($first: Int!) {
-        issueLabels(first: $first) {
-          nodes {
-            id
-            name
-            team { id }
-          }
-        }
-      }
-      `,
-			{ first: 250 },
+		const labelsConnection = await this.client.issueLabels({
+			first: 250,
+		});
+		const availableLabels = labelsConnection.nodes.map((label) =>
+			this.mapSdkLabelToRecord(label),
 		);
-
-		const availableLabels = [...labelsData.issueLabels.nodes];
 		const resolved: Partial<Record<WorkflowLabelStage, string>> = {};
 
 		for (const [stage, labelNameRaw] of configuredEntries) {
@@ -360,7 +233,7 @@ export class LinearClient {
 
 	private findLabelIdByName(
 		labelName: string,
-		labels: RawIssueLabel[],
+		labels: LinearLabelRecord[],
 	): string | undefined {
 		const matches = labels.filter(
 			(label) => label.name.toLowerCase() === labelName.toLowerCase(),
@@ -370,12 +243,12 @@ export class LinearClient {
 		}
 		if (this.config.linear.teamId) {
 			const teamMatch = matches.find(
-				(label) => label.team?.id === this.config.linear.teamId,
+				(label) => label.teamId === this.config.linear.teamId,
 			);
 			if (teamMatch) {
 				return teamMatch.id;
 			}
-			const workspaceLabel = matches.find((label) => !label.team?.id);
+			const workspaceLabel = matches.find((label) => !label.teamId);
 			if (workspaceLabel) {
 				return workspaceLabel.id;
 			}
@@ -383,43 +256,32 @@ export class LinearClient {
 		return matches[0]?.id;
 	}
 
-	private async createIssueLabel(labelName: string): Promise<RawIssueLabel> {
-		const data = await this.graphql<{
-			issueLabelCreate: {
-				success: boolean;
-				issueLabel: RawIssueLabel;
-			};
-		}>(
-			`
-      mutation CreateIssueLabel($input: IssueLabelCreateInput!) {
-        issueLabelCreate(input: $input) {
-          success
-          issueLabel {
-            id
-            name
-            team { id }
-          }
-        }
-      }
-      `,
-			{
-				input: {
-					name: labelName,
-					teamId: this.config.linear.teamId,
-				},
-			},
-		);
-
-		if (!data.issueLabelCreate.success) {
+	private async createIssueLabel(
+		labelName: string,
+	): Promise<LinearLabelRecord> {
+		const payload = await this.client.createIssueLabel({
+			name: labelName,
+			teamId: this.config.linear.teamId,
+		});
+		if (!payload.success) {
 			throw new Error(`Failed to create Linear label '${labelName}'.`);
 		}
-		return data.issueLabelCreate.issueLabel;
+
+		const issueLabel =
+			(await payload.issueLabel) ??
+			(payload.issueLabelId
+				? await this.client.issueLabel(payload.issueLabelId)
+				: undefined);
+		if (!issueLabel?.id) {
+			throw new Error(`Linear label '${labelName}' was created without an id.`);
+		}
+		return this.mapSdkLabelToRecord(issueLabel);
 	}
 
 	private resolveStatusValue(
 		key: keyof ResolvedProjectConfig["linear"]["statusMap"],
 		value: string,
-		states: RawWorkflowState[],
+		states: LinearSdkWorkflowState[],
 	): string {
 		const trimmed = value.trim();
 		if (isLikelyUuid(trimmed)) {
@@ -442,17 +304,47 @@ export class LinearClient {
 		}
 		return this.resolvedStatusMap;
 	}
-}
 
-function mapRawIssue(issue: RawLinearIssue): LinearIssue {
-	return {
-		id: issue.id,
-		identifier: issue.identifier,
-		title: issue.title,
-		url: issue.url,
-		state: issue.state,
-		labels: issue.labels?.nodes ?? [],
-	};
+	private async mapSdkIssueToLinearIssue(
+		issue: LinearSdkIssue,
+		includeLabels: boolean,
+	): Promise<LinearIssue> {
+		const state = await issue.state;
+		if (!state?.id) {
+			throw new Error(
+				`Issue ${issue.identifier} is missing workflow state data.`,
+			);
+		}
+		const labels = includeLabels
+			? (await issue.labels()).nodes.map((label) => ({
+					id: label.id,
+					name: label.name,
+				}))
+			: [];
+		return {
+			id: issue.id,
+			identifier: issue.identifier,
+			title: issue.title,
+			url: issue.url,
+			priority: {
+				value: issue.priority ?? 0,
+				name: issue.priorityLabel ?? "No priority",
+			},
+			state: {
+				id: state.id,
+				name: state.name,
+			},
+			labels,
+		};
+	}
+
+	private mapSdkLabelToRecord(label: LinearSdkIssueLabel): LinearLabelRecord {
+		return {
+			id: label.id,
+			name: label.name,
+			teamId: label.teamId ?? undefined,
+		};
+	}
 }
 
 function isLikelyUuid(value: string): boolean {
@@ -465,4 +357,31 @@ function isWorkflowLabelStage(
 	stage: WorkflowStage,
 ): stage is WorkflowLabelStage {
 	return stage === "pr_created" || stage === "reviewing" || stage === "testing";
+}
+
+const PRIORITY_SORT_ORDER: Record<number, number> = {
+	1: 0,
+	2: 1,
+	3: 2,
+	4: 3,
+	0: 4,
+};
+
+function getPriorityRank(priority: number): number {
+	return PRIORITY_SORT_ORDER[priority] ?? PRIORITY_SORT_ORDER[0];
+}
+
+export function sortIssuesByPriority(issues: LinearIssue[]): LinearIssue[] {
+	return issues
+		.map((issue, index) => ({ issue, index }))
+		.sort((left, right) => {
+			const rankDiff =
+				getPriorityRank(left.issue.priority.value) -
+				getPriorityRank(right.issue.priority.value);
+			if (rankDiff !== 0) {
+				return rankDiff;
+			}
+			return left.index - right.index;
+		})
+		.map((entry) => entry.issue);
 }

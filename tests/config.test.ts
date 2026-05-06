@@ -15,6 +15,9 @@ const envKeys = [
 	"PIV_EXECUTION_PATH",
 	"CODEX_SANDBOX",
 	"CODEX_HOME",
+	"CODEX_MODEL_PLAN",
+	"CODEX_MODEL_IMPLEMENT",
+	"CODEX_MODEL_REVIEW_TEST",
 ] as const;
 
 const previousEnv: Record<string, string | undefined> = {};
@@ -69,5 +72,15 @@ describe("loadConfig", () => {
 		expect(overrideConfig.projects[0]?.codex.codexHome).toBe(
 			"/tmp/custom-codex-home",
 		);
+	});
+
+	it("loads stage-specific codex models from env", async () => {
+		process.env.CODEX_MODEL_PLAN = "gpt-5.5";
+		process.env.CODEX_MODEL_IMPLEMENT = "gpt-5.3-codex";
+		process.env.CODEX_MODEL_REVIEW_TEST = "gpt-5.3-codex";
+		const config = await loadConfig(process.cwd());
+		expect(config.projects[0]?.codex.models?.plan).toBe("gpt-5.5");
+		expect(config.projects[0]?.codex.models?.implement).toBe("gpt-5.3-codex");
+		expect(config.projects[0]?.codex.models?.reviewTest).toBe("gpt-5.3-codex");
 	});
 });
