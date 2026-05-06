@@ -131,6 +131,12 @@ async function processIssue(
 			startedAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		} satisfies RunState);
+	issueLogger.info(
+		buildIssueJobLogFields(runState, runState.stage, {
+			resumed: existing !== null,
+		}),
+		"Taking issue job",
+	);
 
 	try {
 		await executeIssue(config, linear, runState);
@@ -179,6 +185,30 @@ export async function sleep(ms: number): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export interface IssueJobLogFields {
+	projectId: string;
+	issueKey: string;
+	issueId: string;
+	issueTitle: string;
+	stage: string;
+	resumed?: true;
+}
+
+export function buildIssueJobLogFields(
+	state: RunState,
+	stage: string,
+	options?: { resumed?: boolean },
+): IssueJobLogFields {
+	return {
+		projectId: state.projectId,
+		issueKey: state.issue.key,
+		issueId: state.issue.id,
+		issueTitle: state.issue.title,
+		stage,
+		...(options?.resumed ? { resumed: true as const } : {}),
+	};
+}
+
 async function executeIssue(
 	config: ResolvedProjectConfig,
 	linear: LinearClient,
@@ -196,6 +226,7 @@ async function executeIssue(
 	}
 
 	if (state.stage === "planning") {
+		logger.info(buildIssueJobLogFields(state, "planning"), "Planning issue");
 		const prompt = await buildPlanPrompt(config.skills.plan, state.issue);
 		const result = await runPlanSession(config, prompt);
 		state.codexSessionId = result.sessionId ?? state.codexSessionId;
@@ -207,12 +238,17 @@ async function executeIssue(
 			state.issue.id,
 			buildPlanComment(state.issue.key, state.planSummary),
 		);
+		logger.info(buildIssueJobLogFields(state, "planning"), "Plan completed");
 	}
 
 	if (state.stage === "implementing") {
 		if (!state.codexSessionId) {
 			throw new Error("Missing codex session id for implement step");
 		}
+		logger.info(
+			buildIssueJobLogFields(state, "implementing"),
+			"Implementing issue",
+		);
 		const prompt = await buildImplementPrompt(
 			config.skills.implement,
 			state.issue,
@@ -243,6 +279,10 @@ async function executeIssue(
 			state.issue.id,
 			`Implementation completed. Draft PR: ${state.pullRequest.url ?? "(created)"}`,
 		);
+		logger.info(
+			buildIssueJobLogFields(state, "implementing"),
+			"Implementation completed",
+		);
 	}
 
 	if (state.stage === "pr_created") {
@@ -253,6 +293,7 @@ async function executeIssue(
 	}
 
 	if (state.stage === "reviewing" || state.stage === "testing") {
+		logger.info(buildIssueJobLogFields(state, "testing"), "Testing issue");
 		await linear.markStage(state.issue.id, "testing");
 		await linear.applyStageLabel(state.issue.id, "testing");
 		Object.assign(state, transitionStage(state, "testing"));
@@ -319,6 +360,10 @@ async function executeIssue(
 		await saveRunState(config.workspacePath, state);
 		await linear.markStage(state.issue.id, "done");
 		await linear.comment(state.issue.id, "Review/testing passed. Marked done.");
+		logger.info(
+			buildIssueJobLogFields(state, "testing"),
+			"Review/testing completed",
+		);
 	}
 }
 
