@@ -13,9 +13,9 @@ import {
 	buildReviewPrompt,
 } from "./prompts";
 import {
-	loadRunState,
+	type RunStateStore,
+	createRunStateStore,
 	normalizeIssueKey,
-	saveRunState,
 	transitionStage,
 } from "./state";
 import type {
@@ -39,6 +39,7 @@ export async function runWorkflow(
 	const projectContexts = projects.map((project) => ({
 		config: project,
 		linear: new LinearClient(project),
+		runStateStore: createRunStateStore(project),
 		polling: resolvePollingSettings(project, options),
 	}));
 	const globalPolling = resolveGlobalPollingSettings(projectContexts);
@@ -53,6 +54,7 @@ export async function runWorkflow(
 				context.config,
 				options,
 				context.linear,
+				context.runStateStore,
 				cycle,
 				context.polling,
 			);
@@ -119,6 +121,7 @@ async function runProjectCycle(
 	config: ResolvedProjectConfig,
 	options: RunOptions,
 	linear: LinearClient,
+	runStateStore: RunStateStore,
 	cycle: number,
 	polling: PollingSettings,
 ): Promise<number> {
@@ -134,7 +137,7 @@ async function runProjectCycle(
 	}
 
 	for (const issue of issues) {
-		await processIssue(config, linear, issue);
+		await processIssue(config, linear, runStateStore, issue);
 	}
 
 	return issues.length;
@@ -143,6 +146,7 @@ async function runProjectCycle(
 async function processIssue(
 	config: ResolvedProjectConfig,
 	linear: LinearClient,
+	runStateStore: RunStateStore,
 	issue: {
 		id: string;
 		identifier: string;
@@ -156,7 +160,7 @@ async function processIssue(
 ): Promise<void> {
 	const key = normalizeIssueKey(issue.identifier);
 	const issueLogger = logger.child({ projectId: config.id, issueKey: key });
-	const existing = await loadRunState(config.workspacePath, config.id, key);
+	const existing = await runStateStore.load(config.id, key);
 	const isAssignedState = await linear.isAssignedState(issue.state.id);
 	if (!existing && !isAssignedState) {
 		issueLogger.info(
@@ -195,13 +199,13 @@ async function processIssue(
 	);
 
 	try {
-		await executeIssue(config, linear, runState);
+		await executeIssue(config, linear, runStateStore, runState);
 		issueLogger.info({ stage: runState.stage }, "Issue workflow finished");
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		runState.lastError = message;
 		runState.stage = "blocked";
-		await saveRunState(config.workspacePath, runState);
+		await runStateStore.save(runState);
 		await safeLinearMoveToCanceled(linear, runState.issue.id);
 		await safeLinearComment(
 			linear,
@@ -268,6 +272,7 @@ export function buildIssueJobLogFields(
 async function executeIssue(
 	config: ResolvedProjectConfig,
 	linear: LinearClient,
+	runStateStore: RunStateStore,
 	state: RunState,
 ): Promise<void> {
 	if (state.stage === "done" || state.stage === "blocked") {
@@ -278,7 +283,7 @@ async function executeIssue(
 		await linear.markStage(state.issue.id, "planning");
 		await linear.comment(state.issue.id, "PIV loop started planning.");
 		Object.assign(state, transitionStage(state, "planning"));
-		await saveRunState(config.workspacePath, state);
+		await runStateStore.save(state);
 	}
 
 	if (state.stage === "planning") {
@@ -289,7 +294,7 @@ async function executeIssue(
 		state.planSummary = result.finalMessage || result.stdout;
 		appendCodexUsage(state, "planning", result.usage);
 		Object.assign(state, transitionStage(state, "implementing"));
-		await saveRunState(config.workspacePath, state);
+		await runStateStore.save(state);
 		await linear.markStage(state.issue.id, "implementing");
 		await linear.comment(
 			state.issue.id,
@@ -330,7 +335,7 @@ async function executeIssue(
 		}
 
 		Object.assign(state, transitionStage(state, "pr_created"));
-		await saveRunState(config.workspacePath, state);
+		await runStateStore.save(state);
 		await linear.markStage(state.issue.id, "pr_created");
 		await linear.applyStageLabel(state.issue.id, "pr_created");
 		await linear.comment(
@@ -348,7 +353,7 @@ async function executeIssue(
 
 	if (state.stage === "pr_created") {
 		Object.assign(state, transitionStage(state, "reviewing"));
-		await saveRunState(config.workspacePath, state);
+		await runStateStore.save(state);
 		await linear.markStage(state.issue.id, "reviewing");
 		await linear.applyStageLabel(state.issue.id, "reviewing");
 	}
@@ -358,7 +363,7 @@ async function executeIssue(
 		await linear.markStage(state.issue.id, "testing");
 		await linear.applyStageLabel(state.issue.id, "testing");
 		Object.assign(state, transitionStage(state, "testing"));
-		await saveRunState(config.workspacePath, state);
+		await runStateStore.save(state);
 
 		const prompt = await buildReviewPrompt(
 			config.skills.reviewTest,
@@ -372,7 +377,7 @@ async function executeIssue(
 		state.reviewSummary = outcome.summary;
 		state.testingSummary = outcome.summary;
 		state.bugs = outcome.bugs;
-		await saveRunState(config.workspacePath, state);
+		await runStateStore.save(state);
 
 		const reviewComment = [
 			`PIV loop review for ${state.issue.key}`,
@@ -405,7 +410,7 @@ async function executeIssue(
 				);
 			}
 			Object.assign(state, transitionStage(state, "blocked"));
-			await saveRunState(config.workspacePath, state);
+			await runStateStore.save(state);
 			await linear.markCanceled(state.issue.id);
 			await linear.comment(
 				state.issue.id,
@@ -421,7 +426,7 @@ async function executeIssue(
 		}
 
 		Object.assign(state, transitionStage(state, "done"));
-		await saveRunState(config.workspacePath, state);
+		await runStateStore.save(state);
 		await linear.markStage(state.issue.id, "done");
 		await linear.comment(state.issue.id, "Review/testing passed. Marked done.");
 		logger.info(

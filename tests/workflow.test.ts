@@ -124,6 +124,9 @@ describe("resolvePollingSettings", () => {
 		codex: {
 			binary: "codex",
 		},
+		stateStore: {
+			type: "json",
+		},
 		skills: {
 			plan: "plan.md",
 			implement: "implement.md",

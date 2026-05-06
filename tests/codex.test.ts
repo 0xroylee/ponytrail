@@ -51,6 +51,9 @@ const config: ResolvedProjectConfig = {
 		sandbox: "workspace-write",
 		codexHome: "/tmp/codex",
 	},
+	stateStore: {
+		type: "json",
+	},
 	skills: { plan: "p", implement: "i", reviewTest: "r" },
 	dryRun: false,
 };

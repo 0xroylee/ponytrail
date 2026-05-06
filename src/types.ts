@@ -78,6 +78,10 @@ export interface ProjectRuntimeConfig {
 		sandbox?: "read-only" | "workspace-write" | "danger-full-access";
 		codexHome?: string;
 	};
+	stateStore: {
+		type: "json" | "sqlite";
+		sqlitePath?: string;
+	};
 	skills: {
 		plan: string;
 		implement: string;

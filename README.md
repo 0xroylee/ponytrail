@@ -76,6 +76,8 @@ Optional:
 - `PIV_MAX_POLL_CYCLES` (optional; stop polling after this many cycles)
 - `PIV_EXIT_WHEN_IDLE` (optional; default `1`, set `0` to keep polling when no issues are found)
 - `PIV_DRY_RUN=1` to avoid Linear/GitHub mutations
+- `PIV_STATE_STORE` (optional; `json` default, or `sqlite` for database-backed run-state storage)
+- `PIV_SQLITE_PATH` (required when `PIV_STATE_STORE=sqlite`; absolute/relative path to run-state sqlite db file)
 - `PIV_DEV_MODE=1` to stream Codex stdout/stderr logs during runs
 - `CODEX_SANDBOX` (optional; leave empty to disable sandbox, or set `read-only`, `workspace-write`, `danger-full-access`)
 - `CODEX_MODEL_PLAN` (optional; overrides planning model)
@@ -117,3 +119,4 @@ bun test
 - Run with authenticated `gh` (`gh auth status`).
 - Codex uses the default CLI home unless you explicitly set `CODEX_HOME`.
 - Linear integration uses the official `@linear/sdk` client.
+- Config resolution stays file/env based in `src/config.ts`; only run-state persistence can use SQLite.

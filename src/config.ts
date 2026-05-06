@@ -91,6 +91,10 @@ function buildEnvBase(cwd: string): ProjectRuntimeConfig {
 			sandbox,
 			codexHome,
 		},
+		stateStore: {
+			type: normalizeStateStoreType(env.PIV_STATE_STORE),
+			sqlitePath: normalizeOptionalValue(env.PIV_SQLITE_PATH),
+		},
 		skills: {
 			plan: path.join(cwd, "skills", "piv-plan", "SKILL.md"),
 			implement: path.join(cwd, "skills", "piv-implement", "SKILL.md"),
@@ -217,6 +221,11 @@ function mergeRuntime(
 			...(rootDefaults.codex ?? {}),
 			...(project.codex ?? {}),
 		},
+		stateStore: {
+			...base.stateStore,
+			...(rootDefaults.stateStore ?? {}),
+			...(project.stateStore ?? {}),
+		},
 		skills: {
 			...base.skills,
 			...(rootDefaults.skills ?? {}),
@@ -292,6 +301,21 @@ function normalizeSandboxValue(
 	);
 }
 
+function normalizeStateStoreType(
+	input: string | undefined,
+): ProjectRuntimeConfig["stateStore"]["type"] {
+	if (!input) {
+		return "json";
+	}
+	const value = input.trim().toLowerCase();
+	if (value === "json" || value === "sqlite") {
+		return value;
+	}
+	throw new Error(
+		`Invalid PIV_STATE_STORE value '${input}'. Use json or sqlite.`,
+	);
+}
+
 function validateProject(project: ResolvedProjectConfig): void {
 	if (!project.linear.apiKey) {
 		throw new Error(`LINEAR_API_KEY is required for project '${project.id}'`);
@@ -325,6 +349,11 @@ function validateProject(project: ResolvedProjectConfig): void {
 	) {
 		throw new Error(
 			`Polling max cycles must be a positive integer for project '${project.id}'`,
+		);
+	}
+	if (project.stateStore.type === "sqlite" && !project.stateStore.sqlitePath) {
+		throw new Error(
+			`PIV_SQLITE_PATH is required when state store is sqlite for project '${project.id}'`,
 		);
 	}
 }

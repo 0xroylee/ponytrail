@@ -2,7 +2,7 @@
 import { parseArgs } from "./args";
 import { getProjectById, loadConfig } from "./config";
 import { logger, normalizeError, setupProcessErrorHandlers } from "./logger";
-import { loadRunState, normalizeIssueKey } from "./state";
+import { createRunStateStore, normalizeIssueKey } from "./state";
 import { runWorkflow } from "./workflow";
 
 async function main(): Promise<void> {
@@ -41,7 +41,8 @@ async function main(): Promise<void> {
 			throw new Error(`Project '${command.projectId}' not found`);
 		}
 		const key = normalizeIssueKey(command.issueKey);
-		const state = await loadRunState(project.workspacePath, project.id, key);
+		const store = createRunStateStore(project);
+		const state = await store.load(project.id, key);
 		if (!state) {
 			process.stdout.write(
 				`No run state found for ${key} in project ${project.id}\n`,

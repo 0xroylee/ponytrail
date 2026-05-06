@@ -18,6 +18,8 @@ const envKeys = [
 	"CODEX_MODEL_PLAN",
 	"CODEX_MODEL_IMPLEMENT",
 	"CODEX_MODEL_REVIEW_TEST",
+	"PIV_STATE_STORE",
+	"PIV_SQLITE_PATH",
 	"PIV_POLL_INTERVAL_MS",
 	"PIV_MAX_POLL_CYCLES",
 	"PIV_EXIT_WHEN_IDLE",
@@ -40,7 +42,11 @@ describe("loadConfig", () => {
 								? ""
 								: key === "PIV_EXIT_WHEN_IDLE"
 									? "1"
-									: key.toLowerCase();
+									: key === "PIV_STATE_STORE"
+										? "json"
+										: key === "PIV_SQLITE_PATH"
+											? ""
+											: key.toLowerCase();
 		}
 	});
 
@@ -104,5 +110,29 @@ describe("loadConfig", () => {
 		expect(config.projects[0]?.codex.models?.plan).toBe("gpt-5.5");
 		expect(config.projects[0]?.codex.models?.implement).toBe("gpt-5.3-codex");
 		expect(config.projects[0]?.codex.models?.reviewTest).toBe("gpt-5.3-codex");
+	});
+
+	it("defaults state store to json", async () => {
+		process.env.PIV_STATE_STORE = undefined;
+		const config = await loadConfig(process.cwd());
+		expect(config.projects[0]?.stateStore.type).toBe("json");
+		expect(config.projects[0]?.stateStore.sqlitePath).toBeUndefined();
+	});
+
+	it("loads sqlite state store config from env", async () => {
+		process.env.PIV_STATE_STORE = "sqlite";
+		process.env.PIV_SQLITE_PATH = "/tmp/piv-state.sqlite";
+		const config = await loadConfig(process.cwd());
+		expect(config.projects[0]?.stateStore.type).toBe("sqlite");
+		expect(config.projects[0]?.stateStore.sqlitePath).toBe(
+			"/tmp/piv-state.sqlite",
+		);
+	});
+
+	it("throws on invalid state store type", async () => {
+		process.env.PIV_STATE_STORE = "redis";
+		await expect(loadConfig(process.cwd())).rejects.toThrow(
+			"Invalid PIV_STATE_STORE value",
+		);
 	});
 });
