@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { IssueRef, PullRequestRef } from "./types";
+import type { BugRecord, IssueRef, PullRequestRef } from "./types";
 
 async function loadSkillText(filePath: string): Promise<string> {
 	try {
@@ -74,5 +74,43 @@ export async function buildReviewPrompt(
 		"SUMMARY: <one-paragraph summary>",
 		"BUGS_JSON:",
 		'[{"title":"short bug title","body":"technical details"}]',
+	].join("\n");
+}
+
+export async function buildFixPrompt(
+	skillPath: string,
+	issue: IssueRef,
+	planSummary: string,
+	reviewSummary: string,
+	bugs: BugRecord[],
+	pr: PullRequestRef | undefined,
+): Promise<string> {
+	const skill = await loadSkillText(skillPath);
+	const bugJson = JSON.stringify(bugs, null, 2);
+	const prText = pr?.url
+		? `PR: ${pr.url}`
+		: `Branch: ${pr?.branch ?? "unknown"}`;
+	return [
+		"You are the implementation agent in a PIV loop workflow.",
+		"",
+		"Use this skill:",
+		skill,
+		"",
+		`Linear issue: ${issue.key}`,
+		`Title: ${issue.title}`,
+		prText,
+		"",
+		"This is a fix pass after review/testing found bugs.",
+		"",
+		"Plan summary:",
+		planSummary || "(none)",
+		"",
+		"Latest review/testing summary:",
+		reviewSummary || "(none)",
+		"",
+		"Bugs to fix (BUGS_JSON):",
+		bugJson,
+		"",
+		"Address every bug, update the existing branch/PR, run relevant tests, and end with a concise summary.",
 	].join("\n");
 }

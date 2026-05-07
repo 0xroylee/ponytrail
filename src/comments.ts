@@ -48,11 +48,12 @@ export function buildPlanComment(
 export function buildImplementationComment(
 	draftPrUrl: string | undefined,
 	usage?: TokenUsage,
+	options?: { updated?: boolean },
 ): string {
-	return [
-		`Implementation completed. Draft PR: ${draftPrUrl ?? "(created)"}`,
-		formatCodexUsageLine(usage),
-	].join("\n");
+	const statusLine = options?.updated
+		? `Implementation updated existing PR branch: ${draftPrUrl ?? "(updated)"}`
+		: `Implementation completed. Draft PR: ${draftPrUrl ?? "(created)"}`;
+	return [statusLine, formatCodexUsageLine(usage)].join("\n");
 }
 
 export function buildReviewComment(input: {
@@ -72,8 +73,10 @@ export function buildReviewComment(input: {
 		input.summary,
 		"",
 		input.bugs.length > 0
-			? "Bugs were detected and converted to GitHub issues."
-			: "No bugs found.",
+			? "Bugs were detected and sent back to implementation."
+			: input.passed
+				? "No bugs found."
+				: "Review failed without structured bug details; feedback was still sent to implementation.",
 	].join("\n");
 }
 

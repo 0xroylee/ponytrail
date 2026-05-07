@@ -109,6 +109,7 @@ function buildEnvPolling(): PollingConfig {
 		intervalMs: Number(env.PIV_POLL_INTERVAL_MS ?? "30000"),
 		maxCycles: parseOptionalPositiveInt(env.PIV_MAX_POLL_CYCLES),
 		exitWhenIdle: env.PIV_EXIT_WHEN_IDLE !== "0",
+		staleRunTimeoutMs: Number(env.PIV_STALE_RUN_TIMEOUT_MS ?? "3600000"),
 	};
 }
 
@@ -338,6 +339,12 @@ function validatePolling(polling: PollingConfig): void {
 		(!Number.isInteger(polling.maxCycles) || polling.maxCycles <= 0)
 	) {
 		throw new Error("Polling max cycles must be a positive integer");
+	}
+	if (
+		!Number.isInteger(polling.staleRunTimeoutMs) ||
+		polling.staleRunTimeoutMs <= 0
+	) {
+		throw new Error("Polling stale run timeout must be a positive integer");
 	}
 }
 

@@ -20,10 +20,7 @@ export async function createDraftPrFromWorktree(
 	const branch = `codex/${issueKey.toLowerCase()}`;
 	await checkoutBranch(config, branch);
 
-	const addResult = await runCommand("git", ["add", "-A"], {
-		cwd: config.executionPath,
-	});
-	assertCommandOk("git", ["add", "-A"], addResult);
+	await stageAllChanges(config);
 
 	const hasChanges = await stagedChangesExist(config);
 	if (!hasChanges) {
@@ -33,15 +30,8 @@ export async function createDraftPrFromWorktree(
 	}
 
 	const commitTitle = `[piv-loop] ${issueKey}: ${issueTitle}`;
-	const commit = await runCommand("git", ["commit", "-m", commitTitle], {
-		cwd: config.executionPath,
-	});
-	assertCommandOk("git", ["commit", "-m", commitTitle], commit);
-
-	const push = await runCommand("git", ["push", "-u", "origin", branch], {
-		cwd: config.executionPath,
-	});
-	assertCommandOk("git", ["push", "-u", "origin", branch], push);
+	await commitChanges(config, commitTitle);
+	await pushBranch(config, branch);
 
 	await ensureGhAuth(config);
 	const prTitle = `[codex] ${issueKey}: ${issueTitle}`;
@@ -82,6 +72,54 @@ export async function createDraftPrFromWorktree(
 		branch,
 		title: prTitle,
 	};
+}
+
+export async function updateDraftPrFromWorktree(
+	config: ResolvedProjectConfig,
+	prBranch: string,
+	issueKey: string,
+): Promise<void> {
+	await ensureGitRepository(config);
+	await checkoutBranch(config, prBranch);
+	await stageAllChanges(config);
+
+	const hasChanges = await stagedChangesExist(config);
+	if (!hasChanges) {
+		throw new Error(
+			"No staged changes found after verification feedback; cannot update PR",
+		);
+	}
+
+	const commitTitle = `[piv-loop] ${issueKey}: address review feedback`;
+	await commitChanges(config, commitTitle);
+	await pushBranch(config, prBranch);
+}
+
+async function stageAllChanges(config: ResolvedProjectConfig): Promise<void> {
+	const addResult = await runCommand("git", ["add", "-A"], {
+		cwd: config.executionPath,
+	});
+	assertCommandOk("git", ["add", "-A"], addResult);
+}
+
+async function commitChanges(
+	config: ResolvedProjectConfig,
+	commitTitle: string,
+): Promise<void> {
+	const commit = await runCommand("git", ["commit", "-m", commitTitle], {
+		cwd: config.executionPath,
+	});
+	assertCommandOk("git", ["commit", "-m", commitTitle], commit);
+}
+
+async function pushBranch(
+	config: ResolvedProjectConfig,
+	branch: string,
+): Promise<void> {
+	const push = await runCommand("git", ["push", "-u", "origin", branch], {
+		cwd: config.executionPath,
+	});
+	assertCommandOk("git", ["push", "-u", "origin", branch], push);
 }
 
 export async function commentOnPr(

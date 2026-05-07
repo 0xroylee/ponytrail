@@ -26,6 +26,7 @@ const envKeys = [
 	"PIV_POLL_INTERVAL_MS",
 	"PIV_MAX_POLL_CYCLES",
 	"PIV_EXIT_WHEN_IDLE",
+	"PIV_STALE_RUN_TIMEOUT_MS",
 ] as const;
 
 const previousEnv: Record<string, string | undefined> = {};
@@ -47,7 +48,9 @@ describe("loadConfig", () => {
 									? "0"
 									: key === "PIV_EXIT_WHEN_IDLE"
 										? "1"
-										: key.toLowerCase();
+										: key === "PIV_STALE_RUN_TIMEOUT_MS"
+											? "3600000"
+											: key.toLowerCase();
 		}
 	});
 
@@ -68,16 +71,26 @@ describe("loadConfig", () => {
 		expect(config.polling.intervalMs).toBe(30000);
 		expect(config.polling.maxCycles).toBeUndefined();
 		expect(config.polling.exitWhenIdle).toBe(true);
+		expect(config.polling.staleRunTimeoutMs).toBe(3600000);
 	});
 
 	it("loads polling values from env", async () => {
 		process.env.PIV_POLL_INTERVAL_MS = "15000";
 		process.env.PIV_MAX_POLL_CYCLES = "20";
 		process.env.PIV_EXIT_WHEN_IDLE = "0";
+		process.env.PIV_STALE_RUN_TIMEOUT_MS = "600000";
 		const config = await loadConfig(process.cwd());
 		expect(config.polling.intervalMs).toBe(15000);
 		expect(config.polling.maxCycles).toBe(20);
 		expect(config.polling.exitWhenIdle).toBe(false);
+		expect(config.polling.staleRunTimeoutMs).toBe(600000);
+	});
+
+	it("rejects non-positive stale run timeout", async () => {
+		process.env.PIV_STALE_RUN_TIMEOUT_MS = "0";
+		await expect(loadConfig(process.cwd())).rejects.toThrow(
+			"Polling stale run timeout must be a positive integer",
+		);
 	});
 
 	it("rejects project-level polling overrides", async () => {

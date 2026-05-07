@@ -8,15 +8,16 @@ PIV Loop is a Bun + TypeScript CLI that automates a Linear-to-Codex-to-GitHub wo
 2. Run plan and implement in the same Codex session.
 3. Open a draft PR after implementation.
 4. Run review/testing in a separate Codex session.
-5. Post review comments and create GitHub issues for detected bugs.
-6. Keep Linear status synchronized per stage.
+5. If review/testing fails, send bug feedback back to the implementation agent and update the same PR branch.
+6. Repeat implement -> review/testing until verification passes.
+7. Keep Linear status synchronized per stage.
 
 ## Multi-Project Configuration
 
 Configuration is loaded from `piv-loop.config.ts` and resolved into project-specific runtime settings.
 
 - Root defaults can define shared repo, linear, codex, skills, and dry-run behavior.
-- Polling is a single global config at the root `polling` key (`intervalMs`, `maxCycles`, `exitWhenIdle`) and applies to all selected projects in a run.
+- Polling is a single global config at the root `polling` key (`intervalMs`, `maxCycles`, `exitWhenIdle`, `staleRunTimeoutMs`) and applies to all selected projects in a run.
 - Optional `linear.projectId` can scope each PIV project to a specific Linear project when selecting assigned work.
 - For targeted runs with `--all-projects --issue <KEY>`, PIV routes the issue to exactly one project by matching `linear.projectId` to the Linear issue's `projectId`.
 - `projects` contains one or more project entries, each with:
@@ -85,6 +86,7 @@ Optional:
 - `PIV_POLL_INTERVAL_MS` (default `30000`; polling sleep between cycles)
 - `PIV_MAX_POLL_CYCLES` (optional; stop polling after this many cycles)
 - `PIV_EXIT_WHEN_IDLE` (optional; default `1`, set `0` to keep polling when no issues are found)
+- `PIV_STALE_RUN_TIMEOUT_MS` (optional; default `3600000`, requeue stale in-progress run states after this timeout)
   - these environment variables configure the single global polling loop
 - `PIV_DRY_RUN=1` to avoid Linear/GitHub mutations
 - `PIV_DEV_MODE=1` to stream Codex stdout/stderr logs during runs

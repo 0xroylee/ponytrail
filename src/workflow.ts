@@ -1,6 +1,5 @@
 import { runPlanSession, runResumeSession, runReviewSession } from "./codex";
 import {
-	buildBugsCanceledComment,
 	buildImplementationComment,
 	buildPlanComment,
 	buildReviewComment,
@@ -8,18 +7,20 @@ import {
 import { type LoadedConfig, getProjectById } from "./config";
 import {
 	commentOnPr,
-	createBugIssues,
 	createDraftPrFromWorktree,
+	updateDraftPrFromWorktree,
 } from "./github";
 import { LinearClient } from "./linear";
 import { logger, normalizeError } from "./logger";
 import {
+	buildFixPrompt,
 	buildImplementPrompt,
 	buildPlanPrompt,
 	buildReviewPrompt,
 } from "./prompts";
-import { parseReviewOutcome } from "./review";
+import { type ReviewOutcome, parseReviewOutcome } from "./review";
 import {
+	listRunStates,
 	loadRunState,
 	normalizeIssueKey,
 	saveRunState,
@@ -31,7 +32,19 @@ import type {
 	ResolvedProjectConfig,
 	RunOptions,
 	RunState,
+	WorkflowStage,
 } from "./types";
+
+interface WorkflowIssue {
+	id: string;
+	identifier: string;
+	title: string;
+	url: string;
+	state: {
+		id: string;
+		name: string;
+	};
+}
 
 export async function runWorkflow(
 	config: LoadedConfig,
@@ -222,35 +235,124 @@ async function runProjectCycle(
 ): Promise<number> {
 	const projectLogger = logger.child({ projectId: config.id });
 	const issues = await linear.fetchWork(options.issueArg);
+	const staleIssues =
+		options.issueArg === undefined
+			? await fetchStaleIssuesForRetry(
+					config,
+					linear,
+					polling.staleRunTimeoutMs,
+					issues,
+				)
+			: [];
+	const issueQueue = dedupeIssuesByKey([...issues, ...staleIssues]);
 	projectLogger.info(
-		{ cycle, issueCount: issues.length, pollingEnabled: polling.enabled },
+		{
+			cycle,
+			issueCount: issueQueue.length,
+			staleRetryCount: staleIssues.length,
+			pollingEnabled: polling.enabled,
+		},
 		"Fetched eligible Linear issues",
 	);
 
-	if (issues.length === 0) {
+	if (issueQueue.length === 0) {
 		projectLogger.info({ cycle }, "No eligible Linear issues found.");
 	}
 
-	for (const issue of issues) {
+	for (const issue of issueQueue) {
 		await processIssue(config, linear, issue);
 	}
 
-	return issues.length;
+	return issueQueue.length;
+}
+
+export function shouldRetryRunStage(stage: WorkflowStage): boolean {
+	return (
+		stage === "received" ||
+		stage === "planning" ||
+		stage === "implementing" ||
+		stage === "pr_created" ||
+		stage === "reviewing" ||
+		stage === "testing"
+	);
+}
+
+export function isRunStateStaleForRetry(
+	state: RunState,
+	nowMs: number,
+	timeoutMs: number,
+): boolean {
+	if (!shouldRetryRunStage(state.stage)) {
+		return false;
+	}
+	const updatedAtMs = Date.parse(state.updatedAt);
+	if (Number.isNaN(updatedAtMs)) {
+		return false;
+	}
+	return nowMs - updatedAtMs >= timeoutMs;
+}
+
+export function selectStaleRunIssueKeys(
+	runStates: RunState[],
+	nowMs: number,
+	timeoutMs: number,
+): string[] {
+	return runStates
+		.filter((state) => isRunStateStaleForRetry(state, nowMs, timeoutMs))
+		.map((state) => normalizeIssueKey(state.issue.key));
+}
+
+function dedupeIssuesByKey(issues: WorkflowIssue[]): WorkflowIssue[] {
+	const seen = new Set<string>();
+	const unique: WorkflowIssue[] = [];
+	for (const issue of issues) {
+		const key = normalizeIssueKey(issue.identifier);
+		if (seen.has(key)) {
+			continue;
+		}
+		seen.add(key);
+		unique.push(issue);
+	}
+	return unique;
+}
+
+async function fetchStaleIssuesForRetry(
+	config: ResolvedProjectConfig,
+	linear: LinearClient,
+	timeoutMs: number,
+	existingIssues: WorkflowIssue[],
+): Promise<WorkflowIssue[]> {
+	const runStates = await listRunStates(config.workspacePath, config.id);
+	const nowMs = Date.now();
+	const existingKeys = new Set(
+		existingIssues.map((issue) => normalizeIssueKey(issue.identifier)),
+	);
+	const staleRunKeys = selectStaleRunIssueKeys(
+		runStates,
+		nowMs,
+		timeoutMs,
+	).filter((key) => !existingKeys.has(key));
+	const staleIssues: WorkflowIssue[] = [];
+	for (const key of staleRunKeys) {
+		const issue = await linear.fetchIssueByIdentifier(key);
+		if (!issue) {
+			continue;
+		}
+		staleIssues.push({
+			id: issue.id,
+			identifier: issue.identifier,
+			title: issue.title,
+			url: issue.url,
+			state: issue.state,
+		});
+	}
+	return staleIssues;
 }
 
 async function processIssue(
 	config: ResolvedProjectConfig,
 	linear: LinearClient,
-	issue: {
-		id: string;
-		identifier: string;
-		title: string;
-		url: string;
-		state: {
-			id: string;
-			name: string;
-		};
-	},
+	issue: WorkflowIssue,
 ): Promise<void> {
 	const key = normalizeIssueKey(issue.identifier);
 	const issueLogger = logger.child({ projectId: config.id, issueKey: key });
@@ -321,6 +423,7 @@ export interface PollingSettings {
 	intervalMs: number;
 	maxCycles?: number;
 	exitWhenIdle: boolean;
+	staleRunTimeoutMs: number;
 }
 
 export function resolvePollingSettings(
@@ -332,6 +435,7 @@ export function resolvePollingSettings(
 		intervalMs: options.pollIntervalMs ?? pollingConfig.intervalMs,
 		maxCycles: options.maxPollCycles ?? pollingConfig.maxCycles,
 		exitWhenIdle: options.exitWhenIdle ?? pollingConfig.exitWhenIdle,
+		staleRunTimeoutMs: pollingConfig.staleRunTimeoutMs,
 	};
 }
 
@@ -368,150 +472,204 @@ async function executeIssue(
 	linear: LinearClient,
 	state: RunState,
 ): Promise<void> {
-	if (state.stage === "done" || state.stage === "blocked") {
-		return;
-	}
-
-	if (state.stage === "received") {
-		await linear.markStage(state.issue.id, "planning");
-		await linear.comment(state.issue.id, "PIV loop started planning.");
-		Object.assign(state, transitionStage(state, "planning"));
-		await saveRunState(config.workspacePath, state);
-	}
-
-	if (state.stage === "planning") {
-		logger.info(buildIssueJobLogFields(state, "planning"), "Planning issue");
-		const prompt = await buildPlanPrompt(config.skills.plan, state.issue);
-		const result = await runPlanSession(config, prompt);
-		state.codexSessionId = result.sessionId ?? state.codexSessionId;
-		state.planSummary = result.finalMessage || result.stdout;
-		appendCodexUsage(state, "planning", result.usage);
-		Object.assign(state, transitionStage(state, "implementing"));
-		await saveRunState(config.workspacePath, state);
-		await linear.markStage(state.issue.id, "implementing");
-		await linear.comment(
-			state.issue.id,
-			buildPlanComment(state.issue.key, state.planSummary, result.usage),
-		);
-		logger.info(buildIssueJobLogFields(state, "planning"), "Plan completed");
-	}
-
-	if (state.stage === "implementing") {
-		if (!state.codexSessionId) {
-			throw new Error("Missing codex session id for implement step");
-		}
-		logger.info(
-			buildIssueJobLogFields(state, "implementing"),
-			"Implementing issue",
-		);
-		const prompt = await buildImplementPrompt(
-			config.skills.implement,
-			state.issue,
-			state.planSummary ?? "",
-		);
-		const result = await runResumeSession(config, state.codexSessionId, prompt);
-		state.implementationSummary = result.finalMessage || result.stdout;
-		appendCodexUsage(state, "implementing", result.usage);
-
-		if (config.dryRun) {
-			state.pullRequest = {
-				branch: `codex/${state.issue.key.toLowerCase()}`,
-				title: `[codex] ${state.issue.key}: ${state.issue.title}`,
-				url: "https://example.invalid/dry-run",
-			};
-		} else {
-			state.pullRequest = await createDraftPrFromWorktree(
-				config,
-				state.issue.key,
-				state.issue.title,
-			);
-		}
-
-		Object.assign(state, transitionStage(state, "pr_created"));
-		await saveRunState(config.workspacePath, state);
-		await linear.markStage(state.issue.id, "pr_created");
-		await linear.applyStageLabel(state.issue.id, "pr_created");
-		await linear.comment(
-			state.issue.id,
-			buildImplementationComment(state.pullRequest.url, result.usage),
-		);
-		logger.info(
-			buildIssueJobLogFields(state, "implementing"),
-			"Implementation completed",
-		);
-	}
-
-	if (state.stage === "pr_created") {
-		Object.assign(state, transitionStage(state, "reviewing"));
-		await saveRunState(config.workspacePath, state);
-		await linear.markStage(state.issue.id, "reviewing");
-		await linear.applyStageLabel(state.issue.id, "reviewing");
-	}
-
-	if (state.stage === "reviewing" || state.stage === "testing") {
-		logger.info(buildIssueJobLogFields(state, "testing"), "Testing issue");
-		await linear.markStage(state.issue.id, "testing");
-		await linear.applyStageLabel(state.issue.id, "testing");
-		Object.assign(state, transitionStage(state, "testing"));
-		await saveRunState(config.workspacePath, state);
-
-		const prompt = await buildReviewPrompt(
-			config.skills.reviewTest,
-			state.issue,
-			state.pullRequest,
-		);
-		const review = await runReviewSession(config, prompt);
-		const outcome = parseReviewOutcome(review.finalMessage || review.stdout);
-		appendCodexUsage(state, "testing", review.usage);
-
-		state.reviewSummary = outcome.summary;
-		state.testingSummary = outcome.summary;
-		state.bugs = outcome.bugs;
-		await saveRunState(config.workspacePath, state);
-
-		const reviewComment = buildReviewComment({
-			issueKey: state.issue.key,
-			passed: outcome.passed,
-			summary: outcome.summary,
-			usage: review.usage,
-			bugs: outcome.bugs,
-		});
-
-		if (!config.dryRun && state.pullRequest) {
-			await commentOnPr(config, state.pullRequest, reviewComment);
-		}
-		await linear.comment(state.issue.id, reviewComment);
-
-		if (outcome.bugs.length > 0) {
-			if (config.dryRun) {
-				state.bugs = outcome.bugs;
-			} else {
-				state.bugs = await createBugIssues(
-					config,
-					outcome.bugs,
-					state.issue.url,
-					state.pullRequest?.url,
-				);
-			}
-			Object.assign(state, transitionStage(state, "blocked"));
+	while (state.stage !== "done" && state.stage !== "blocked") {
+		if (state.stage === "received") {
+			await linear.markStage(state.issue.id, "planning");
+			await linear.comment(state.issue.id, "PIV loop started planning.");
+			Object.assign(state, transitionStage(state, "planning"));
 			await saveRunState(config.workspacePath, state);
-			await linear.markCanceled(state.issue.id);
+			continue;
+		}
+
+		if (state.stage === "planning") {
+			logger.info(buildIssueJobLogFields(state, "planning"), "Planning issue");
+			const prompt = await buildPlanPrompt(config.skills.plan, state.issue);
+			const result = await runPlanSession(config, prompt);
+			state.codexSessionId = result.sessionId ?? state.codexSessionId;
+			state.planSummary = result.finalMessage || result.stdout;
+			appendCodexUsage(state, "planning", result.usage);
+			Object.assign(state, transitionStage(state, "implementing"));
+			await saveRunState(config.workspacePath, state);
+			await linear.markStage(state.issue.id, "implementing");
 			await linear.comment(
 				state.issue.id,
-				buildBugsCanceledComment(state.bugs),
+				buildPlanComment(state.issue.key, state.planSummary, result.usage),
 			);
-			return;
+			logger.info(buildIssueJobLogFields(state, "planning"), "Plan completed");
+			continue;
 		}
 
-		Object.assign(state, transitionStage(state, "done"));
-		await saveRunState(config.workspacePath, state);
-		await linear.markStage(state.issue.id, "done");
-		await linear.comment(state.issue.id, "Review/testing passed. Marked done.");
-		logger.info(
-			buildIssueJobLogFields(state, "testing"),
-			"Review/testing completed",
-		);
+		if (state.stage === "implementing") {
+			if (!state.codexSessionId) {
+				throw new Error("Missing codex session id for implement step");
+			}
+			logger.info(
+				buildIssueJobLogFields(state, "implementing"),
+				"Implementing issue",
+			);
+
+			const hasExistingPr = Boolean(state.pullRequest);
+			const fixRound = hasExistingPr && state.bugs.length > 0;
+			const prompt = fixRound
+				? await buildFixPrompt(
+						config.skills.implement,
+						state.issue,
+						state.planSummary ?? "",
+						state.testingSummary ?? state.reviewSummary ?? "",
+						state.bugs,
+						state.pullRequest,
+					)
+				: await buildImplementPrompt(
+						config.skills.implement,
+						state.issue,
+						state.planSummary ?? "",
+					);
+			const result = await runResumeSession(
+				config,
+				state.codexSessionId,
+				prompt,
+			);
+			state.implementationSummary = result.finalMessage || result.stdout;
+			appendCodexUsage(state, "implementing", result.usage);
+
+			if (!hasExistingPr) {
+				if (config.dryRun) {
+					state.pullRequest = {
+						branch: `codex/${state.issue.key.toLowerCase()}`,
+						title: `[codex] ${state.issue.key}: ${state.issue.title}`,
+						url: "https://example.invalid/dry-run",
+					};
+				} else {
+					state.pullRequest = await createDraftPrFromWorktree(
+						config,
+						state.issue.key,
+						state.issue.title,
+					);
+				}
+			} else if (!config.dryRun) {
+				if (!state.pullRequest?.branch) {
+					throw new Error("Missing pull request branch for feedback pass");
+				}
+				await updateDraftPrFromWorktree(
+					config,
+					state.pullRequest.branch,
+					state.issue.key,
+				);
+			}
+
+			state.bugs = [];
+			const nextStage: WorkflowStage = hasExistingPr
+				? "reviewing"
+				: "pr_created";
+			Object.assign(state, transitionStage(state, nextStage));
+			await saveRunState(config.workspacePath, state);
+			await linear.markStage(state.issue.id, nextStage);
+			await linear.applyStageLabel(state.issue.id, nextStage);
+			await linear.comment(
+				state.issue.id,
+				buildImplementationComment(state.pullRequest?.url, result.usage, {
+					updated: hasExistingPr,
+				}),
+			);
+			logger.info(
+				buildIssueJobLogFields(state, "implementing"),
+				hasExistingPr
+					? "Implementation feedback pass completed"
+					: "Implementation completed",
+			);
+			continue;
+		}
+
+		if (state.stage === "pr_created") {
+			Object.assign(state, transitionStage(state, "reviewing"));
+			await saveRunState(config.workspacePath, state);
+			await linear.markStage(state.issue.id, "reviewing");
+			await linear.applyStageLabel(state.issue.id, "reviewing");
+			continue;
+		}
+
+		if (state.stage === "reviewing" || state.stage === "testing") {
+			logger.info(buildIssueJobLogFields(state, "testing"), "Testing issue");
+			await linear.markStage(state.issue.id, "testing");
+			await linear.applyStageLabel(state.issue.id, "testing");
+			Object.assign(state, transitionStage(state, "testing"));
+			await saveRunState(config.workspacePath, state);
+
+			const prompt = await buildReviewPrompt(
+				config.skills.reviewTest,
+				state.issue,
+				state.pullRequest,
+			);
+			const review = await runReviewSession(config, prompt);
+			const outcome = parseReviewOutcome(review.finalMessage || review.stdout);
+			const retryBugs = normalizeFailedReviewBugs(outcome);
+			appendCodexUsage(state, "testing", review.usage);
+
+			state.reviewSummary = outcome.summary;
+			state.testingSummary = outcome.summary;
+			state.bugs = retryBugs;
+			await saveRunState(config.workspacePath, state);
+
+			const reviewComment = buildReviewComment({
+				issueKey: state.issue.key,
+				passed: outcome.passed,
+				summary: outcome.summary,
+				usage: review.usage,
+				bugs: retryBugs,
+			});
+
+			if (!config.dryRun && state.pullRequest) {
+				await commentOnPr(config, state.pullRequest, reviewComment);
+			}
+			await linear.comment(state.issue.id, reviewComment);
+
+			if (!outcome.passed) {
+				Object.assign(state, transitionStage(state, "implementing"));
+				await saveRunState(config.workspacePath, state);
+				await linear.markStage(state.issue.id, "implementing");
+				await linear.comment(
+					state.issue.id,
+					"Review/testing failed. Feedback was sent back to implementation for another pass.",
+				);
+				continue;
+			}
+
+			Object.assign(state, transitionStage(state, "done"));
+			await saveRunState(config.workspacePath, state);
+			await linear.markStage(state.issue.id, "done");
+			await linear.comment(
+				state.issue.id,
+				"Review/testing passed. Marked done.",
+			);
+			logger.info(
+				buildIssueJobLogFields(state, "testing"),
+				"Review/testing completed",
+			);
+			continue;
+		}
+
+		throw new Error(`Unsupported workflow stage: ${state.stage}`);
 	}
+}
+
+export function normalizeFailedReviewBugs(
+	outcome: ReviewOutcome,
+): RunState["bugs"] {
+	if (outcome.passed) {
+		return [];
+	}
+	if (outcome.bugs.length > 0) {
+		return outcome.bugs;
+	}
+	const summary =
+		outcome.summary.trim() ||
+		"Review/testing failed but no structured BUGS_JSON details were provided.";
+	return [
+		{
+			title: "Review/testing failed without structured bug details",
+			body: summary,
+		},
+	];
 }
 
 export function appendCodexUsage(

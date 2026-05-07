@@ -7,8 +7,12 @@ import type {
 import {
 	appendCodexUsage,
 	buildIssueJobLogFields,
+	isRunStateStaleForRetry,
+	normalizeFailedReviewBugs,
 	resolvePollingSettings,
 	routeProjectsForIssueProjectId,
+	selectStaleRunIssueKeys,
+	shouldRetryRunStage,
 	shouldStopPolling,
 } from "../src/workflow";
 
@@ -17,6 +21,7 @@ describe("resolvePollingSettings", () => {
 		intervalMs: 30000,
 		maxCycles: 12,
 		exitWhenIdle: true,
+		staleRunTimeoutMs: 3600000,
 	};
 
 	it("uses project defaults when options are unset", () => {
@@ -26,6 +31,7 @@ describe("resolvePollingSettings", () => {
 			intervalMs: 30000,
 			maxCycles: 12,
 			exitWhenIdle: true,
+			staleRunTimeoutMs: 3600000,
 		});
 	});
 
@@ -41,6 +47,7 @@ describe("resolvePollingSettings", () => {
 			intervalMs: 15000,
 			maxCycles: 2,
 			exitWhenIdle: false,
+			staleRunTimeoutMs: 3600000,
 		});
 	});
 });
@@ -48,7 +55,12 @@ describe("resolvePollingSettings", () => {
 describe("shouldStopPolling", () => {
 	it("stops immediately when polling is disabled", () => {
 		const stop = shouldStopPolling(
-			{ enabled: false, intervalMs: 30000, exitWhenIdle: true },
+			{
+				enabled: false,
+				intervalMs: 30000,
+				exitWhenIdle: true,
+				staleRunTimeoutMs: 3600000,
+			},
 			{},
 			1,
 			2,
@@ -58,7 +70,12 @@ describe("shouldStopPolling", () => {
 
 	it("stops immediately when issue is explicitly targeted", () => {
 		const stop = shouldStopPolling(
-			{ enabled: true, intervalMs: 30000, exitWhenIdle: false },
+			{
+				enabled: true,
+				intervalMs: 30000,
+				exitWhenIdle: false,
+				staleRunTimeoutMs: 3600000,
+			},
 			{ poll: true, issueArg: "ENG-1" },
 			1,
 			1,
@@ -68,7 +85,13 @@ describe("shouldStopPolling", () => {
 
 	it("stops after max polling cycles", () => {
 		const stop = shouldStopPolling(
-			{ enabled: true, intervalMs: 30000, maxCycles: 2, exitWhenIdle: false },
+			{
+				enabled: true,
+				intervalMs: 30000,
+				maxCycles: 2,
+				exitWhenIdle: false,
+				staleRunTimeoutMs: 3600000,
+			},
 			{ poll: true },
 			2,
 			3,
@@ -78,7 +101,12 @@ describe("shouldStopPolling", () => {
 
 	it("stops on global idle cycle only when enabled", () => {
 		const stop = shouldStopPolling(
-			{ enabled: true, intervalMs: 30000, exitWhenIdle: true },
+			{
+				enabled: true,
+				intervalMs: 30000,
+				exitWhenIdle: true,
+				staleRunTimeoutMs: 3600000,
+			},
 			{ poll: true },
 			1,
 			0,
@@ -88,12 +116,51 @@ describe("shouldStopPolling", () => {
 
 	it("continues when any project has work in the cycle", () => {
 		const stop = shouldStopPolling(
-			{ enabled: true, intervalMs: 30000, exitWhenIdle: true },
+			{
+				enabled: true,
+				intervalMs: 30000,
+				exitWhenIdle: true,
+				staleRunTimeoutMs: 3600000,
+			},
 			{ poll: true },
 			1,
 			1,
 		);
 		expect(stop).toBe(false);
+	});
+});
+
+describe("stale run retry helpers", () => {
+	it("flags retryable stages", () => {
+		expect(shouldRetryRunStage("received")).toBe(true);
+		expect(shouldRetryRunStage("planning")).toBe(true);
+		expect(shouldRetryRunStage("implementing")).toBe(true);
+		expect(shouldRetryRunStage("pr_created")).toBe(true);
+		expect(shouldRetryRunStage("reviewing")).toBe(true);
+		expect(shouldRetryRunStage("testing")).toBe(true);
+		expect(shouldRetryRunStage("blocked")).toBe(false);
+		expect(shouldRetryRunStage("done")).toBe(false);
+	});
+
+	it("marks only stale active run states for retry", () => {
+		const nowMs = Date.parse("2026-05-07T12:00:00.000Z");
+		const oldMs = nowMs - 3600000;
+		const freshMs = nowMs - 5000;
+		const runStates: RunState[] = [
+			createRunState("ENG-1", "planning", oldMs),
+			createRunState("ENG-2", "implementing", oldMs),
+			createRunState("ENG-3", "testing", oldMs),
+			createRunState("ENG-4", "planning", freshMs),
+			createRunState("ENG-5", "done", oldMs),
+		];
+		const keys = selectStaleRunIssueKeys(runStates, nowMs, 600000);
+		expect(keys).toEqual(["ENG-1", "ENG-2", "ENG-3"]);
+	});
+
+	it("ignores invalid updatedAt values", () => {
+		const state = createRunState("ENG-9", "planning", Date.now());
+		state.updatedAt = "not-a-date";
+		expect(isRunStateStaleForRetry(state, Date.now(), 1000)).toBe(false);
 	});
 });
 
@@ -240,6 +307,39 @@ describe("appendCodexUsage", () => {
 	});
 });
 
+describe("normalizeFailedReviewBugs", () => {
+	it("returns empty list when review passed", () => {
+		expect(
+			normalizeFailedReviewBugs({
+				passed: true,
+				summary: "Looks good.",
+				bugs: [{ title: "Ignored", body: "ignored" }],
+			}),
+		).toEqual([]);
+	});
+
+	it("returns reviewer bugs when present", () => {
+		expect(
+			normalizeFailedReviewBugs({
+				passed: false,
+				summary: "Found issues.",
+				bugs: [{ title: "Bug A", body: "Details" }],
+			}),
+		).toEqual([{ title: "Bug A", body: "Details" }]);
+	});
+
+	it("creates fallback bug when failed without BUGS_JSON details", () => {
+		const bugs = normalizeFailedReviewBugs({
+			passed: false,
+			summary: "Result failed with malformed output.",
+			bugs: [],
+		});
+		expect(bugs).toHaveLength(1);
+		expect(bugs[0]?.title).toContain("failed without structured bug details");
+		expect(bugs[0]?.body).toContain("Result failed with malformed output.");
+	});
+});
+
 function createProject(
 	id: string,
 	linearProjectId?: string,
@@ -292,6 +392,34 @@ function createProject(
 			reviewTest: "/tmp/review.md",
 		},
 		dryRun: false,
+	};
+}
+
+function createRunState(
+	issueKey: string,
+	stage: RunState["stage"],
+	updatedAtMs: number,
+): RunState {
+	const updatedAt = new Date(updatedAtMs).toISOString();
+	return {
+		projectId: "default",
+		projectName: "Default",
+		workspacePath: "/tmp/work",
+		repository: {
+			owner: "acme",
+			name: "repo",
+			baseBranch: "main",
+		},
+		issue: {
+			id: `lin_${issueKey}`,
+			key: issueKey,
+			title: issueKey,
+			url: `https://linear.app/acme/issue/${issueKey}/sample`,
+		},
+		stage,
+		bugs: [],
+		startedAt: updatedAt,
+		updatedAt,
 	};
 }
 

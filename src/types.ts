@@ -97,6 +97,7 @@ export interface PollingConfig {
 	intervalMs: number;
 	maxCycles?: number;
 	exitWhenIdle: boolean;
+	staleRunTimeoutMs: number;
 }
 
 export type PivLoopRootConfig = DeepPartial<ProjectRuntimeConfig> & {

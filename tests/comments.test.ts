@@ -64,6 +64,18 @@ describe("buildImplementationComment", () => {
 		expect(comment).toContain("https://example.com/pr/1");
 		expect(comment).toContain("Token usage: input 2, output 3, total 5");
 	});
+
+	it("renders update wording for feedback passes", () => {
+		const comment = buildImplementationComment(
+			"https://example.com/pr/1",
+			undefined,
+			{
+				updated: true,
+			},
+		);
+		expect(comment).toContain("Implementation updated existing PR branch:");
+		expect(comment).toContain("https://example.com/pr/1");
+	});
 });
 
 describe("buildReviewComment", () => {
@@ -78,6 +90,20 @@ describe("buildReviewComment", () => {
 		expect(comment).toContain("PIV loop review for ENG-1");
 		expect(comment).toContain("Result: PASS");
 		expect(comment).toContain("No bugs found.");
+	});
+
+	it("renders fail review summary as feedback loop", () => {
+		const comment = buildReviewComment({
+			issueKey: "ENG-1",
+			passed: false,
+			summary: "Found regressions.",
+			usage: { inputTokens: 1, outputTokens: 2 },
+			bugs: [{ title: "Bug A", body: "Details" }],
+		});
+		expect(comment).toContain("Result: FAIL");
+		expect(comment).toContain(
+			"Bugs were detected and sent back to implementation.",
+		);
 	});
 });
 
