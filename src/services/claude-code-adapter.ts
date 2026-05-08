@@ -1,5 +1,3 @@
-import { mkdir, readFile } from "node:fs/promises";
-import path from "node:path";
 import type { AgentAdapter, AgentResult } from "../core/agent-adapter";
 import type { ResolvedProjectConfig } from "../core/types";
 import { assertCommandOk, runCommand } from "../utils/shell";
@@ -20,15 +18,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
 	}
 
 	private async runClaude(prompt: string): Promise<AgentResult> {
-		const outputFile = await this.nextOutputFile();
-		const args = [
-			"-p",
-			prompt,
-			"--output-format",
-			"json",
-			"--output-file",
-			outputFile,
-		];
+		const args = ["-p", prompt, "--output-format", "json"];
 
 		const result = await runCommand("claude", args, {
 			cwd: this.config.executionPath,
@@ -38,7 +28,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
 		});
 
 		assertCommandOk("claude", args, result);
-		const finalMessage = await readOutputFile(outputFile);
+		const finalMessage = extractFinalMessage(result.stdout);
 		const sessionId = extractSessionId(result.stdout);
 		const usage = extractUsage(result.stdout);
 
@@ -51,15 +41,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
 	}
 
 	private async runClaudeContinue(prompt: string): Promise<AgentResult> {
-		const outputFile = await this.nextOutputFile();
-		const args = [
-			"--continue",
-			prompt,
-			"--output-format",
-			"json",
-			"--output-file",
-			outputFile,
-		];
+		const args = ["--continue", prompt, "--output-format", "json"];
 
 		const result = await runCommand("claude", args, {
 			cwd: this.config.executionPath,
@@ -69,7 +51,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
 		});
 
 		assertCommandOk("claude", args, result);
-		const finalMessage = await readOutputFile(outputFile);
+		const finalMessage = extractFinalMessage(result.stdout);
 		const sessionId = extractSessionId(result.stdout);
 		const usage = extractUsage(result.stdout);
 
@@ -80,26 +62,29 @@ export class ClaudeCodeAdapter implements AgentAdapter {
 			usage,
 		};
 	}
-
-	private async nextOutputFile(): Promise<string> {
-		const dir = path.join(this.config.workspacePath, ".piv-loop", "tmp");
-		await mkdir(dir, { recursive: true });
-		return path.join(
-			dir,
-			`claude-output-${Date.now()}-${Math.floor(Math.random() * 10000)}.txt`,
-		);
-	}
 }
 
-async function readOutputFile(file: string): Promise<string> {
+function extractFinalMessage(jsonOutput: string): string {
 	try {
-		return (await readFile(file, "utf8")).trim();
-	} catch {
-		return "";
-	}
+		const parsed = JSON.parse(jsonOutput) as Record<string, unknown>;
+		if (typeof parsed.result === "string") return parsed.result;
+		if (typeof parsed.content === "string") return parsed.content;
+		if (typeof parsed.message === "string") return parsed.message;
+		if (Array.isArray(parsed.messages)) {
+			const last = parsed.messages[parsed.messages.length - 1];
+			if (
+				last &&
+				typeof last === "object" &&
+				typeof last.content === "string"
+			) {
+				return last.content;
+			}
+		}
+	} catch {}
+	return jsonOutput;
 }
 
-function extractSessionId(jsonOutput: string): string | undefined {
+export function extractSessionId(jsonOutput: string): string | undefined {
 	try {
 		const parsed = JSON.parse(jsonOutput) as Record<string, unknown>;
 		const id =
@@ -114,7 +99,9 @@ function extractSessionId(jsonOutput: string): string | undefined {
 	return undefined;
 }
 
-function extractUsage(jsonOutput: string): AgentResult["usage"] | undefined {
+export function extractUsage(
+	jsonOutput: string,
+): AgentResult["usage"] | undefined {
 	try {
 		const parsed = JSON.parse(jsonOutput) as Record<string, unknown>;
 		const usage = parsed.usage as Record<string, unknown> | undefined;

@@ -537,6 +537,11 @@ function mergeRuntime(
 			...(rootDefaults.skills ?? {}),
 			...(project.skills ?? {}),
 		},
+		agent: {
+			...base.agent,
+			...(rootDefaults.agent ?? {}),
+			...(project.agent ?? {}),
+		},
 		dryRun: project.dryRun ?? rootDefaults.dryRun ?? base.dryRun,
 	};
 }
