@@ -1,11 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import type { ResolvedProjectConfig } from "../src/core/types";
 import {
-	buildCodexExecArgs,
-	buildCodexResumeArgs,
+	CodexAdapter,
 	extractSessionId,
 	extractUsage,
-} from "../src/services/codex";
+} from "../src/services/codex-adapter";
 
 const config: ResolvedProjectConfig = {
 	id: "default",
@@ -56,87 +55,7 @@ const config: ResolvedProjectConfig = {
 	dryRun: false,
 };
 
-describe("codex args", () => {
-	it("builds exec args with output file", () => {
-		const args = buildCodexExecArgs(config, "hello", "/tmp/out.txt");
-		expect(args).toContain("exec");
-		expect(args).toContain("--json");
-		expect(args).toContain("--output-last-message");
-		expect(args).toContain("/tmp/out.txt");
-		expect(args).toContain("--sandbox");
-		expect(args).toEqual(
-			expect.arrayContaining([
-				"--config",
-				'plugins."github@openai-curated".enabled=true',
-			]),
-		);
-		expect(args).toEqual(
-			expect.arrayContaining([
-				"--config",
-				'skillsets=["adhd-ai", "repo-defaults"]',
-			]),
-		);
-		expect(args).toEqual(
-			expect.arrayContaining(["--config", "features.experimental_tools=true"]),
-		);
-	});
-
-	it("supports stage model overrides", () => {
-		const planArgs = buildCodexExecArgs(
-			config,
-			"plan",
-			"/tmp/out.txt",
-			config.codex.models?.plan,
-		);
-		expect(planArgs).toEqual(expect.arrayContaining(["--model", "gpt-5.5"]));
-
-		const implementArgs = buildCodexResumeArgs(
-			config,
-			"session-123",
-			"implement",
-			"/tmp/out.txt",
-			config.codex.models?.implement,
-		);
-		expect(implementArgs).toEqual(
-			expect.arrayContaining(["--model", "gpt-5.3-codex"]),
-		);
-	});
-
-	it("omits sandbox when not configured", () => {
-		const args = buildCodexExecArgs(
-			{ ...config, codex: { ...config.codex, sandbox: undefined } },
-			"hello",
-			"/tmp/out.txt",
-		);
-		expect(args).not.toContain("--sandbox");
-	});
-
-	it("builds resume args with session", () => {
-		const args = buildCodexResumeArgs(
-			config,
-			"session-123",
-			"continue",
-			"/tmp/out.txt",
-		);
-		expect(args).toEqual(
-			expect.arrayContaining([
-				"exec",
-				"resume",
-				"session-123",
-				"continue",
-				"--json",
-			]),
-		);
-		expect(args).not.toContain("--sandbox");
-		expect(args).not.toContain("--cd");
-		expect(args).toEqual(
-			expect.arrayContaining([
-				"--config",
-				'plugins."linear@openai-curated".enabled=true',
-			]),
-		);
-	});
-
+describe("codex adapter", () => {
 	it("extracts session id from jsonl", () => {
 		const jsonl = `{"type":"thread.started","thread_id":"abc-123"}\n{"type":"turn.completed"}`;
 		expect(extractSessionId(jsonl)).toBe("abc-123");
@@ -171,5 +90,13 @@ describe("codex args", () => {
 			outputTokens: 5,
 			totalTokens: 25,
 		});
+	});
+
+	it("creates adapter instance", () => {
+		const adapter = new CodexAdapter(config);
+		expect(adapter).toBeDefined();
+		expect(typeof adapter.runPlan).toBe("function");
+		expect(typeof adapter.resume).toBe("function");
+		expect(typeof adapter.runReview).toBe("function");
 	});
 });

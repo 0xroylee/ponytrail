@@ -4,3 +4,5 @@ dist/
 *.log
 
 .env
+# Local dev docs (not for sync)
+HANDOFF.md

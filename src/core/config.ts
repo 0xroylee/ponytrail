@@ -118,6 +118,9 @@ function buildEnvBase(cwd: string): ProjectRuntimeConfig {
 			implement: path.join(cwd, "skills", "piv-implement", "SKILL.md"),
 			reviewTest: path.join(cwd, "skills", "piv-review-test", "SKILL.md"),
 		},
+		agent: {
+			backend: normalizeAgentBackend(env.AGENT_BACKEND),
+		},
 		dryRun: env.PIV_DRY_RUN === "1",
 	};
 }
@@ -768,4 +771,19 @@ function assertNoProjectNotifications(projects: ProjectConfig[]): void {
 			);
 		}
 	}
+}
+
+function normalizeAgentBackend(
+	value: string | undefined,
+): "codex" | "claude-code" | undefined {
+	if (!value) {
+		return undefined;
+	}
+	const normalized = value.trim().toLowerCase();
+	if (normalized === "codex" || normalized === "claude-code") {
+		return normalized;
+	}
+	throw new Error(
+		`Invalid AGENT_BACKEND value: '${value}'. Must be 'codex' or 'claude-code'.`,
+	);
 }

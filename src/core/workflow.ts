@@ -1,9 +1,4 @@
 import {
-	runPlanSession,
-	runResumeSession,
-	runReviewSession,
-} from "../services/codex";
-import {
 	commentOnPr,
 	createDraftPrFromWorktree,
 	updateDraftPrFromWorktree,
@@ -22,6 +17,7 @@ import {
 	buildReviewComment,
 } from "../utils/comments";
 import { logger, normalizeError } from "../utils/logger";
+import { type AgentAdapter, createAgentAdapter } from "./agent-adapter";
 import { type LoadedConfig, getProjectById } from "./config";
 import { type ReviewOutcome, parseReviewOutcome } from "./review";
 import {
@@ -502,6 +498,8 @@ async function executeIssue(
 	linear: LinearClient,
 	state: RunState,
 ): Promise<void> {
+	const agent = createAgentAdapter(config);
+
 	while (state.stage !== "done" && state.stage !== "blocked") {
 		if (state.stage === "received") {
 			await handleReceivedStage(config, linear, state);
@@ -509,12 +507,12 @@ async function executeIssue(
 		}
 
 		if (state.stage === "planning") {
-			await handlePlanningStage(config, linear, state);
+			await handlePlanningStage(config, agent, linear, state);
 			continue;
 		}
 
 		if (state.stage === "implementing") {
-			await handleImplementingStage(config, linear, state);
+			await handleImplementingStage(config, agent, linear, state);
 			continue;
 		}
 
@@ -524,7 +522,13 @@ async function executeIssue(
 		}
 
 		if (state.stage === "reviewing" || state.stage === "testing") {
-			await handleReviewTestingStage(config, notifications, linear, state);
+			await handleReviewTestingStage(
+				config,
+				agent,
+				notifications,
+				linear,
+				state,
+			);
 			continue;
 		}
 
@@ -545,12 +549,13 @@ async function handleReceivedStage(
 
 async function handlePlanningStage(
 	config: ResolvedProjectConfig,
+	agent: AgentAdapter,
 	linear: LinearClient,
 	state: RunState,
 ): Promise<void> {
 	logger.info(buildIssueJobLogFields(state, "planning"), "Planning issue");
 	const prompt = await buildPlanPrompt(config.skills.plan, state.issue);
-	const result = await runPlanSession(config, prompt);
+	const result = await agent.runPlan(prompt);
 	state.codexSessionId = result.sessionId ?? state.codexSessionId;
 	state.planSummary = result.finalMessage || result.stdout;
 	appendCodexUsage(state, "planning", result.usage);
@@ -566,6 +571,7 @@ async function handlePlanningStage(
 
 async function handleImplementingStage(
 	config: ResolvedProjectConfig,
+	agent: AgentAdapter,
 	linear: LinearClient,
 	state: RunState,
 ): Promise<void> {
@@ -593,7 +599,7 @@ async function handleImplementingStage(
 				state.issue,
 				state.planSummary ?? "",
 			);
-	const result = await runResumeSession(config, state.codexSessionId, prompt);
+	const result = await agent.resume(state.codexSessionId, prompt);
 	state.implementationSummary = result.finalMessage || result.stdout;
 	appendCodexUsage(state, "implementing", result.usage);
 
@@ -655,6 +661,7 @@ async function handlePrCreatedStage(
 
 async function handleReviewTestingStage(
 	config: ResolvedProjectConfig,
+	agent: AgentAdapter,
 	notifications: ResolvedNotificationConfig,
 	linear: LinearClient,
 	state: RunState,
@@ -670,7 +677,7 @@ async function handleReviewTestingStage(
 		state.issue,
 		state.pullRequest,
 	);
-	const review = await runReviewSession(config, prompt);
+	const review = await agent.runReview(prompt);
 	const outcome = parseReviewOutcome(review.finalMessage || review.stdout);
 	const retryBugs = normalizeFailedReviewBugs(outcome);
 	appendCodexUsage(state, "testing", review.usage);

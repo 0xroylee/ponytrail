@@ -82,6 +82,9 @@ export interface ProjectRuntimeConfig {
 		sandbox?: "read-only" | "workspace-write" | "danger-full-access";
 		codexHome?: string;
 	};
+	agent?: {
+		backend?: "codex" | "claude-code";
+	};
 	skills: {
 		plan: string;
 		implement: string;
