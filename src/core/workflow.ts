@@ -886,7 +886,7 @@ async function handleReviewTestingStage(
 	});
 
 	if (!config.dryRun && state.pullRequest) {
-		await commentOnPr(config, state.pullRequest, reviewComment);
+		await safePrComment(config, state, reviewComment);
 	}
 	await linear.comment(state.issue.id, reviewComment);
 
@@ -1242,6 +1242,29 @@ async function safeLinearComment(
 		runLogger.error(
 			{ err: normalizeError(error) },
 			"Failed to add Linear comment",
+		);
+	}
+}
+
+async function safePrComment(
+	config: ResolvedProjectConfig,
+	state: RunState,
+	body: string,
+): Promise<void> {
+	if (!state.pullRequest) {
+		return;
+	}
+	const runLogger = logger.child({
+		projectId: state.projectId,
+		issueKey: state.issue.key,
+		pr: state.pullRequest.url ?? state.pullRequest.number,
+	});
+	try {
+		await commentOnPr(config, state.pullRequest, body);
+	} catch (error) {
+		runLogger.error(
+			{ err: normalizeError(error) },
+			"Failed to add GitHub PR comment",
 		);
 	}
 }
