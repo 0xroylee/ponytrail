@@ -24,6 +24,7 @@ const LEGACY_CONFIG_FILE = "piv-loop.config.ts";
 const SQLITE_ENV_DIR = path.join(".piv-loop", "config");
 const SQLITE_ENV_DB_FILE = "env.sqlite";
 const SQLITE_ENV_TABLE = "env_config";
+const AUTO_SELECT_SKILLS_DB_FILE = "skills.sqlite";
 
 type ResolvedEnv = Record<string, string | undefined>;
 
@@ -195,6 +196,19 @@ function buildEnvBase(cwd: string, env: ResolvedEnv): ProjectRuntimeConfig {
 			plan: path.join("piv-plan", "SKILL.md"),
 			implement: path.join("piv-implement", "SKILL.md"),
 			reviewTest: path.join("piv-review-test", "SKILL.md"),
+			autoSelect: {
+				enabled: false,
+				sources: {
+					folder: true,
+					database: false,
+				},
+				databasePath: path.join(
+					cwd,
+					SQLITE_ENV_DIR,
+					AUTO_SELECT_SKILLS_DB_FILE,
+				),
+				maxSelected: 3,
+			},
 		},
 		agent: {
 			backend: normalizeAgentBackend(env.AGENT_BACKEND),
@@ -619,6 +633,11 @@ function mergeRuntime(
 			rootDefaults.skills?.reviewTest ??
 			base.skills.reviewTest,
 	};
+	const mergedAutoSelect = resolveAutoSelectConfig(
+		base.skills.autoSelect,
+		rootDefaults.skills?.autoSelect,
+		project.skills?.autoSelect,
+	);
 
 	return {
 		workspacePath,
@@ -658,6 +677,7 @@ function mergeRuntime(
 			plan: resolveSkillPath(skillRoot, mergedSkills.plan),
 			implement: resolveSkillPath(skillRoot, mergedSkills.implement),
 			reviewTest: resolveSkillPath(skillRoot, mergedSkills.reviewTest),
+			autoSelect: mergedAutoSelect,
 		},
 		agent: {
 			...base.agent,
@@ -673,6 +693,67 @@ function resolveSkillPath(root: string, input: string): string {
 		return input;
 	}
 	return path.resolve(root, input);
+}
+
+function resolveAutoSelectConfig(
+	base: ProjectRuntimeConfig["skills"]["autoSelect"] | undefined,
+	rootOverride:
+		| DeepPartial<NonNullable<ProjectRuntimeConfig["skills"]["autoSelect"]>>
+		| undefined,
+	projectOverride:
+		| DeepPartial<NonNullable<ProjectRuntimeConfig["skills"]["autoSelect"]>>
+		| undefined,
+): NonNullable<ProjectRuntimeConfig["skills"]["autoSelect"]> {
+	const mergedEnabled =
+		projectOverride?.enabled ?? rootOverride?.enabled ?? base?.enabled ?? false;
+	const mergedFolderSource =
+		projectOverride?.sources?.folder ??
+		rootOverride?.sources?.folder ??
+		base?.sources?.folder ??
+		true;
+	const mergedDatabaseSource =
+		projectOverride?.sources?.database ??
+		rootOverride?.sources?.database ??
+		base?.sources?.database ??
+		false;
+	const mergedDatabasePath = normalizeOptionalPath(
+		projectOverride?.databasePath ??
+			rootOverride?.databasePath ??
+			base?.databasePath,
+	);
+	const mergedMaxSelected = normalizeMaxSelected(
+		projectOverride?.maxSelected ??
+			rootOverride?.maxSelected ??
+			base?.maxSelected,
+	);
+
+	return {
+		enabled: mergedEnabled === true,
+		sources: {
+			folder: mergedFolderSource === true,
+			database: mergedDatabaseSource === true,
+		},
+		databasePath: mergedDatabasePath,
+		maxSelected: mergedMaxSelected,
+	};
+}
+
+function normalizeOptionalPath(input: unknown): string | undefined {
+	if (typeof input !== "string") {
+		return undefined;
+	}
+	const trimmed = input.trim();
+	if (!trimmed) {
+		return undefined;
+	}
+	return path.isAbsolute(trimmed) ? trimmed : path.resolve(trimmed);
+}
+
+function normalizeMaxSelected(input: unknown): number {
+	if (typeof input !== "number" || !Number.isInteger(input) || input <= 0) {
+		return 3;
+	}
+	return input;
 }
 
 function parseOptionalPositiveInt(
