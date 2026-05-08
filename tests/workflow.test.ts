@@ -1,4 +1,8 @@
 import { describe, expect, it, mock } from "bun:test";
+import { mkdtemp, readFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { agentChatLogPath } from "../src/core/state";
 import type {
 	PollingConfig,
 	ResolvedProjectConfig,
@@ -7,6 +11,7 @@ import type {
 import {
 	appendCodexUsage,
 	buildIssueJobLogFields,
+	buildPrioritizedIssueQueue,
 	buildRunLeaseOwnerId,
 	fixedBugsForImplementationComment,
 	isRunStateStaleForRetry,
@@ -17,6 +22,7 @@ import {
 	resolvePollingSettings,
 	resolveReviewModeForComplexityScore,
 	routeProjectsForIssueProjectId,
+	selectIssueQueueForCycle,
 	selectStaleRunIssueKeys,
 	shouldRetryRunStage,
 	shouldStopPolling,
@@ -150,6 +156,48 @@ describe("shouldStopPolling", () => {
 			true,
 		);
 		expect(stop).toBe(false);
+	});
+});
+
+describe("buildPrioritizedIssueQueue", () => {
+	it("sorts merged assigned and stale-retry issues by priority", () => {
+		const assignedIssues = [
+			createWorkflowIssue("ROY-2", 2, "High"),
+			createWorkflowIssue("ROY-4", 4, "Low"),
+		];
+		const staleRetryIssues = [
+			createWorkflowIssue("ROY-1", 1, "Urgent"),
+			createWorkflowIssue("ROY-3", 3, "Medium"),
+		];
+
+		const queue = buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
+		expect(queue.map((issue) => issue.identifier)).toEqual([
+			"ROY-1",
+			"ROY-2",
+			"ROY-3",
+			"ROY-4",
+		]);
+	});
+
+	it("keeps first occurrence when assigned and stale queues overlap", () => {
+		const assignedIssues = [createWorkflowIssue("ROY-20", 4, "Low")];
+		const staleRetryIssues = [createWorkflowIssue("ROY-20", 1, "Urgent")];
+
+		const queue = buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
+		expect(queue).toHaveLength(1);
+		expect(queue[0]?.priority.value).toBe(4);
+	});
+
+	it("bypasses merged sorting when a specific issue is targeted", () => {
+		const assignedIssues = [createWorkflowIssue("ROY-9", 4, "Low")];
+		const staleRetryIssues = [createWorkflowIssue("ROY-8", 1, "Urgent")];
+
+		const queue = selectIssueQueueForCycle(
+			"ROY-9",
+			assignedIssues,
+			staleRetryIssues,
+		);
+		expect(queue.map((issue) => issue.identifier)).toEqual(["ROY-9"]);
 	});
 });
 
@@ -365,6 +413,106 @@ describe("appendCodexUsage", () => {
 
 		appendCodexUsage(state, "planning", undefined);
 		expect(state.codexUsage).toHaveLength(0);
+	});
+});
+
+describe("runAgentWithChatLog", () => {
+	it("records successful agent runs", async () => {
+		const workspace = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-workflow-log-"),
+		);
+		const result = await runAgentWithChatLog({
+			workspacePath: workspace,
+			projectId: "default",
+			issue: {
+				id: "lin_123",
+				key: "ENG-1",
+				title: "Capture logs",
+				url: "https://linear.app/acme/issue/ENG-1/capture-logs",
+			},
+			agentRole: "planning",
+			skillPath: "skills/piv-plan/SKILL.md",
+			prompt: "plan prompt",
+			invoke: async () => ({
+				sessionId: "session-1",
+				finalMessage: "plan done",
+				stdout: "stdout payload",
+				usage: {
+					inputTokens: 10,
+					outputTokens: 4,
+					totalTokens: 14,
+				},
+			}),
+		});
+
+		expect(result.finalMessage).toBe("plan done");
+
+		const file = agentChatLogPath(
+			workspace,
+			"default",
+			"planning",
+			"skills/piv-plan/SKILL.md",
+		);
+		const raw = await readFile(file, "utf8");
+		const entries = JSON.parse(raw) as Array<Record<string, unknown>>;
+		expect(entries).toHaveLength(1);
+		expect(entries[0]).toMatchObject({
+			projectId: "default",
+			issueKey: "ENG-1",
+			agentRole: "planning",
+			skillPath: "skills/piv-plan/SKILL.md",
+			prompt: "plan prompt",
+			finalMessage: "plan done",
+			stdout: "stdout payload",
+			sessionId: "session-1",
+			success: true,
+		});
+		expect(typeof entries[0]?.recordedAt).toBe("string");
+	});
+
+	it("records failed agent runs and rethrows", async () => {
+		const workspace = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-workflow-log-"),
+		);
+		const invoke = async () => {
+			throw new Error("agent failed");
+		};
+		await expect(
+			runAgentWithChatLog({
+				workspacePath: workspace,
+				projectId: "default",
+				issue: {
+					id: "lin_123",
+					key: "ENG-2",
+					title: "Capture failures",
+					url: "https://linear.app/acme/issue/ENG-2/capture-failures",
+				},
+				agentRole: "review-testing",
+				skillPath: "skills/piv-review-test/SKILL.md",
+				prompt: "review prompt",
+				invoke,
+			}),
+		).rejects.toThrow("agent failed");
+
+		const file = agentChatLogPath(
+			workspace,
+			"default",
+			"review-testing",
+			"skills/piv-review-test/SKILL.md",
+		);
+		const raw = await readFile(file, "utf8");
+		const entries = JSON.parse(raw) as Array<Record<string, unknown>>;
+		expect(entries).toHaveLength(1);
+		expect(entries[0]).toMatchObject({
+			projectId: "default",
+			issueKey: "ENG-2",
+			agentRole: "review-testing",
+			prompt: "review prompt",
+			success: false,
+			error: "agent failed",
+			finalMessage: "",
+			stdout: "",
+		});
 	});
 });
 
@@ -693,6 +841,28 @@ function createRunState(
 		bugs: [],
 		startedAt: updatedAt,
 		updatedAt,
+	};
+}
+
+function createWorkflowIssue(
+	identifier: string,
+	priorityValue: number,
+	priorityName: string,
+) {
+	return {
+		id: identifier,
+		identifier,
+		title: identifier,
+		url: `https://linear.app/acme/issue/${identifier}/sample`,
+		priority: {
+			value: priorityValue,
+			name: priorityName,
+		},
+		labels: [],
+		state: {
+			id: "state_assigned",
+			name: "Todo",
+		},
 	};
 }
 

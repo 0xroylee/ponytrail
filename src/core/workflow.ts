@@ -25,10 +25,15 @@ import {
 	buildReviewComment,
 } from "../utils/comments";
 import { logger, normalizeError } from "../utils/logger";
-import { type AgentAdapter, createAgentAdapter } from "./agent-adapter";
+import {
+	type AgentAdapter,
+	type AgentResult,
+	createAgentAdapter,
+} from "./agent-adapter";
 import { type LoadedConfig, getProjectById } from "./config";
 import { type ReviewOutcome, parseReviewOutcome } from "./review";
 import {
+	appendAgentChatLog,
 	appendProjectErrorLog,
 	applyRunLease,
 	clearRunLease,
@@ -42,6 +47,8 @@ import {
 	transitionStage,
 } from "./state";
 import type {
+	AgentChatLogEntry,
+	AgentChatLogRole,
 	CodexUsageRecord,
 	PlannedSplitTask,
 	PollingConfig,
@@ -59,6 +66,14 @@ interface WorkflowIssue {
 	description?: string;
 	url: string;
 	teamId?: string;
+	priority: {
+		value: number;
+		name: string;
+	};
+	labels: Array<{
+		id: string;
+		name: string;
+	}>;
 	state: {
 		id: string;
 		name: string;
@@ -357,7 +372,14 @@ async function buildIssueQueueForProjectCycle(
 ): Promise<{ issueQueue: WorkflowIssue[]; staleRetryCount: number }> {
 	const assignedIssues = await linear.fetchWork(options.issueArg);
 	if (options.issueArg !== undefined) {
-		return { issueQueue: assignedIssues, staleRetryCount: 0 };
+		return {
+			issueQueue: selectIssueQueueForCycle(
+				options.issueArg,
+				assignedIssues,
+				[],
+			),
+			staleRetryCount: 0,
+		};
 	}
 	const staleRetryIssues = await fetchStaleIssuesForRetry(
 		config,
@@ -366,9 +388,33 @@ async function buildIssueQueueForProjectCycle(
 		assignedIssues,
 	);
 	return {
-		issueQueue: dedupeIssuesByKey([...assignedIssues, ...staleRetryIssues]),
+		issueQueue: selectIssueQueueForCycle(
+			options.issueArg,
+			assignedIssues,
+			staleRetryIssues,
+		),
 		staleRetryCount: staleRetryIssues.length,
 	};
+}
+
+export function buildPrioritizedIssueQueue(
+	assignedIssues: WorkflowIssue[],
+	staleRetryIssues: WorkflowIssue[],
+): WorkflowIssue[] {
+	return sortIssuesByPriority(
+		dedupeIssuesByKey([...assignedIssues, ...staleRetryIssues]),
+	);
+}
+
+export function selectIssueQueueForCycle(
+	issueArg: string | undefined,
+	assignedIssues: WorkflowIssue[],
+	staleRetryIssues: WorkflowIssue[],
+): WorkflowIssue[] {
+	if (issueArg !== undefined) {
+		return assignedIssues;
+	}
+	return buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
 }
 
 export function shouldRetryRunStage(stage: WorkflowStage): boolean {
@@ -454,6 +500,8 @@ async function fetchStaleIssuesForRetry(
 			title: issue.title,
 			url: issue.url,
 			teamId: issue.teamId,
+			priority: issue.priority,
+			labels: issue.labels,
 			state: issue.state,
 		});
 	}
@@ -690,7 +738,15 @@ async function handlePlanningStage(
 		supplementalSkills: supplemental.selected,
 		autoSelectWarnings: supplemental.warnings,
 	});
-	const result = await agent.runPlan(prompt);
+	const result = await runAgentWithChatLog({
+		workspacePath: config.workspacePath,
+		projectId: config.id,
+		issue: state.issue,
+		agentRole: "planning",
+		skillPath: config.skills.plan,
+		prompt,
+		invoke: () => agent.runPlan(prompt),
+	});
 	state.codexSessionId = result.sessionId ?? state.codexSessionId;
 	state.planSummary = result.finalMessage || result.stdout;
 	appendCodexUsage(state, "planning", result.usage);
@@ -757,6 +813,7 @@ async function handleImplementingStage(
 	if (!state.codexSessionId) {
 		throw new Error("Missing codex session id for implement step");
 	}
+	const codexSessionId = state.codexSessionId;
 	logger.info(
 		buildIssueJobLogFields(state, "implementing"),
 		"Implementing issue",
@@ -796,7 +853,15 @@ async function handleImplementingStage(
 				state.issue,
 				state.planSummary ?? "",
 			);
-	const result = await agent.resume(state.codexSessionId, prompt);
+	const result = await runAgentWithChatLog({
+		workspacePath: config.workspacePath,
+		projectId: config.id,
+		issue: state.issue,
+		agentRole: "implementing",
+		skillPath: config.skills.implement,
+		prompt,
+		invoke: () => agent.resume(codexSessionId, prompt),
+	});
 	state.implementationSummary = result.finalMessage || result.stdout;
 	appendCodexUsage(state, "implementing", result.usage);
 
@@ -890,7 +955,15 @@ async function handleReviewTestingStage(
 		state.issue,
 		state.pullRequest,
 	);
-	const review = await agent.runReview(prompt);
+	const review = await runAgentWithChatLog({
+		workspacePath: config.workspacePath,
+		projectId: config.id,
+		issue: state.issue,
+		agentRole: "review-testing",
+		skillPath: config.skills.reviewTest,
+		prompt,
+		invoke: () => agent.runReview(prompt),
+	});
 	const outcome = parseReviewOutcome(review.finalMessage || review.stdout);
 	const retryBugs = normalizeFailedReviewBugs(outcome);
 	appendCodexUsage(state, "testing", review.usage);
@@ -909,7 +982,7 @@ async function handleReviewTestingStage(
 	});
 
 	if (!config.dryRun && state.pullRequest) {
-		await commentOnPr(config, state.pullRequest, reviewComment);
+		await safePrComment(config, state, reviewComment);
 	}
 	await linear.comment(state.issue.id, reviewComment);
 
@@ -986,6 +1059,86 @@ export function normalizeFailedReviewBugs(
 			body: summary,
 		},
 	];
+}
+
+export interface RunAgentWithChatLogOptions {
+	workspacePath: string;
+	projectId: string;
+	issue: RunState["issue"];
+	agentRole: AgentChatLogRole;
+	skillPath: string;
+	prompt: string;
+	invoke: () => Promise<AgentResult>;
+}
+
+export async function runAgentWithChatLog(
+	options: RunAgentWithChatLogOptions,
+): Promise<AgentResult> {
+	try {
+		const result = await options.invoke();
+		await persistAgentChatLog(options, {
+			finalMessage: result.finalMessage,
+			stdout: result.stdout,
+			sessionId: result.sessionId,
+			usage: result.usage,
+			success: true,
+		});
+		return result;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		await persistAgentChatLog(options, {
+			finalMessage: "",
+			stdout: "",
+			success: false,
+			error: message,
+		});
+		throw error;
+	}
+}
+
+interface PersistedAgentChatLogResult {
+	finalMessage: string;
+	stdout: string;
+	sessionId?: string;
+	usage?: AgentResult["usage"];
+	success: boolean;
+	error?: string;
+}
+
+async function persistAgentChatLog(
+	options: RunAgentWithChatLogOptions,
+	result: PersistedAgentChatLogResult,
+): Promise<void> {
+	const entry: AgentChatLogEntry = {
+		projectId: options.projectId,
+		issueKey: options.issue.key,
+		issueId: options.issue.id,
+		issueTitle: options.issue.title,
+		agentRole: options.agentRole,
+		skillPath: options.skillPath,
+		prompt: options.prompt,
+		finalMessage: result.finalMessage,
+		stdout: result.stdout,
+		sessionId: result.sessionId,
+		usage: result.usage,
+		success: result.success,
+		error: result.error,
+		recordedAt: new Date().toISOString(),
+	};
+	try {
+		await appendAgentChatLog(options.workspacePath, options.projectId, entry);
+	} catch (error) {
+		logger.error(
+			{
+				projectId: options.projectId,
+				issueKey: options.issue.key,
+				agentRole: options.agentRole,
+				skillPath: options.skillPath,
+				err: normalizeError(error),
+			},
+			"Failed to append agent chat log entry",
+		);
+	}
 }
 
 export function appendCodexUsage(
@@ -1331,6 +1484,36 @@ async function safeLinearComment(
 		runLogger.error(
 			{ err: normalizeError(error) },
 			"Failed to add Linear comment",
+		);
+	}
+}
+
+async function safePrComment(
+	config: ResolvedProjectConfig,
+	state: RunState,
+	body: string,
+): Promise<void> {
+	if (!state.pullRequest) {
+		return;
+	}
+	const runLogger = logger.child({
+		projectId: state.projectId,
+		issueKey: state.issue.key,
+		pr: state.pullRequest.url ?? state.pullRequest.number,
+	});
+	try {
+		runLogger.info(
+			{
+				commentBody: body,
+				runState: state,
+			},
+			"Adding GitHub PR comment",
+		);
+		await commentOnPr(config, state.pullRequest, body);
+	} catch (error) {
+		runLogger.error(
+			{ err: normalizeError(error) },
+			"Failed to add GitHub PR comment",
 		);
 	}
 }
