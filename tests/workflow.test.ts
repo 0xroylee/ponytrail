@@ -14,6 +14,7 @@ import {
 	buildPrioritizedIssueQueue,
 	buildRunLeaseOwnerId,
 	fixedBugsForImplementationComment,
+	isReviewOnlyExecutableStage,
 	isRunStateStaleForRetry,
 	normalizeFailedReviewBugs,
 	parsePlannerComplexityScore,
@@ -243,6 +244,17 @@ describe("review-only selection", () => {
 			"ROY-2",
 			"ROY-3",
 		]);
+	});
+});
+
+describe("isReviewOnlyExecutableStage", () => {
+	it("only allows review-related stages", () => {
+		expect(isReviewOnlyExecutableStage("pr_created")).toBe(true);
+		expect(isReviewOnlyExecutableStage("reviewing")).toBe(true);
+		expect(isReviewOnlyExecutableStage("testing")).toBe(true);
+		expect(isReviewOnlyExecutableStage("implementing")).toBe(false);
+		expect(isReviewOnlyExecutableStage("planning")).toBe(false);
+		expect(isReviewOnlyExecutableStage("received")).toBe(false);
 	});
 });
 

@@ -358,6 +358,7 @@ async function runProjectCycle(
 					notifications,
 					linear,
 					issue,
+					options,
 					polling.staleRunTimeoutMs,
 					buildRunLeaseOwnerId(),
 				),
@@ -372,6 +373,7 @@ async function runProjectCycle(
 			notifications,
 			linear,
 			issue,
+			options,
 			polling.staleRunTimeoutMs,
 			buildRunLeaseOwnerId(),
 		);
@@ -461,6 +463,10 @@ export function selectReviewOnlyIssueKeys(runStates: RunState[]): string[] {
 	return runStates
 		.filter((state) => isReviewOnlyEligibleRunState(state))
 		.map((state) => normalizeIssueKey(state.issue.key));
+}
+
+export function isReviewOnlyExecutableStage(stage: WorkflowStage): boolean {
+	return stage === "pr_created" || stage === "reviewing" || stage === "testing";
 }
 
 export function shouldRetryRunStage(stage: WorkflowStage): boolean {
@@ -584,6 +590,7 @@ async function processIssue(
 	notifications: ResolvedNotificationConfig,
 	linear: LinearClient,
 	issue: WorkflowIssue,
+	options: RunOptions,
 	leaseTimeoutMs: number,
 	leaseOwnerId: string,
 ): Promise<void> {
@@ -649,6 +656,7 @@ async function processIssue(
 			notifications,
 			linear,
 			runState,
+			options,
 			leaseOwnerId,
 			leaseTimeoutMs,
 		);
@@ -731,6 +739,7 @@ async function executeIssue(
 	notifications: ResolvedNotificationConfig,
 	linear: LinearClient,
 	state: RunState,
+	options: RunOptions,
 	leaseOwnerId: string,
 	leaseTimeoutMs: number,
 ): Promise<void> {
@@ -741,6 +750,9 @@ async function executeIssue(
 		state.stage !== "blocked" &&
 		state.stage !== "human_review"
 	) {
+		if (options.reviewOnly && !isReviewOnlyExecutableStage(state.stage)) {
+			break;
+		}
 		await heartbeatRunLease(
 			config.workspacePath,
 			state,

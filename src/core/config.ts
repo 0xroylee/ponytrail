@@ -340,7 +340,7 @@ function resolveCron(
 	const jobs = override?.jobs;
 	if (jobs === undefined) {
 		return {
-			jobs: [buildDefaultCronJob()],
+			jobs: buildDefaultCronJobs(),
 		};
 	}
 	return {
@@ -348,22 +348,38 @@ function resolveCron(
 	};
 }
 
-function buildDefaultCronJob(): CronJobConfig {
-	return {
-		id: "daily-codebase-maintenance",
-		name: "Daily Codebase Maintenance",
-		enabled: true,
-		schedule: {
-			frequency: "daily",
-			time: "09:00",
+function buildDefaultCronJobs(): CronJobConfig[] {
+	return [
+		{
+			id: "hourly-pr-review",
+			name: "Hourly PR Review",
+			enabled: true,
+			schedule: {
+				frequency: "hourly",
+				every: 1,
+				minute: 0,
+			},
+			run: {
+				allProjects: true,
+				reviewOnly: true,
+			},
 		},
-		run: {
-			allProjects: true,
-			poll: true,
-			maxPollCycles: 1,
-			exitWhenIdle: true,
+		{
+			id: "daily-codebase-maintenance",
+			name: "Daily Codebase Maintenance",
+			enabled: true,
+			schedule: {
+				frequency: "daily",
+				time: "09:00",
+			},
+			run: {
+				allProjects: true,
+				poll: true,
+				maxPollCycles: 1,
+				exitWhenIdle: true,
+			},
 		},
-	};
+	];
 }
 
 function resolveNotifications(

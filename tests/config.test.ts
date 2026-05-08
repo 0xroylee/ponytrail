@@ -220,9 +220,29 @@ describe("loadConfig", () => {
 		}
 	});
 
-	it("loads default daily codebase maintenance cron job", async () => {
+	it("loads default hourly review and daily maintenance cron jobs", async () => {
 		const config = await loadConfig(process.cwd());
 		expect(config.cron.jobs).toEqual([
+			{
+				id: "hourly-pr-review",
+				name: "Hourly PR Review",
+				enabled: true,
+				schedule: {
+					frequency: "hourly",
+					every: 1,
+					minute: 0,
+				},
+				run: {
+					projectId: undefined,
+					issueArg: undefined,
+					allProjects: true,
+					reviewOnly: true,
+					poll: undefined,
+					pollIntervalMs: undefined,
+					maxPollCycles: undefined,
+					exitWhenIdle: undefined,
+				},
+			},
 			{
 				id: "daily-codebase-maintenance",
 				name: "Daily Codebase Maintenance",
@@ -235,6 +255,7 @@ describe("loadConfig", () => {
 					projectId: undefined,
 					issueArg: undefined,
 					allProjects: true,
+					reviewOnly: undefined,
 					poll: true,
 					pollIntervalMs: undefined,
 					maxPollCycles: 1,
