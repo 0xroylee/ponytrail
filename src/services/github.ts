@@ -5,31 +5,57 @@ import type {
 } from "../core/types";
 import { assertCommandOk, runCommand } from "../utils/shell";
 
+const GITHUB_RETRY_ATTEMPTS = 3;
+
+interface GithubCommandDeps {
+	runCommand?: typeof runCommand;
+	assertCommandOk?: typeof assertCommandOk;
+}
+
 export function issueBranchName(issueKey: string): string {
 	return `codex/${issueKey.toLowerCase()}`;
 }
 
 export async function ensureGhAuth(
 	config: ResolvedProjectConfig,
+	deps: GithubCommandDeps = {},
 ): Promise<void> {
-	const result = await runCommand("gh", ["auth", "status"], {
-		cwd: config.executionPath,
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	await withRetries("gh auth status", async () => {
+		const result = await commandRunner("gh", ["auth", "status"], {
+			cwd: config.executionPath,
+		});
+		assertOk("gh", ["auth", "status"], result);
 	});
-	assertCommandOk("gh", ["auth", "status"], result);
 }
 
 export async function createDraftPrFromWorktree(
 	config: ResolvedProjectConfig,
 	issueKey: string,
 	issueTitle: string,
+	deps: GithubCommandDeps = {},
 ): Promise<PullRequestRef> {
-	await ensureGitRepository(config);
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	await ensureGitRepository(config, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
 	const branch = issueBranchName(issueKey);
-	await ensureCurrentBranch(config, branch);
+	await ensureCurrentBranch(config, branch, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
 
-	await stageAllChanges(config);
+	await stageAllChanges(config, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
 
-	const hasChanges = await stagedChangesExist(config);
+	const hasChanges = await stagedChangesExist(config, {
+		runCommand: commandRunner,
+	});
 	if (!hasChanges) {
 		throw new Error(
 			"No staged changes found after implement step; cannot create PR",
@@ -37,10 +63,19 @@ export async function createDraftPrFromWorktree(
 	}
 
 	const commitTitle = `[adhd.ai] ${issueKey}: ${issueTitle}`;
-	await commitChanges(config, commitTitle);
-	await pushBranch(config, branch);
+	await commitChanges(config, commitTitle, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
+	await pushBranch(config, branch, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
 
-	await ensureGhAuth(config);
+	await ensureGhAuth(config, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
 	const prTitle = `[codex] ${issueKey}: ${issueTitle}`;
 	const prBody = [
 		`Linear issue: ${issueKey}`,
@@ -52,24 +87,27 @@ export async function createDraftPrFromWorktree(
 		"- separate review/testing session",
 	].join("\n");
 
-	const create = await runCommand(
-		"gh",
-		[
-			"pr",
-			"create",
-			"--draft",
-			"--title",
-			prTitle,
-			"--body",
-			prBody,
-			"--base",
-			config.repo.baseBranch,
-			"--head",
-			branch,
-		],
-		{ cwd: config.executionPath },
-	);
-	assertCommandOk("gh", ["pr", "create"], create);
+	const create = await withRetries("gh pr create", async () => {
+		const result = await commandRunner(
+			"gh",
+			[
+				"pr",
+				"create",
+				"--draft",
+				"--title",
+				prTitle,
+				"--body",
+				prBody,
+				"--base",
+				config.repo.baseBranch,
+				"--head",
+				branch,
+			],
+			{ cwd: config.executionPath },
+		);
+		assertOk("gh", ["pr", "create"], result);
+		return result;
+	});
 
 	const prUrl = create.stdout.trim().split("\n").filter(Boolean).at(-1);
 	const prNumber = parsePrNumber(prUrl);
@@ -85,19 +123,39 @@ export async function updateDraftPrFromWorktree(
 	config: ResolvedProjectConfig,
 	prBranch: string,
 	issueKey: string,
+	deps: GithubCommandDeps = {},
 ): Promise<boolean> {
-	await ensureGitRepository(config);
-	await ensureCurrentBranch(config, prBranch);
-	await stageAllChanges(config);
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	await ensureGitRepository(config, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
+	await ensureCurrentBranch(config, prBranch, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
+	await stageAllChanges(config, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
 
-	const hasChanges = await stagedChangesExist(config);
+	const hasChanges = await stagedChangesExist(config, {
+		runCommand: commandRunner,
+	});
 	if (!hasChanges) {
 		return false;
 	}
 
 	const commitTitle = `[adhd.ai] ${issueKey}: address review feedback`;
-	await commitChanges(config, commitTitle);
-	await pushBranch(config, prBranch);
+	await commitChanges(config, commitTitle, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
+	await pushBranch(config, prBranch, {
+		runCommand: commandRunner,
+		assertCommandOk: assertOk,
+	});
 	return true;
 }
 
@@ -134,31 +192,58 @@ export async function ensureCleanWorktree(
 	}
 }
 
-async function stageAllChanges(config: ResolvedProjectConfig): Promise<void> {
-	const addResult = await runCommand("git", ["add", "-A"], {
+async function stageAllChanges(
+	config: ResolvedProjectConfig,
+	deps: GithubCommandDeps = {},
+): Promise<void> {
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	const addResult = await commandRunner("git", ["add", "-A"], {
 		cwd: config.executionPath,
 	});
-	assertCommandOk("git", ["add", "-A"], addResult);
+	assertOk("git", ["add", "-A"], addResult);
 }
 
 async function commitChanges(
 	config: ResolvedProjectConfig,
 	commitTitle: string,
+	deps: GithubCommandDeps = {},
 ): Promise<void> {
-	const commit = await runCommand("git", ["commit", "-m", commitTitle], {
-		cwd: config.executionPath,
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	await withRetries("git commit", async () => {
+		const commit = await commandRunner("git", ["commit", "-m", commitTitle], {
+			cwd: config.executionPath,
+		});
+		if (commit.code === 0) {
+			return;
+		}
+
+		const committed = await wasCommitApplied(config, commitTitle, {
+			runCommand: commandRunner,
+			assertCommandOk: assertOk,
+		});
+		if (committed) {
+			return;
+		}
+
+		assertOk("git", ["commit", "-m", commitTitle], commit);
 	});
-	assertCommandOk("git", ["commit", "-m", commitTitle], commit);
 }
 
 async function pushBranch(
 	config: ResolvedProjectConfig,
 	branch: string,
+	deps: GithubCommandDeps = {},
 ): Promise<void> {
-	const push = await runCommand("git", ["push", "-u", "origin", branch], {
-		cwd: config.executionPath,
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	await withRetries("git push", async () => {
+		const push = await commandRunner("git", ["push", "-u", "origin", branch], {
+			cwd: config.executionPath,
+		});
+		assertOk("git", ["push", "-u", "origin", branch], push);
 	});
-	assertCommandOk("git", ["push", "-u", "origin", branch], push);
 }
 
 export async function commentOnPr(
@@ -247,15 +332,18 @@ export async function createBugIssues(
 
 async function ensureGitRepository(
 	config: ResolvedProjectConfig,
+	deps: GithubCommandDeps = {},
 ): Promise<void> {
-	const result = await runCommand(
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	const result = await commandRunner(
 		"git",
 		["rev-parse", "--is-inside-work-tree"],
 		{
 			cwd: config.executionPath,
 		},
 	);
-	assertCommandOk("git", ["rev-parse", "--is-inside-work-tree"], result);
+	assertOk("git", ["rev-parse", "--is-inside-work-tree"], result);
 }
 
 async function checkoutBranch(
@@ -289,11 +377,14 @@ async function checkoutBranch(
 async function ensureCurrentBranch(
 	config: ResolvedProjectConfig,
 	branch: string,
+	deps: GithubCommandDeps = {},
 ): Promise<void> {
-	const current = await runCommand("git", ["branch", "--show-current"], {
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	const current = await commandRunner("git", ["branch", "--show-current"], {
 		cwd: config.executionPath,
 	});
-	assertCommandOk("git", ["branch", "--show-current"], current);
+	assertOk("git", ["branch", "--show-current"], current);
 	if (current.stdout.trim() !== branch) {
 		throw new Error(
 			`Expected current branch '${branch}' before staging PR changes.`,
@@ -303,8 +394,10 @@ async function ensureCurrentBranch(
 
 async function stagedChangesExist(
 	config: ResolvedProjectConfig,
+	deps: GithubCommandDeps = {},
 ): Promise<boolean> {
-	const diff = await runCommand("git", ["diff", "--cached", "--quiet"], {
+	const commandRunner = deps.runCommand ?? runCommand;
+	const diff = await commandRunner("git", ["diff", "--cached", "--quiet"], {
 		cwd: config.executionPath,
 	});
 	if (diff.code === 0) {
@@ -322,4 +415,43 @@ function parsePrNumber(prUrl: string | undefined): number | undefined {
 	}
 	const match = prUrl.match(/\/pull\/(\d+)/);
 	return match ? Number(match[1]) : undefined;
+}
+
+async function withRetries<T>(
+	label: string,
+	operation: (attempt: number) => Promise<T>,
+): Promise<T> {
+	let lastError: unknown;
+	for (let attempt = 1; attempt <= GITHUB_RETRY_ATTEMPTS; attempt += 1) {
+		try {
+			return await operation(attempt);
+		} catch (error) {
+			lastError = error;
+		}
+	}
+	const reason =
+		lastError instanceof Error ? lastError.message : String(lastError);
+	throw new Error(
+		`${label} failed after ${GITHUB_RETRY_ATTEMPTS} attempts: ${reason}`,
+	);
+}
+
+async function wasCommitApplied(
+	config: ResolvedProjectConfig,
+	commitTitle: string,
+	deps: GithubCommandDeps,
+): Promise<boolean> {
+	const commandRunner = deps.runCommand ?? runCommand;
+	const assertOk = deps.assertCommandOk ?? assertCommandOk;
+	const hasStagedChanges = await stagedChangesExist(config, {
+		runCommand: commandRunner,
+	});
+	if (hasStagedChanges) {
+		return false;
+	}
+	const head = await commandRunner("git", ["log", "-1", "--pretty=%s"], {
+		cwd: config.executionPath,
+	});
+	assertOk("git", ["log", "-1", "--pretty=%s"], head);
+	return head.stdout.trim() === commitTitle;
 }
