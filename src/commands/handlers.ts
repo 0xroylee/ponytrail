@@ -1,11 +1,24 @@
 import type { CliCommand } from "../args";
 import type { LoadedConfig } from "../core/config";
 import { getProjectById } from "../core/config";
+import { runSetupCheck, runSetupWizard } from "../core/setup";
 import { loadRunState, normalizeIssueKey } from "../core/state";
 import { runWorkflow } from "../core/workflow";
 import { runCronScheduler } from "../services/cron";
 
-type RunnableCommand = Exclude<CliCommand, { kind: "help" }>;
+type SetupCommand = Extract<CliCommand, { kind: "setup" }>;
+type RunnableCommand = Exclude<CliCommand, { kind: "help" } | SetupCommand>;
+
+export async function handleSetupCommand(
+	command: SetupCommand,
+	cwd: string,
+): Promise<void> {
+	if (command.check) {
+		await runSetupCheck(cwd);
+		return;
+	}
+	await runSetupWizard(cwd);
+}
 
 export async function handleCommand(
 	command: RunnableCommand,
@@ -61,6 +74,7 @@ export function printHelp(): void {
 			"  adhd-ai cron [--job <JOB_ID>]",
 			"  adhd-ai status --project <PROJECT_ID> --issue <LINEAR_KEY>",
 			"  adhd-ai projects",
+			"  adhd-ai setup [--check]",
 			"  adhd-ai help",
 			"",
 			"Environment:",

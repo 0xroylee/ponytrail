@@ -6,3 +6,4 @@ dist/
 .env
 # Local dev docs (not for sync)
 HANDOFF.md
+adhd-ai.local.config.ts

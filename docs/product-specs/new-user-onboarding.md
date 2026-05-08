@@ -12,18 +12,9 @@ Get a new operator from zero setup to running a scoped project workflow.
 
 ## Setup
 
-1. Configure required environment variables:
-   - `LINEAR_API_KEY`
-   - `LINEAR_STATUS_ASSIGNED`
-   - `LINEAR_STATUS_PLANNING`
-   - `LINEAR_STATUS_IMPLEMENTING`
-   - `LINEAR_STATUS_PR_CREATED`
-   - `LINEAR_STATUS_REVIEWING`
-   - `LINEAR_STATUS_TESTING`
-   - `LINEAR_STATUS_BLOCKED`
-   - `LINEAR_STATUS_DONE`
-2. Review `adhd-ai.config.ts` and confirm `projects[]` entries, `project.id`, and paths.
-3. Verify GitHub auth with `gh auth status`.
+1. Run `adhd-ai setup` and answer the guided prompts.
+2. Confirm the wizard writes `.env` for secrets and `adhd-ai.local.config.ts` for local project settings.
+3. Run `adhd-ai setup --check` to verify config, GitHub auth, Codex availability, and secret placement.
 
 ## First Run
 

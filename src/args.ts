@@ -5,6 +5,7 @@ export type CliCommand =
 	| { kind: "cron"; jobId?: string }
 	| { kind: "status"; issueKey: string; projectId: string }
 	| { kind: "projects" }
+	| { kind: "setup"; check: boolean }
 	| { kind: "help" };
 
 export function parseArgs(argv: string[]): CliCommand {
@@ -52,6 +53,11 @@ export function parseArgs(argv: string[]): CliCommand {
 		const args = rest.slice(1);
 		const jobId = readFlagValue(args, "--job");
 		return { kind: "cron", jobId };
+	}
+
+	if (command === "setup") {
+		const args = rest.slice(1);
+		return { kind: "setup", check: args.includes("--check") };
 	}
 
 	if (command === "status") {

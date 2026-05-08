@@ -1,6 +1,10 @@
 #!/usr/bin/env bun
 import { parseArgs } from "./args";
-import { handleCommand, printHelp } from "./commands/handlers";
+import {
+	handleCommand,
+	handleSetupCommand,
+	printHelp,
+} from "./commands/handlers";
 import { loadConfig } from "./core/config";
 import {
 	logger,
@@ -17,6 +21,11 @@ async function main(): Promise<void> {
 	}
 
 	const cwd = process.cwd();
+	if (command.kind === "setup") {
+		await handleSetupCommand(command, cwd);
+		return;
+	}
+
 	const config = await loadConfig(cwd);
 	await handleCommand(command, config);
 }

@@ -234,6 +234,38 @@ describe("loadConfig", () => {
 		}
 	});
 
+	it("loads local config before tracked config", async () => {
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-config-test-"),
+		);
+		await writeFile(
+			path.join(tempDir, "adhd-ai.config.ts"),
+			[
+				"export default {",
+				"  projects: [{ id: 'tracked', name: 'Tracked Config' }]",
+				"};",
+				"",
+			].join("\n"),
+		);
+		await writeFile(
+			path.join(tempDir, "adhd-ai.local.config.ts"),
+			[
+				"export default {",
+				"  projects: [{ id: 'local', name: 'Local Config' }]",
+				"};",
+				"",
+			].join("\n"),
+		);
+
+		try {
+			const config = await loadConfig(tempDir);
+			expect(config.projects[0]?.id).toBe("local");
+			expect(config.projects[0]?.name).toBe("Local Config");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
 	it("disables codex sandbox by default", async () => {
 		process.env.CODEX_SANDBOX = undefined;
 		const config = await loadConfig(process.cwd());

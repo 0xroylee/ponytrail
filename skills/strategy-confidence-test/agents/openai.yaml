@@ -1,0 +1,4 @@
+interface:
+  display_name: "Strategy Confidence Test"
+  short_description: "Pressure-test strategies until evidence-backed"
+  default_prompt: "Use $strategy-confidence-test to pressure-test this strategy and iterate on fixes until the confidence claim is evidence-backed."

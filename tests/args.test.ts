@@ -117,6 +117,20 @@ describe("parseArgs", () => {
 		});
 	});
 
+	it("parses setup command", () => {
+		expect(parseArgs(["bun", "adhd-ai", "setup"])).toEqual({
+			kind: "setup",
+			check: false,
+		});
+	});
+
+	it("parses setup check command", () => {
+		expect(parseArgs(["bun", "adhd-ai", "setup", "--check"])).toEqual({
+			kind: "setup",
+			check: true,
+		});
+	});
+
 	it("rejects project with all-projects", () => {
 		expect(() =>
 			parseArgs([

@@ -90,6 +90,8 @@ Routing notes:
 ## Commands
 
 ```bash
+bun run src/index.ts setup
+bun run src/index.ts setup --check
 bun run src/index.ts run --project default
 bun run src/index.ts run --all-projects
 bun run src/index.ts run --project default --issue ENG-123
@@ -105,7 +107,19 @@ bun run src/index.ts projects
 adhd-ai run --project default
 adhd-ai cron
 adhd-ai projects
+adhd-ai setup
 ```
+
+## Guided Setup
+
+Run `adhd-ai setup` to answer plain-language prompts and generate local setup files:
+
+- `.env` stores secrets such as `LINEAR_API_KEY`.
+- `adhd-ai.local.config.ts` stores local project, GitHub, Linear routing, and Codex settings.
+
+`adhd-ai.local.config.ts` is loaded before the tracked `adhd-ai.config.ts` and is ignored by git. Existing `adhd-ai.config.ts` and legacy `piv-loop.config.ts` files continue to work.
+
+Run `adhd-ai setup --check` to validate that config loads, the execution path exists, `gh` is authenticated, Codex is available, and configured secrets are not present in tracked config files.
 
 ## Cron Jobs
 

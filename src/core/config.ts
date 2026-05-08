@@ -18,6 +18,7 @@ import type {
 } from "./types";
 
 const DEFAULT_CONFIG_FILE = "adhd-ai.config.ts";
+const LOCAL_CONFIG_FILE = "adhd-ai.local.config.ts";
 const LEGACY_CONFIG_FILE = "piv-loop.config.ts";
 
 type RootOverride = DeepPartial<AdhdAiRootConfig>;
@@ -148,7 +149,11 @@ function buildEnvNotifications(): ResolvedNotificationConfig {
 }
 
 async function loadConfigOverride(cwd: string): Promise<AnyOverride> {
-	for (const configFile of [DEFAULT_CONFIG_FILE, LEGACY_CONFIG_FILE]) {
+	for (const configFile of [
+		LOCAL_CONFIG_FILE,
+		DEFAULT_CONFIG_FILE,
+		LEGACY_CONFIG_FILE,
+	]) {
 		const configPath = path.join(cwd, configFile);
 		try {
 			await access(configPath);
