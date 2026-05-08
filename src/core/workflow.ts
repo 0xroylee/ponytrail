@@ -82,6 +82,7 @@ interface WorkflowIssue {
 
 const DEFAULT_PLANNER_COMPLEXITY_SCORE = 4;
 const HUMAN_REVIEW_COMPLEXITY_THRESHOLD = 5;
+const executionPathLockTails = new Map<string, Promise<void>>();
 
 export async function runWorkflow(
 	config: LoadedConfig,
@@ -469,6 +470,38 @@ export function isReviewOnlyExecutableStage(stage: WorkflowStage): boolean {
 	return stage === "pr_created" || stage === "reviewing" || stage === "testing";
 }
 
+export async function withExecutionPathLock<T>(
+	executionPath: string,
+	run: () => Promise<T>,
+): Promise<T> {
+	const currentTail = executionPathLockTails.get(executionPath);
+	const previousTail = currentTail
+		? currentTail.catch(() => undefined)
+		: undefined;
+
+	let release!: () => void;
+	const nextTail = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const queuedTail = previousTail
+		? previousTail.then(() => nextTail)
+		: nextTail;
+	executionPathLockTails.set(executionPath, queuedTail);
+
+	if (previousTail) {
+		await previousTail;
+	}
+
+	try {
+		return await run();
+	} finally {
+		release();
+		if (executionPathLockTails.get(executionPath) === queuedTail) {
+			executionPathLockTails.delete(executionPath);
+		}
+	}
+}
+
 export function shouldRetryRunStage(stage: WorkflowStage): boolean {
 	return (
 		stage === "received" ||
@@ -651,14 +684,16 @@ async function processIssue(
 	}
 
 	try {
-		await executeIssue(
-			config,
-			notifications,
-			linear,
-			runState,
-			options,
-			leaseOwnerId,
-			leaseTimeoutMs,
+		await withExecutionPathLock(config.executionPath, async () =>
+			executeIssue(
+				config,
+				notifications,
+				linear,
+				runState,
+				options,
+				leaseOwnerId,
+				leaseTimeoutMs,
+			),
 		);
 		issueLogger.info({ stage: runState.stage }, "Issue workflow finished");
 	} catch (error) {

@@ -29,6 +29,7 @@ import {
 	selectStaleRunIssueKeys,
 	shouldRetryRunStage,
 	shouldStopPolling,
+	withExecutionPathLock,
 } from "../src/core/workflow";
 
 describe("resolvePollingSettings", () => {
@@ -255,6 +256,26 @@ describe("isReviewOnlyExecutableStage", () => {
 		expect(isReviewOnlyExecutableStage("implementing")).toBe(false);
 		expect(isReviewOnlyExecutableStage("planning")).toBe(false);
 		expect(isReviewOnlyExecutableStage("received")).toBe(false);
+	});
+});
+
+describe("withExecutionPathLock", () => {
+	it("serializes execution for the same path", async () => {
+		const events: string[] = [];
+
+		await Promise.all([
+			withExecutionPathLock("/tmp/shared", async () => {
+				events.push("a:start");
+				await new Promise((resolve) => setTimeout(resolve, 5));
+				events.push("a:end");
+			}),
+			withExecutionPathLock("/tmp/shared", async () => {
+				events.push("b:start");
+				events.push("b:end");
+			}),
+		]);
+
+		expect(events).toEqual(["a:start", "a:end", "b:start", "b:end"]);
 	});
 });
 
