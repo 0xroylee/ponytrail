@@ -232,6 +232,19 @@ export interface BugRecord {
 	issueUrl?: string;
 }
 
+export interface PlannedSplitTask {
+	title: string;
+	description?: string;
+	labels?: string[];
+	priority?: number;
+}
+
+export interface SplitTaskRef {
+	title: string;
+	issueKey?: string;
+	issueUrl?: string;
+}
+
 export interface CodexUsageRecord {
 	stage: "planning" | "implementing" | "testing";
 	inputTokens?: number;
@@ -266,6 +279,7 @@ export interface RunState {
 	testingSummary?: string;
 	pullRequest?: PullRequestRef;
 	bugs: BugRecord[];
+	splitTasks?: SplitTaskRef[];
 	codexUsage?: CodexUsageRecord[];
 	lease?: RunLease;
 	startedAt: string;
