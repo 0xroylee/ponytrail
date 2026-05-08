@@ -6,7 +6,7 @@ import {
 	prepareImplementationBranch,
 	updateDraftPrFromWorktree,
 } from "../services/github";
-import { LinearClient } from "../services/linear";
+import { LinearClient, sortIssuesByPriority } from "../services/linear";
 import { sendTaskOutcomeEmail } from "../services/notifications";
 import { selectPlanningSupplementalSkills } from "../skills/catalog";
 import {
@@ -56,6 +56,14 @@ interface WorkflowIssue {
 	description?: string;
 	url: string;
 	teamId?: string;
+	priority: {
+		value: number;
+		name: string;
+	};
+	labels: Array<{
+		id: string;
+		name: string;
+	}>;
 	state: {
 		id: string;
 		name: string;
@@ -351,7 +359,14 @@ async function buildIssueQueueForProjectCycle(
 ): Promise<{ issueQueue: WorkflowIssue[]; staleRetryCount: number }> {
 	const assignedIssues = await linear.fetchWork(options.issueArg);
 	if (options.issueArg !== undefined) {
-		return { issueQueue: assignedIssues, staleRetryCount: 0 };
+		return {
+			issueQueue: selectIssueQueueForCycle(
+				options.issueArg,
+				assignedIssues,
+				[],
+			),
+			staleRetryCount: 0,
+		};
 	}
 	const staleRetryIssues = await fetchStaleIssuesForRetry(
 		config,
@@ -360,9 +375,33 @@ async function buildIssueQueueForProjectCycle(
 		assignedIssues,
 	);
 	return {
-		issueQueue: dedupeIssuesByKey([...assignedIssues, ...staleRetryIssues]),
+		issueQueue: selectIssueQueueForCycle(
+			options.issueArg,
+			assignedIssues,
+			staleRetryIssues,
+		),
 		staleRetryCount: staleRetryIssues.length,
 	};
+}
+
+export function buildPrioritizedIssueQueue(
+	assignedIssues: WorkflowIssue[],
+	staleRetryIssues: WorkflowIssue[],
+): WorkflowIssue[] {
+	return sortIssuesByPriority(
+		dedupeIssuesByKey([...assignedIssues, ...staleRetryIssues]),
+	);
+}
+
+export function selectIssueQueueForCycle(
+	issueArg: string | undefined,
+	assignedIssues: WorkflowIssue[],
+	staleRetryIssues: WorkflowIssue[],
+): WorkflowIssue[] {
+	if (issueArg !== undefined) {
+		return assignedIssues;
+	}
+	return buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
 }
 
 export function shouldRetryRunStage(stage: WorkflowStage): boolean {
@@ -448,6 +487,8 @@ async function fetchStaleIssuesForRetry(
 			title: issue.title,
 			url: issue.url,
 			teamId: issue.teamId,
+			priority: issue.priority,
+			labels: issue.labels,
 			state: issue.state,
 		});
 	}
