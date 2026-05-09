@@ -278,12 +278,6 @@ describe("loadConfig", () => {
 		process.env.RESEND_API_KEY = "re_test_key";
 		process.env.RESEND_FROM = "ADHD.ai <ops@example.com>";
 		process.env.RESEND_TO = "a@example.com,b@example.com";
-		await writeFile(
-			path.join(tempDir, "adhd-ai.config.ts"),
-			["export default {", "  projects: [{ id: 'default' }]", "};", ""].join(
-				"\n",
-			),
-		);
 		try {
 			const config = await loadConfig(tempDir);
 			expect(config.notifications.email.enabled).toBe(true);
@@ -333,12 +327,6 @@ describe("loadConfig", () => {
 		process.env.RESEND_API_KEY = "re_test_key";
 		process.env.RESEND_FROM = "";
 		process.env.RESEND_TO = "a@example.com";
-		await writeFile(
-			path.join(tempDir, "adhd-ai.config.ts"),
-			["export default {", "  projects: [{ id: 'default' }]", "};", ""].join(
-				"\n",
-			),
-		);
 		try {
 			await expect(loadConfig(tempDir)).rejects.toThrow(
 				"notifications.email.from (or RESEND_FROM) is required when email notifications are enabled",
