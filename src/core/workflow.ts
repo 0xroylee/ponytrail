@@ -890,6 +890,17 @@ async function processIssue(
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		runState.lastError = message;
+		if (runState.stage === "done") {
+			await saveRunState(config.workspacePath, runState);
+			issueLogger.error(
+				{
+					err: normalizeError(error),
+					stage: runState.stage,
+				},
+				"Issue workflow failed after reaching done",
+			);
+			return;
+		}
 		runState.stage = "blocked";
 		await saveRunState(config.workspacePath, runState);
 		await safeLinearMoveToCanceled(linear, runState.issue.id);
@@ -1108,6 +1119,7 @@ async function handlePlanningStage(
 	Object.assign(state, transitionStage(state, "done"));
 	await saveRunState(config.workspacePath, state);
 	await linear.markStage(state.issue.id, "done");
+	await linear.clearWorkflowStageLabels(state.issue.id);
 	await linear.comment(
 		state.issue.id,
 		buildPlanSplitComment(state.issue.key, state.planSummary, createdTasks, {
@@ -1334,6 +1346,7 @@ async function handleReviewTestingStage(
 	Object.assign(state, transitionStage(state, "done"));
 	await saveRunState(config.workspacePath, state);
 	await linear.markStage(state.issue.id, "done");
+	await linear.clearWorkflowStageLabels(state.issue.id);
 	await linear.comment(state.issue.id, "Review/testing passed. Marked done.");
 	await safeNotifyTaskOutcome(notifications, state, "done");
 	logger.info(

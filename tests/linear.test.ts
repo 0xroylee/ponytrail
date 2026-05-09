@@ -4,9 +4,11 @@ import {
 	buildSplitTaskIssueDescription,
 	buildSplitTaskIssueTitle,
 	buildTodoIssueFromPlanInput,
+	buildWorkflowLabelUpdate,
 	isIssueInConfiguredProject,
 	isLinearIssueReviewOnlyCandidate,
 	resolveSplitTaskTeamId,
+	shouldSkipDoneStageRegression,
 	sortIssuesByPriority,
 } from "../src/services/linear";
 
@@ -131,6 +133,57 @@ describe("isLinearIssueReviewOnlyCandidate", () => {
 			"Testing",
 		);
 		expect(candidate).toBe(false);
+	});
+});
+
+describe("shouldSkipDoneStageRegression", () => {
+	it("prevents moving a done issue back into active workflow stages", () => {
+		expect(
+			shouldSkipDoneStageRegression("done_id", "implementing", "done_id"),
+		).toBe(true);
+		expect(shouldSkipDoneStageRegression("done_id", "testing", "done_id")).toBe(
+			true,
+		);
+		expect(shouldSkipDoneStageRegression("done_id", "done", "done_id")).toBe(
+			false,
+		);
+	});
+
+	it("allows active issues to move through workflow stages", () => {
+		expect(
+			shouldSkipDoneStageRegression(
+				"in_progress_id",
+				"implementing",
+				"done_id",
+			),
+		).toBe(false);
+	});
+});
+
+describe("buildWorkflowLabelUpdate", () => {
+	it("adds the next workflow label and removes stale workflow labels", () => {
+		expect(
+			buildWorkflowLabelUpdate(
+				["lbl_reviewing", "lbl_backend"],
+				["lbl_pr", "lbl_reviewing", "lbl_testing"],
+				"lbl_testing",
+			),
+		).toEqual({
+			addedLabelIds: ["lbl_testing"],
+			removedLabelIds: ["lbl_reviewing"],
+		});
+	});
+
+	it("removes all workflow labels when no next label is provided", () => {
+		expect(
+			buildWorkflowLabelUpdate(
+				["lbl_testing", "lbl_backend"],
+				["lbl_pr", "lbl_reviewing", "lbl_testing"],
+			),
+		).toEqual({
+			addedLabelIds: [],
+			removedLabelIds: ["lbl_testing"],
+		});
 	});
 });
 
