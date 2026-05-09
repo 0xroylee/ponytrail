@@ -22,6 +22,9 @@ const config: DeepPartial<AdhdAiRootConfig> = {
 					maxPollCycles: 1,
 					exitWhenIdle: true,
 				},
+				skills: {
+					implement: "daily-codebase-maintenance/SKILL.md",
+				},
 			},
 		],
 	},
@@ -33,7 +36,7 @@ const config: DeepPartial<AdhdAiRootConfig> = {
 	],
 	codex: {
 		reasoningEfforts: {
-			plan: "low",
+			plan: "high",
 		},
 		models: {
 			plan: "gpt-5.5",
