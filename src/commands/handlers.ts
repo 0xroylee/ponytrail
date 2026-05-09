@@ -128,7 +128,11 @@ export async function handleCommand(
 		);
 		return;
 	}
-	process.stdout.write(`${JSON.stringify(state, null, 2)}\n`);
+	const statusDisplay = {
+		...state,
+		stageDisplay: formatWorkflowStageDisplay(state.stage),
+	};
+	process.stdout.write(`${JSON.stringify(statusDisplay, null, 2)}\n`);
 }
 
 export function printHelp(): void {
