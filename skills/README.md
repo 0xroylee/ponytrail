@@ -12,6 +12,7 @@ This directory is the default skill pack root for ADHD.ai.
 - `adhd-docs/SKILL.md`
 - `backend-standard/SKILL.md`
 - `frontend-standard/SKILL.md`
+- `daily-codebase-maintenance/SKILL.md`
 - `typescript-biome-style/SKILL.md`
 
 ## Configure a custom skill root
@@ -60,6 +61,12 @@ planning when issue text matches their domain:
 
 You can also copy these folders into another shared skill pack and keep
 `skills.root` pointed at that location.
+
+## Included Maintenance Skill
+
+`daily-codebase-maintenance/SKILL.md` is for recurring maintenance runs that
+apply backend and TypeScript/Biome standards to clean unused code, keep module
+boundaries focused, and improve reliability with tests.
 
 ## Included Documentation Skill
 

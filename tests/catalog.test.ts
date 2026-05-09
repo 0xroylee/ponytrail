@@ -67,6 +67,7 @@ describe("loadFolderSkillCandidates", () => {
 
 		expect(names.has("backend-standard")).toBe(true);
 		expect(names.has("frontend-standard")).toBe(true);
+		expect(names.has("daily-codebase-maintenance")).toBe(true);
 		expect(names.has("typescript-biome-style")).toBe(true);
 	});
 });
@@ -188,5 +189,28 @@ describe("rankSkillCandidates", () => {
 		expect(rankedNames).toContain("backend-standard");
 		expect(rankedNames).toContain("frontend-standard");
 		expect(rankedNames).toContain("typescript-biome-style");
+	});
+
+	it("ranks daily maintenance skill for recurring codebase cleanup issues", async () => {
+		const skillsRoot = path.join(process.cwd(), "skills");
+		const basePlanPath = path.join(skillsRoot, "piv-plan", "SKILL.md");
+		const candidates = await loadFolderSkillCandidates(
+			skillsRoot,
+			basePlanPath,
+		);
+
+		const maintenanceIssue: IssueRef = {
+			id: "lin_roy_62",
+			key: "ROY-62",
+			title: "Define a skill for daily codebase maintenance",
+			description:
+				"Use backend-standard and typescript-biome-style to maintain the codebase, remove unused code, and keep reliability high.",
+			url: "https://linear.app/roy/issue/ROY-62",
+		};
+
+		const ranked = rankSkillCandidates(candidates, maintenanceIssue, 8);
+		const rankedNames = ranked.map((candidate) => candidate.name);
+
+		expect(rankedNames).toContain("daily-codebase-maintenance");
 	});
 });

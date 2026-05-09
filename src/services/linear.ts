@@ -13,6 +13,7 @@ import type {
 } from "../core/types";
 
 type WorkflowLabelStage = keyof ResolvedProjectConfig["linear"]["labelMap"];
+type LinearStatusStage = keyof ResolvedProjectConfig["linear"]["statusMap"];
 
 interface LinearLabelRecord {
 	id: string;
@@ -43,6 +44,11 @@ interface TodoIssueFromPlanInput {
 	parentId: string;
 	projectId?: string;
 	priority?: number;
+}
+
+interface WorkflowLabelUpdate {
+	addedLabelIds: string[];
+	removedLabelIds: string[];
 }
 
 export function buildSplitTaskIssueTitle(
@@ -247,15 +253,22 @@ export class LinearClient {
 		return this.requiredStatusMap().assigned === stateId;
 	}
 
-	async markStage(
-		issueId: string,
-		stage: keyof ResolvedProjectConfig["linear"]["statusMap"],
-	): Promise<void> {
+	async markStage(issueId: string, stage: LinearStatusStage): Promise<void> {
 		await this.ensureResolvedStatusMap();
 		if (this.config.dryRun) {
 			return;
 		}
-		const stateId = this.requiredStatusMap()[stage];
+		const statusMap = this.requiredStatusMap();
+		if (
+			shouldSkipDoneStageRegression(
+				await this.fetchIssueStateId(issueId),
+				stage,
+				statusMap.done,
+			)
+		) {
+			return;
+		}
+		const stateId = statusMap[stage];
 		await this.client.updateIssue(issueId, { stateId });
 	}
 
@@ -264,6 +277,9 @@ export class LinearClient {
 			return;
 		}
 		await this.ensureResolvedStatusMap();
+		if (await this.isIssueDone(issueId)) {
+			return;
+		}
 		const stateId = await this.resolveCanceledStateId();
 		await this.client.updateIssue(issueId, { stateId });
 	}
@@ -347,11 +363,11 @@ export class LinearClient {
 		}
 
 		const currentLabelIds = await this.fetchIssueLabelIds(issueId);
-		const currentLabelSet = new Set(currentLabelIds);
-		const removedLabelIds = this.workflowLabelIds.filter(
-			(labelId) => labelId !== nextLabelId && currentLabelSet.has(labelId),
+		const { addedLabelIds, removedLabelIds } = buildWorkflowLabelUpdate(
+			currentLabelIds,
+			this.workflowLabelIds,
+			nextLabelId,
 		);
-		const addedLabelIds = currentLabelSet.has(nextLabelId) ? [] : [nextLabelId];
 
 		if (addedLabelIds.length === 0 && removedLabelIds.length === 0) {
 			return;
@@ -359,6 +375,26 @@ export class LinearClient {
 
 		await this.client.updateIssue(issueId, {
 			addedLabelIds,
+			removedLabelIds,
+		});
+	}
+
+	async clearWorkflowStageLabels(issueId: string): Promise<void> {
+		await this.ensureResolvedWorkflowLabels();
+		if (this.config.dryRun || this.workflowLabelIds.length === 0) {
+			return;
+		}
+
+		const currentLabelIds = await this.fetchIssueLabelIds(issueId);
+		const { removedLabelIds } = buildWorkflowLabelUpdate(
+			currentLabelIds,
+			this.workflowLabelIds,
+		);
+		if (removedLabelIds.length === 0) {
+			return;
+		}
+
+		await this.client.updateIssue(issueId, {
 			removedLabelIds,
 		});
 	}
@@ -661,6 +697,12 @@ export class LinearClient {
 		return this.resolvedStatusMap;
 	}
 
+	private async isIssueDone(issueId: string): Promise<boolean> {
+		return (
+			(await this.fetchIssueStateId(issueId)) === this.requiredStatusMap().done
+		);
+	}
+
 	private async mapSdkIssueToLinearIssue(
 		issue: LinearSdkIssue,
 		includeLabels: boolean,
@@ -707,6 +749,17 @@ export class LinearClient {
 		return labels.nodes
 			.map((label) => label.id)
 			.filter((id): id is string => Boolean(id));
+	}
+
+	private async fetchIssueStateId(
+		issueId: string,
+	): Promise<string | undefined> {
+		const issue = await this.client.issue(issueId);
+		if (!issue) {
+			return undefined;
+		}
+		const state = await issue.state;
+		return state?.id;
 	}
 
 	private mapSdkLabelToRecord(label: LinearSdkIssueLabel): LinearLabelRecord {
@@ -771,6 +824,29 @@ export function isLinearIssueReviewOnlyCandidate(
 	return issue.labels.some(
 		(label) => label.name.toLowerCase() === testingLabelName.toLowerCase(),
 	);
+}
+
+export function shouldSkipDoneStageRegression(
+	currentStateId: string | undefined,
+	nextStage: LinearStatusStage,
+	doneStateId: string,
+): boolean {
+	return currentStateId === doneStateId && nextStage !== "done";
+}
+
+export function buildWorkflowLabelUpdate(
+	currentLabelIds: string[],
+	workflowLabelIds: string[],
+	nextLabelId?: string,
+): WorkflowLabelUpdate {
+	const currentLabelSet = new Set(currentLabelIds);
+	const removedLabelIds = workflowLabelIds.filter(
+		(labelId) => labelId !== nextLabelId && currentLabelSet.has(labelId),
+	);
+	const addedLabelIds =
+		nextLabelId && !currentLabelSet.has(nextLabelId) ? [nextLabelId] : [];
+
+	return { addedLabelIds, removedLabelIds };
 }
 
 export function isIssueInConfiguredProject(
