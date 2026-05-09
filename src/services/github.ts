@@ -312,10 +312,10 @@ export async function markPrReadyForReview(
 	return true;
 }
 
-export async function approvePullRequest(
+export async function squashMergePullRequest(
 	config: ResolvedProjectConfig,
 	pr: PullRequestRef,
-	body = "ADHD.ai review/testing passed for this PR.",
+	body = "ADHD.ai review/testing passed; squash merging this PR.",
 	deps?: {
 		runCommand?: typeof runCommand;
 		assertCommandOk?: typeof assertCommandOk;
@@ -330,20 +330,29 @@ export async function approvePullRequest(
 		return false;
 	}
 	if (!pr.url && !pr.number) {
-		throw new Error("PR URL or number is required to approve PR");
+		throw new Error("PR URL or number is required to merge PR");
 	}
 	const target = pr.url ?? String(pr.number);
 
 	await ensureAuth(config);
-	await withRetries("gh pr review --approve", async () => {
+	await withRetries("gh pr merge --squash", async () => {
 		const result = await commandRunner(
 			"gh",
-			["pr", "review", target, "--approve", "--body", body],
+			[
+				"pr",
+				"merge",
+				target,
+				"--squash",
+				"--subject",
+				pr.title,
+				"--body",
+				body,
+			],
 			{
 				cwd: config.executionPath,
 			},
 		);
-		assertOk("gh", ["pr", "review", target, "--approve"], result);
+		assertOk("gh", ["pr", "merge", target, "--squash"], result);
 	});
 	return true;
 }

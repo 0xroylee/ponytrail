@@ -1,11 +1,11 @@
 import {
-	approvePullRequest,
 	commentOnPr,
 	createDraftPrFromWorktree,
 	findOpenPullRequestForIssue,
 	issueBranchName,
 	markPrReadyForReview,
 	prepareImplementationBranch,
+	squashMergePullRequest,
 	updateDraftPrFromWorktree,
 } from "../services/github";
 import { LinearClient, sortIssuesByPriority } from "../services/linear";
@@ -984,7 +984,7 @@ async function executeIssue(
 	const agent = createAgentAdapter(config);
 
 	if (options.reviewOnly && state.stage === "done") {
-		await handleDoneReviewApprovalStage(config, notifications, linear, state);
+		await handleDoneReviewMergeStage(config, notifications, linear, state);
 		return;
 	}
 
@@ -1342,7 +1342,7 @@ async function handleReviewTestingStage(
 	);
 }
 
-async function handleDoneReviewApprovalStage(
+async function handleDoneReviewMergeStage(
 	config: ResolvedProjectConfig,
 	notifications: ResolvedNotificationConfig,
 	linear: LinearClient,
@@ -1353,7 +1353,7 @@ async function handleDoneReviewApprovalStage(
 	}
 
 	const score = state.complexityScore ?? DEFAULT_PLANNER_COMPLEXITY_SCORE;
-	if (!shouldApprovePullRequestForComplexityScore(score)) {
+	if (!shouldSquashMergePullRequestForComplexityScore(score)) {
 		const reason = `Planning complexity score ${score}/10 requires human PR approval (threshold >= ${HUMAN_REVIEW_COMPLEXITY_THRESHOLD}).`;
 		if (!state.humanReviewNotifiedAt) {
 			await linear.comment(
@@ -1373,14 +1373,17 @@ async function handleDoneReviewApprovalStage(
 		return;
 	}
 
-	const approved = await safeApprovePullRequest(config, state);
-	if (!approved) {
+	const merged = await safeSquashMergePullRequest(config, state);
+	if (!merged) {
 		return;
 	}
 
 	state.pullRequestApprovedAt = new Date().toISOString();
 	await saveRunState(config.workspacePath, state);
-	await linear.comment(state.issue.id, "PR approved after completed review.");
+	await linear.comment(
+		state.issue.id,
+		"PR squash-merged after completed review.",
+	);
 }
 
 export function normalizeFailedReviewBugs(
@@ -1674,7 +1677,7 @@ export function resolveReviewModeForComplexityScore(
 	return complexityScore < HUMAN_REVIEW_COMPLEXITY_THRESHOLD ? "bot" : "human";
 }
 
-export function shouldApprovePullRequestForComplexityScore(
+export function shouldSquashMergePullRequestForComplexityScore(
 	complexityScore: number,
 ): boolean {
 	return complexityScore < HUMAN_REVIEW_COMPLEXITY_THRESHOLD;
@@ -2000,7 +2003,7 @@ async function safePrComment(
 	}
 }
 
-async function safeApprovePullRequest(
+async function safeSquashMergePullRequest(
 	config: ResolvedProjectConfig,
 	state: RunState,
 ): Promise<boolean> {
@@ -2013,11 +2016,11 @@ async function safeApprovePullRequest(
 		pr: state.pullRequest.url ?? state.pullRequest.number,
 	});
 	try {
-		return await approvePullRequest(config, state.pullRequest);
+		return await squashMergePullRequest(config, state.pullRequest);
 	} catch (error) {
 		runLogger.error(
 			{ err: normalizeError(error) },
-			"Failed to approve GitHub PR",
+			"Failed to squash-merge GitHub PR",
 		);
 		return false;
 	}

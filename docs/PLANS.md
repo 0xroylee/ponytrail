@@ -20,7 +20,7 @@ Planning output should remain concise and implementation-focused, including:
 
 ## Hourly Review Automation Example
 
-Use an hourly review-only automation job to re-run PR review/testing in parallel across resumable runs and approve completed PRs whose complexity score is below the human approval threshold:
+Use an hourly review-only automation job to re-run PR review/testing in parallel across resumable runs and squash-merge completed PRs whose complexity score is below the human approval threshold:
 
 ```ts
 export default {

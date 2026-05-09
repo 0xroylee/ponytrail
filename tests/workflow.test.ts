@@ -38,9 +38,9 @@ import {
 	selectIssueQueueForCycle,
 	selectReviewOnlyIssueKeys,
 	selectStaleRunIssueKeys,
-	shouldApprovePullRequestForComplexityScore,
 	shouldRetryRunStage,
 	shouldSkipReviewOnlyRunState,
+	shouldSquashMergePullRequestForComplexityScore,
 	shouldStopPolling,
 	withExecutionPathLock,
 } from "../src/core/workflow";
@@ -375,7 +375,7 @@ describe("isReviewOnlyExecutableStage", () => {
 });
 
 describe("isReviewOnlyEligibleRunState", () => {
-	it("includes done states with unapproved PRs", () => {
+	it("includes done states with unmerged PRs", () => {
 		const state = createRunState("ENG-90", "done", Date.now());
 		state.pullRequest = {
 			branch: "codex/eng-90",
@@ -386,14 +386,14 @@ describe("isReviewOnlyEligibleRunState", () => {
 		expect(isReviewOnlyEligibleRunState(state)).toBe(true);
 	});
 
-	it("excludes done states after approval or human notification", () => {
-		const approved = createRunState("ENG-91", "done", Date.now());
-		approved.pullRequest = {
+	it("excludes done states after automated PR action or human notification", () => {
+		const completed = createRunState("ENG-91", "done", Date.now());
+		completed.pullRequest = {
 			branch: "codex/eng-91",
 			title: "ENG-91",
 			url: "https://github.com/acme/repo/pull/91",
 		};
-		approved.pullRequestApprovedAt = "2026-05-07T12:00:00.000Z";
+		completed.pullRequestApprovedAt = "2026-05-07T12:00:00.000Z";
 
 		const notified = createRunState("ENG-92", "done", Date.now());
 		notified.pullRequest = {
@@ -403,7 +403,7 @@ describe("isReviewOnlyEligibleRunState", () => {
 		};
 		notified.humanReviewNotifiedAt = "2026-05-07T12:00:00.000Z";
 
-		expect(isReviewOnlyEligibleRunState(approved)).toBe(false);
+		expect(isReviewOnlyEligibleRunState(completed)).toBe(false);
 		expect(isReviewOnlyEligibleRunState(notified)).toBe(false);
 	});
 });
@@ -1135,12 +1135,12 @@ describe("resolveReviewModeForComplexityScore", () => {
 	});
 });
 
-describe("shouldApprovePullRequestForComplexityScore", () => {
-	it("allows PR approval only below the human review threshold", () => {
-		expect(shouldApprovePullRequestForComplexityScore(0)).toBe(true);
-		expect(shouldApprovePullRequestForComplexityScore(4)).toBe(true);
-		expect(shouldApprovePullRequestForComplexityScore(5)).toBe(false);
-		expect(shouldApprovePullRequestForComplexityScore(10)).toBe(false);
+describe("shouldSquashMergePullRequestForComplexityScore", () => {
+	it("allows automated PR merge only below the human review threshold", () => {
+		expect(shouldSquashMergePullRequestForComplexityScore(0)).toBe(true);
+		expect(shouldSquashMergePullRequestForComplexityScore(4)).toBe(true);
+		expect(shouldSquashMergePullRequestForComplexityScore(5)).toBe(false);
+		expect(shouldSquashMergePullRequestForComplexityScore(10)).toBe(false);
 	});
 });
 

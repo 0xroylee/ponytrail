@@ -1,13 +1,13 @@
 import { describe, expect, it, mock } from "bun:test";
 import type { ResolvedProjectConfig } from "../src/core/types";
 import {
-	approvePullRequest,
 	buildBugIssueBody,
 	commentOnPr,
 	createDraftPrFromWorktree,
 	ensureGhAuth,
 	findOpenPullRequestForIssue,
 	issueBranchName,
+	squashMergePullRequest,
 } from "../src/services/github";
 import type { CommandResult } from "../src/utils/shell";
 
@@ -129,8 +129,8 @@ describe("commentOnPr", () => {
 	});
 });
 
-describe("approvePullRequest", () => {
-	it("approves a pull request through gh", async () => {
+describe("squashMergePullRequest", () => {
+	it("squash-merges a pull request through gh", async () => {
 		const calls: string[][] = [];
 		const runCommand = mock(
 			async (_command: string, args: string[]): Promise<CommandResult> => {
@@ -139,14 +139,14 @@ describe("approvePullRequest", () => {
 			},
 		);
 
-		const approved = await approvePullRequest(
+		const merged = await squashMergePullRequest(
 			createProjectConfig(),
 			{
 				url: "https://github.com/acme/repo/pull/77",
 				branch: "codex/eng-42",
 				title: "ENG-42",
 			},
-			"Approved by ADHD.ai.",
+			"Merged by ADHD.ai.",
 			{
 				runCommand,
 				assertCommandOk: assertOk,
@@ -154,15 +154,17 @@ describe("approvePullRequest", () => {
 			},
 		);
 
-		expect(approved).toBe(true);
+		expect(merged).toBe(true);
 		expect(calls).toEqual([
 			[
 				"pr",
-				"review",
+				"merge",
 				"https://github.com/acme/repo/pull/77",
-				"--approve",
+				"--squash",
+				"--subject",
+				"ENG-42",
 				"--body",
-				"Approved by ADHD.ai.",
+				"Merged by ADHD.ai.",
 			],
 		]);
 	});
@@ -174,7 +176,7 @@ describe("approvePullRequest", () => {
 		const config = createProjectConfig();
 		config.dryRun = true;
 
-		const approved = await approvePullRequest(
+		const merged = await squashMergePullRequest(
 			config,
 			{
 				number: 77,
@@ -189,7 +191,7 @@ describe("approvePullRequest", () => {
 			},
 		);
 
-		expect(approved).toBe(false);
+		expect(merged).toBe(false);
 		expect(runCommand).not.toHaveBeenCalled();
 	});
 });
