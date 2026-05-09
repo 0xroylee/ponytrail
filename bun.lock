@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "adhd.ai",
+      "name": "adhdai",
       "dependencies": {
         "@linear/sdk": "^83.0.0",
         "pino": "^10.3.1",
