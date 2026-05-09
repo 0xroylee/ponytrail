@@ -23,7 +23,7 @@ describe("package metadata for npm publish prep", () => {
 		expect(packageJson.scripts?.["prepare:publish"]).toContain("bun test");
 		expect(packageJson.scripts?.["prepare:publish"]).toContain("bun run build");
 		expect(packageJson.scripts?.["prepare:publish"]).toContain(
-			"npm pack --dry-run",
+			"npm pack --dry-run --ignore-scripts",
 		);
 	});
 });
