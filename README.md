@@ -134,6 +134,7 @@ Run `adhd-ai setup` to answer plain-language prompts and generate local setup fi
 - `.piv-loop/config/env.sqlite` stores local secrets such as `LINEAR_API_KEY`.
 - `.env` is still written as a compatibility fallback for existing local workflows.
 - `adhd-ai.local.config.ts` stores local project, GitHub, Linear routing, and Codex settings.
+- Setup preflight prints install guidance when `rtk` or authenticated `gh` is missing, and prompts for optional Resend email notification settings.
 
 `adhd-ai.local.config.ts` is loaded before the tracked `adhd-ai.config.ts` and is ignored by git. Existing `adhd-ai.config.ts` and legacy `piv-loop.config.ts` files continue to work.
 
