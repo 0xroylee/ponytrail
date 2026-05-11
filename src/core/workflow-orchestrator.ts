@@ -40,6 +40,7 @@ import {
 	isReviewOnlyEligibleRunState,
 	isReviewOnlyExecutableStage,
 	isRunStateStaleForRetry as isRunStateStaleForRetryHelper,
+	processIssueQueueBounded,
 	selectReviewOnlyIssueKeys,
 	selectStaleRunIssueKeys as selectStaleRunIssueKeysHelper,
 	shouldRetryRunStage,
@@ -297,36 +298,21 @@ async function runProjectCycle(
 		projectLogger.info({ cycle }, "No eligible Linear issues found.");
 	}
 
-	if (options.reviewOnly) {
-		await Promise.all(
-			issueQueue.map((issue) =>
-				processIssue(
-					config,
-					notifications,
-					linear,
-					issue,
-					options,
-					polling.staleRunTimeoutMs,
-					buildRunLeaseOwnerId(),
-					runtime,
-				),
+	await processIssueQueueBounded(
+		issueQueue,
+		options.concurrency,
+		async (issue) =>
+			processIssue(
+				config,
+				notifications,
+				linear,
+				issue,
+				options,
+				polling.staleRunTimeoutMs,
+				buildRunLeaseOwnerId(),
+				runtime,
 			),
-		);
-		return issueQueue.length;
-	}
-
-	for (const issue of issueQueue) {
-		await processIssue(
-			config,
-			notifications,
-			linear,
-			issue,
-			options,
-			polling.staleRunTimeoutMs,
-			buildRunLeaseOwnerId(),
-			runtime,
-		);
-	}
+	);
 
 	return issueQueue.length;
 }
