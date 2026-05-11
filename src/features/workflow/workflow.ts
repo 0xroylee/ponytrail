@@ -57,9 +57,9 @@ import type {
 	RunState,
 	WorkflowStage,
 } from "../../core/types";
-import { sortIssuesByPriority } from "../../integrations/linear";
-import { AgentAdapter } from "../../integrations/agent-adapters";
+import type { AgentAdapter } from "../../integrations/agent-adapters";
 import { issueBranchName } from "../../integrations/github";
+import { sortIssuesByPriority } from "../../integrations/linear";
 export type {
 	IssueJobLogFields,
 	IssueProjectRoutingResult,

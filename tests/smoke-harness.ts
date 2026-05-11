@@ -14,8 +14,11 @@ import {
 	type WorkflowRuntime,
 	createWorkflowRuntime,
 } from "../src/features/workflow/workflow-runtime";
+import type {
+	AgentAdapter,
+	AgentResult,
+} from "../src/integrations/agent-adapters";
 import { pr, project } from "./smoke-fixtures";
-import { AgentAdapter, AgentResult } from "../src/integrations/agent-adapters";
 
 export interface SmokeHarness {
 	config: LoadedConfig;

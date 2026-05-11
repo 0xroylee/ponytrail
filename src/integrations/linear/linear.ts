@@ -10,6 +10,7 @@ import type {
 	ResolvedProjectConfig,
 	WorkflowStage,
 } from "../../core/types";
+import { normalizeIssueKey } from "../../features/workflow/state";
 import type {
 	BuildTodoIssueInput,
 	CreatedLinearIssueRef,
@@ -21,7 +22,6 @@ import type {
 	WorkflowLabelStage,
 	WorkflowLabelUpdate,
 } from "./linear.types";
-import { normalizeIssueKey } from "../../features/workflow/state";
 
 const LINEAR_MAX_REQUESTS_PER_HOUR = 1800;
 const LINEAR_REQUEST_INTERVAL_MS = Math.ceil(

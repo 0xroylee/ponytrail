@@ -1,3 +1,9 @@
+import type {
+	CodexUsageRecord,
+	ResolvedProjectConfig,
+	RunState,
+	WorkflowStage,
+} from "../../core/types";
 import type { AgentAdapter } from "../../integrations/agent-adapters";
 import {
 	createDraftPrFromWorktree,
@@ -5,14 +11,8 @@ import {
 	prepareImplementationBranch,
 	updateDraftPrFromWorktree,
 } from "../../integrations/github";
-import { buildFixPrompt, buildImplementPrompt } from "../skills/prompts";
 import { buildImplementationComment } from "../../utils/comments";
-import type {
-	CodexUsageRecord,
-	ResolvedProjectConfig,
-	RunState,
-	WorkflowStage,
-} from "../../core/types";
+import { buildFixPrompt, buildImplementPrompt } from "../skills/prompts";
 
 interface HandleImplementingStageDeps {
 	runAgentWithChatLog: (input: {

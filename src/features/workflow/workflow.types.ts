@@ -1,12 +1,11 @@
-
 import type {
 	PullRequestRef,
 	ResolvedNotificationEmailConfig,
 	ResolvedProjectConfig,
 	RunState,
 } from "../../core/types";
-import { AgentAdapter } from "../../integrations/agent-adapters";
-import { LinearClient } from "../../integrations/linear";
+import type { AgentAdapter } from "../../integrations/agent-adapters";
+import type { LinearClient } from "../../integrations/linear";
 
 export interface WorkflowIssue {
 	id: string;

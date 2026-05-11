@@ -1,3 +1,4 @@
+import { sleep } from "bun";
 import type { LoadedConfig } from "../../core/config";
 import type {
 	CronJobConfig,
@@ -5,7 +6,7 @@ import type {
 	CronScheduleDayOfWeek,
 	RunOptions,
 } from "../../core/types";
-import { runWorkflow, sleep } from "../../core/workflow";
+import { runWorkflow } from "../../features/workflow/workflow";
 import { logger, normalizeError } from "../../utils/logger";
 import { applyCronJobSkillOverrides, selectCronJobs } from "./cron-jobs";
 import type {

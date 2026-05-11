@@ -1,3 +1,8 @@
+import type {
+	ResolvedNotificationConfig,
+	ResolvedProjectConfig,
+	RunState,
+} from "../../core/types";
 import { commentOnPr, squashMergePullRequest } from "../../integrations/github";
 import type { LinearClient } from "../../integrations/linear";
 import {
@@ -6,12 +11,6 @@ import {
 } from "../../integrations/notifications";
 import { logger, normalizeError } from "../../utils/logger";
 import type { IntegrationWrapperDeps } from "./integration-wrappers.types";
-import type {
-	ResolvedNotificationConfig,
-	ResolvedProjectConfig,
-	RunState,
-} from "../../core/types";
-
 
 export async function safeLinearComment(
 	linear: Pick<LinearClient, "comment">,

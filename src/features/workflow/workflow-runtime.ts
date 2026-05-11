@@ -1,7 +1,4 @@
-
 import { createAgentAdapter } from "../../integrations/agent-adapters";
-import { LinearClient } from "../../integrations/linear";
-import { sendHumanReviewRequiredEmail, sendTaskOutcomeEmail } from "../../integrations/notifications";
 import {
 	commentOnPr,
 	createDraftPrFromWorktree,
@@ -13,6 +10,11 @@ import {
 	squashMergePullRequest,
 	updateDraftPrFromWorktree,
 } from "../../integrations/github";
+import { LinearClient } from "../../integrations/linear";
+import {
+	sendHumanReviewRequiredEmail,
+	sendTaskOutcomeEmail,
+} from "../../integrations/notifications";
 import type { WorkflowRuntime } from "./workflow.types";
 export type { WorkflowLinearClient, WorkflowRuntime } from "./workflow.types";
 

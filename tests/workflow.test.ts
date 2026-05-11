@@ -49,7 +49,7 @@ import {
 	withExecutionPathLock,
 } from "../src/features/workflow/workflow";
 import { processIssueQueueBounded } from "../src/features/workflow/workflow-queue";
-import { AgentAdapter } from "../src/integrations/agent-adapters";
+import type { AgentAdapter } from "../src/integrations/agent-adapters";
 
 describe("resolvePollingSettings", () => {
 	const polling: PollingConfig = {

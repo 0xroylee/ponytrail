@@ -2,8 +2,6 @@ import type { CliCommand } from "../../args";
 import type { LoadedConfig } from "../../core/config";
 import { getProjectById } from "../../core/config";
 import { runSetupCheck, runSetupWizard } from "../../core/setup";
-import { loadRunState, normalizeIssueKey } from "../../core/state";
-import { runWorkflow } from "../../core/workflow";
 import { runCronJobOnce, runCronScheduler } from "../../integrations/cron";
 import { formatWorkflowStageDisplay } from "../../utils/status";
 import {
@@ -12,6 +10,8 @@ import {
 	removeSkill,
 	updateSkill,
 } from "../skills/manage";
+import { loadRunState, normalizeIssueKey } from "../workflow/state";
+import { runWorkflow } from "../workflow/workflow";
 
 type SetupCommand = Extract<CliCommand, { kind: "setup" }>;
 type RunnableCommand = Exclude<CliCommand, { kind: "help" } | SetupCommand>;
