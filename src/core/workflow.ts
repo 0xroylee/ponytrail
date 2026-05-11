@@ -1,8 +1,5 @@
 import type { AgentAdapter } from "../agent-adapters";
-import { issueBranchName } from "../services/github";
 import { sortIssuesByPriority } from "../services/linear";
-import { buildFixPrompt, buildImplementPrompt } from "../skills/prompts";
-import { buildImplementationComment } from "../utils/comments";
 import { logger, normalizeError } from "../utils/logger";
 import { runAgentWithChatLog } from "./agent-chat-log";
 import { type LoadedConfig, getProjectById } from "./config";
@@ -32,56 +29,67 @@ import {
 	tryAcquireRunLease,
 } from "./workflow-lease";
 import {
+	resolvePollingSettings,
+	shouldStopPolling,
+	sleep,
+} from "./workflow-polling";
+import {
 	buildPrioritizedIssueQueue as buildPrioritizedIssueQueueHelper,
+	buildReviewOnlyIssueQueue,
 	dedupeIssuesByKey,
+	isReviewOnlyEligibleRunState,
+	isReviewOnlyExecutableStage,
+	isRunStateStaleForRetry as isRunStateStaleForRetryHelper,
+	selectReviewOnlyIssueKeys,
+	selectStaleRunIssueKeys as selectStaleRunIssueKeysHelper,
+	shouldRetryRunStage,
+	shouldSkipReviewOnlyRunState,
 } from "./workflow-queue";
+import { routeProjectsForIssueProjectId } from "./workflow-routing";
 import {
 	type WorkflowLinearClient,
 	type WorkflowRuntime,
 	createWorkflowRuntime,
 } from "./workflow-runtime";
+import {
+	safeLinearComment,
+	safeLinearMoveToCanceled,
+	safeNotifyHumanReviewRequired,
+	safeNotifyTaskOutcome,
+	safePrComment,
+	safeSquashMergePullRequest,
+} from "./workflow-safe";
+import {
+	fixedBugsForImplementationComment,
+	handleImplementingStage,
+} from "./workflow-stage-implement";
+import {
+	handleDoneReviewMergeStage,
+	handlePrCreatedStage,
+	handleReceivedStage,
+	resolveReviewOnlyBootstrapStage,
+} from "./workflow-stages";
+import type {
+	IssueJobLogFields,
+	PollingSettings,
+	WorkflowIssue,
+} from "./workflow.types";
 
 export { buildRunLeaseOwnerId } from "./workflow-lease";
 import type {
 	CodexUsageRecord,
-	PollingConfig,
-	PullRequestRef,
 	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
 	RunOptions,
 	RunState,
-	WorkflowStage,
 } from "./types";
+export type {
+	IssueProjectRoutingResult,
+	ReviewOnlyQueueBuildResult,
+} from "./workflow.types";
 
 export { runAgentWithChatLog } from "./agent-chat-log";
 
-interface WorkflowIssue {
-	id: string;
-	identifier: string;
-	title: string;
-	description?: string;
-	url: string;
-	projectId?: string;
-	teamId?: string;
-	creatorId?: string;
-	assigneeId?: string;
-	priority: {
-		value: number;
-		name: string;
-	};
-	labels: Array<{
-		id: string;
-		name: string;
-	}>;
-	state: {
-		id: string;
-		name: string;
-	};
-	pullRequest?: PullRequestRef;
-}
-
-const DEFAULT_PLANNER_COMPLEXITY_SCORE = 4;
-const HUMAN_REVIEW_COMPLEXITY_THRESHOLD = 5;
 const executionPathLockTails = new Map<string, Promise<void>>();
 
 export async function runWorkflow(
@@ -258,77 +266,6 @@ async function routeProjectContextsForTargetIssue(
 	return selected;
 }
 
-export interface IssueProjectRoutingResult {
-	selectedProjectId?: string;
-	skipReason?: string;
-	error?: string;
-}
-
-export function routeProjectsForIssueProjectId(
-	projects: ResolvedProjectConfig[],
-	issueProjectId: string | undefined,
-): IssueProjectRoutingResult {
-	const scopedProjects = projects.filter((project) => project.linear.projectId);
-	const unscopedProjects = projects.filter(
-		(project) => !project.linear.projectId,
-	);
-
-	if (!issueProjectId) {
-		if (unscopedProjects.length > 1) {
-			return {
-				error:
-					"Target issue has no Linear project id and multiple unscoped projects are configured. Re-run with --project <PROJECT_ID>.",
-			};
-		}
-		return {
-			skipReason:
-				"Target issue has no Linear project id and cannot be safely routed in --all-projects mode.",
-		};
-	}
-
-	const explicitMatches = scopedProjects.filter(
-		(project) => project.linear.projectId === issueProjectId,
-	);
-	if (explicitMatches.length > 1) {
-		return {
-			error: `Multiple projects are configured with linear.projectId='${issueProjectId}'. Re-run with --project <PROJECT_ID>.`,
-		};
-	}
-	if (explicitMatches.length === 1) {
-		return {
-			selectedProjectId: explicitMatches[0]?.id,
-		};
-	}
-	if (unscopedProjects.length > 1) {
-		return {
-			error:
-				"No explicit linear.projectId match was found and multiple unscoped projects are configured. Re-run with --project <PROJECT_ID>.",
-		};
-	}
-	return {
-		skipReason: `No project configured for linear.projectId='${issueProjectId}'.`,
-	};
-}
-
-export function shouldStopPolling(
-	polling: PollingSettings,
-	options: RunOptions,
-	cycle: number,
-	totalIssues: number,
-	cycleHadError = false,
-): boolean {
-	if (!polling.enabled || options.issueArg) {
-		return true;
-	}
-	if (polling.maxCycles !== undefined && cycle >= polling.maxCycles) {
-		return true;
-	}
-	if (totalIssues === 0 && polling.exitWhenIdle && !cycleHadError) {
-		return true;
-	}
-	return false;
-}
-
 async function runProjectCycle(
 	config: ResolvedProjectConfig,
 	notifications: ResolvedNotificationConfig,
@@ -444,136 +381,6 @@ async function buildIssueQueueForProjectCycle(
 	};
 }
 
-export function buildPrioritizedIssueQueue(
-	assignedIssues: WorkflowIssue[],
-	staleRetryIssues: WorkflowIssue[],
-): WorkflowIssue[] {
-	return sortIssuesByPriority(
-		buildPrioritizedIssueQueueHelper(assignedIssues, staleRetryIssues),
-	);
-}
-
-export function selectIssueQueueForCycle(
-	issueArg: string | undefined,
-	assignedIssues: WorkflowIssue[],
-	staleRetryIssues: WorkflowIssue[],
-	options: Pick<RunOptions, "reviewOnly"> = {},
-): WorkflowIssue[] {
-	if (options.reviewOnly) {
-		return [];
-	}
-	if (issueArg !== undefined) {
-		return assignedIssues;
-	}
-	return buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
-}
-
-export function isReviewOnlyEligibleRunState(state: RunState): boolean {
-	return (
-		(state.stage === "pr_created" ||
-			state.stage === "reviewing" ||
-			state.stage === "testing" ||
-			(state.stage === "done" &&
-				!state.pullRequestApprovedAt &&
-				!state.humanReviewNotifiedAt)) &&
-		Boolean(state.pullRequest?.url)
-	);
-}
-
-export function resolveReviewOnlyBootstrapStage(
-	state: WorkflowIssue["state"],
-	statusMap: ResolvedProjectConfig["linear"]["statusMap"],
-): WorkflowStage {
-	if (matchesIssueStateConfigValue(state, statusMap.pr_created)) {
-		return "pr_created";
-	}
-	if (matchesIssueStateConfigValue(state, statusMap.reviewing)) {
-		return "reviewing";
-	}
-	if (matchesIssueStateConfigValue(state, statusMap.done)) {
-		return "done";
-	}
-	return "testing";
-}
-
-export interface ReviewOnlyQueueBuildResult {
-	issueQueue: WorkflowIssue[];
-	mergedCandidateCount: number;
-	discoveredPrCount: number;
-	skippedWithoutPr: number;
-}
-
-export function buildReviewOnlyIssueQueue(input: {
-	runStates: RunState[];
-	localIssues: WorkflowIssue[];
-	linearIssues: WorkflowIssue[];
-	discoveredPullRequestsByIssueKey: Map<string, PullRequestRef | undefined>;
-}): ReviewOnlyQueueBuildResult {
-	const merged = dedupeIssuesByKey([
-		...input.localIssues,
-		...input.linearIssues,
-	]);
-	const runStateByKey = new Map(
-		input.runStates.map((state) => [normalizeIssueKey(state.issue.key), state]),
-	);
-	const issueQueue: WorkflowIssue[] = [];
-	let discoveredPrCount = 0;
-	let skippedWithoutPr = 0;
-
-	for (const issue of merged) {
-		const key = normalizeIssueKey(issue.identifier);
-		const runState = runStateByKey.get(key);
-		if (runState?.stage === "done" && !isReviewOnlyEligibleRunState(runState)) {
-			continue;
-		}
-		const runStatePr = runState?.pullRequest;
-		const discoveredPr = input.discoveredPullRequestsByIssueKey.get(key);
-		const pullRequest = runStatePr?.url ? runStatePr : discoveredPr;
-
-		if (!runStatePr?.url && discoveredPr?.url) {
-			discoveredPrCount += 1;
-		}
-		if (!pullRequest?.url) {
-			skippedWithoutPr += 1;
-			continue;
-		}
-
-		issueQueue.push({
-			...issue,
-			pullRequest,
-		});
-	}
-
-	return {
-		issueQueue,
-		mergedCandidateCount: merged.length,
-		discoveredPrCount,
-		skippedWithoutPr,
-	};
-}
-
-export function selectReviewOnlyIssueKeys(runStates: RunState[]): string[] {
-	return runStates
-		.filter((state) => isReviewOnlyEligibleRunState(state))
-		.map((state) => normalizeIssueKey(state.issue.key));
-}
-
-export function isReviewOnlyExecutableStage(stage: WorkflowStage): boolean {
-	return (
-		stage === "pr_created" ||
-		stage === "reviewing" ||
-		stage === "testing" ||
-		stage === "done"
-	);
-}
-
-export function shouldSkipReviewOnlyRunState(
-	state: Pick<RunState, "stage"> | null,
-	options: Pick<RunOptions, "reviewOnly">,
-): boolean {
-	return options.reviewOnly === true && state?.stage === "human_review";
-}
-
 export async function withExecutionPathLock<T>(
 	executionPath: string,
 	run: () => Promise<T>,
@@ -604,45 +411,6 @@ export async function withExecutionPathLock<T>(
 			executionPathLockTails.delete(executionPath);
 		}
 	}
-}
-
-export function shouldRetryRunStage(stage: WorkflowStage): boolean {
-	return (
-		stage === "received" ||
-		stage === "planning" ||
-		stage === "implementing" ||
-		stage === "pr_created" ||
-		stage === "reviewing" ||
-		stage === "testing"
-	);
-}
-
-export function isRunStateStaleForRetry(
-	state: RunState,
-	nowMs: number,
-	timeoutMs: number,
-): boolean {
-	if (!shouldRetryRunStage(state.stage)) {
-		return false;
-	}
-	if (!isRunLeaseExpired(state, nowMs)) {
-		return false;
-	}
-	const updatedAtMs = Date.parse(state.updatedAt);
-	if (Number.isNaN(updatedAtMs)) {
-		return false;
-	}
-	return nowMs - updatedAtMs >= timeoutMs;
-}
-
-export function selectStaleRunIssueKeys(
-	runStates: RunState[],
-	nowMs: number,
-	timeoutMs: number,
-): string[] {
-	return runStates
-		.filter((state) => isRunStateStaleForRetry(state, nowMs, timeoutMs))
-		.map((state) => normalizeIssueKey(state.issue.key));
 }
 
 async function fetchStaleIssuesForRetry(
@@ -717,7 +485,7 @@ async function fetchReviewOnlyIssues(
 	const linearIssues = await linear.fetchReviewOnlyWork();
 	const discoveredPullRequestsByIssueKey = new Map<
 		string,
-		PullRequestRef | undefined
+		WorkflowIssue["pullRequest"]
 	>();
 	for (const issue of dedupeIssuesByKey([...localIssues, ...linearIssues])) {
 		const key = normalizeIssueKey(issue.identifier);
@@ -930,50 +698,6 @@ async function processIssue(
 	}
 }
 
-export interface PollingSettings {
-	enabled: boolean;
-	intervalMs: number;
-	maxCycles?: number;
-	exitWhenIdle: boolean;
-	staleRunTimeoutMs: number;
-}
-
-export function resolvePollingSettings(
-	pollingConfig: PollingConfig,
-	options: RunOptions,
-): PollingSettings {
-	return {
-		enabled: options.poll === true,
-		intervalMs: options.pollIntervalMs ?? pollingConfig.intervalMs,
-		maxCycles: options.maxPollCycles ?? pollingConfig.maxCycles,
-		exitWhenIdle: options.exitWhenIdle ?? pollingConfig.exitWhenIdle,
-		staleRunTimeoutMs: pollingConfig.staleRunTimeoutMs,
-	};
-}
-
-export async function sleep(ms: number): Promise<void> {
-	await new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export interface IssueJobLogFields {
-	projectId: string;
-	issueKey: string;
-	issueId: string;
-	issueTitle: string;
-	stage: string;
-	resumed?: true;
-}
-
-function matchesIssueStateConfigValue(
-	state: WorkflowIssue["state"],
-	configValue: string,
-): boolean {
-	const expected = configValue.trim().toLowerCase();
-	return (
-		state.id.toLowerCase() === expected || state.name.toLowerCase() === expected
-	);
-}
-
 export function buildIssueJobLogFields(
 	state: RunState,
 	stage: string,
@@ -1006,6 +730,26 @@ async function executeIssue(
 			linear,
 			state,
 			runtime,
+			{
+				saveRunState,
+				safeNotifyHumanReviewRequired,
+				safeSquashMergePullRequest,
+				finalizeIssueAfterReviewMerge: (
+					finalizeConfig,
+					finalizeNotifications,
+					finalizeLinear,
+					finalizeState,
+					finalizeRuntime,
+				) =>
+					finalizeIssueAfterReviewMerge(
+						finalizeConfig,
+						finalizeNotifications,
+						finalizeLinear,
+						finalizeState,
+						undefined,
+						finalizeRuntime,
+					),
+			},
 		);
 		return;
 	}
@@ -1028,7 +772,10 @@ async function executeIssue(
 			leaseTimeoutMs,
 		);
 		if (state.stage === "received") {
-			await handleReceivedStage(config, linear, state);
+			await handleReceivedStage(config, linear, state, {
+				transitionStage,
+				saveRunState,
+			});
 			continue;
 		}
 
@@ -1055,12 +802,24 @@ async function executeIssue(
 		}
 
 		if (state.stage === "implementing") {
-			await handleImplementingStage(config, agent, linear, state, runtime);
+			await handleImplementingStage(config, agent, linear, state, runtime, {
+				runAgentWithChatLog,
+				appendCodexUsage: (runState, stage, usage) =>
+					appendCodexUsage(runState, stage, usage),
+				transitionStage,
+				saveRunState,
+				buildIssueJobLogFields: (runState, stage, stageOptions) => ({
+					...buildIssueJobLogFields(runState, stage, stageOptions),
+				}),
+			});
 			continue;
 		}
 
 		if (state.stage === "pr_created") {
-			await handlePrCreatedStage(config, notifications, linear, state);
+			await handlePrCreatedStage(config, linear, state, {
+				transitionStage,
+				saveRunState,
+			});
 			continue;
 		}
 
@@ -1138,209 +897,6 @@ export async function finalizeIssueAfterReviewMerge(
 	);
 }
 
-async function handleReceivedStage(
-	config: ResolvedProjectConfig,
-	linear: WorkflowLinearClient,
-	state: RunState,
-): Promise<void> {
-	await linear.markStage(state.issue.id, "planning");
-	await linear.comment(state.issue.id, "ADHD.ai started planning.");
-	Object.assign(state, transitionStage(state, "planning"));
-	await saveRunState(config.workspacePath, state);
-}
-
-export function fixedBugsForImplementationComment(
-	hasExistingPr: boolean,
-	bugs: RunState["bugs"],
-): RunState["bugs"] {
-	if (!hasExistingPr || bugs.length === 0) {
-		return [];
-	}
-	return bugs.map((bug) => ({
-		title: bug.title,
-		body: bug.body,
-		issueUrl: bug.issueUrl,
-	}));
-}
-async function handleImplementingStage(
-	config: ResolvedProjectConfig,
-	agent: AgentAdapter,
-	linear: WorkflowLinearClient,
-	state: RunState,
-	runtime: WorkflowRuntime,
-): Promise<void> {
-	if (!state.codexSessionId) {
-		throw new Error("Missing codex session id for implement step");
-	}
-	const codexSessionId = state.codexSessionId;
-	logger.info(
-		buildIssueJobLogFields(state, "implementing"),
-		"Implementing issue",
-	);
-
-	if (!config.dryRun) {
-		const preparedBranch = await runtime.prepareImplementationBranch(
-			config,
-			state.issue.key,
-			state.pullRequest,
-		);
-		if (!state.pullRequest) {
-			state.pullRequest = {
-				branch: preparedBranch,
-				title: `[codex] ${state.issue.key}: ${state.issue.title}`,
-			};
-		}
-	}
-
-	const hasExistingPr = Boolean(state.pullRequest?.url);
-	const fixRound = hasExistingPr && state.bugs.length > 0;
-	const fixedBugs = fixedBugsForImplementationComment(
-		hasExistingPr,
-		state.bugs,
-	);
-	const prompt = fixRound
-		? await buildFixPrompt(
-				config.skills.implement,
-				state.issue,
-				state.planSummary ?? "",
-				state.testingSummary ?? state.reviewSummary ?? "",
-				state.bugs,
-				state.pullRequest,
-			)
-		: await buildImplementPrompt(
-				config.skills.implement,
-				state.issue,
-				state.planSummary ?? "",
-			);
-	const result = await runAgentWithChatLog({
-		workspacePath: config.workspacePath,
-		projectId: config.id,
-		issue: state.issue,
-		agentRole: "implementing",
-		skillPath: config.skills.implement,
-		prompt,
-		invoke: () => agent.resume(codexSessionId, prompt),
-	});
-	state.implementationSummary = result.finalMessage || result.stdout;
-	appendCodexUsage(state, "implementing", result.usage);
-
-	if (!hasExistingPr) {
-		if (config.dryRun) {
-			state.pullRequest = {
-				branch: issueBranchName(state.issue.key),
-				title: `[codex] ${state.issue.key}: ${state.issue.title}`,
-				url: "https://example.invalid/dry-run",
-			};
-		} else {
-			state.pullRequest = await runtime.createDraftPrFromWorktree(
-				config,
-				state.issue.key,
-				state.issue.title,
-			);
-		}
-	} else if (!config.dryRun) {
-		if (!state.pullRequest?.branch) {
-			throw new Error("Missing pull request branch for feedback pass");
-		}
-		const updated = await runtime.updateDraftPrFromWorktree(
-			config,
-			state.pullRequest.branch,
-			state.issue.key,
-		);
-		if (!updated) {
-			logger.info(
-				buildIssueJobLogFields(state, "implementing"),
-				"No code changes after feedback; skipping PR update",
-			);
-		}
-	}
-
-	state.bugs = [];
-	const nextStage: WorkflowStage = hasExistingPr ? "reviewing" : "pr_created";
-	Object.assign(state, transitionStage(state, nextStage));
-	await saveRunState(config.workspacePath, state);
-	await linear.markStage(state.issue.id, nextStage);
-	await linear.applyStageLabel(state.issue.id, nextStage);
-	await linear.comment(
-		state.issue.id,
-		buildImplementationComment(state.pullRequest?.url, result.usage, {
-			updated: hasExistingPr,
-			fixedBugs,
-		}),
-	);
-	logger.info(
-		buildIssueJobLogFields(state, "implementing"),
-		hasExistingPr
-			? "Implementation feedback pass completed"
-			: "Implementation completed",
-	);
-}
-
-async function handlePrCreatedStage(
-	config: ResolvedProjectConfig,
-	notifications: ResolvedNotificationConfig,
-	linear: WorkflowLinearClient,
-	state: RunState,
-): Promise<void> {
-	Object.assign(state, transitionStage(state, "reviewing"));
-	await saveRunState(config.workspacePath, state);
-	await linear.markStage(state.issue.id, "reviewing");
-	await linear.applyStageLabel(state.issue.id, "reviewing");
-}
-
-async function handleDoneReviewMergeStage(
-	config: ResolvedProjectConfig,
-	notifications: ResolvedNotificationConfig,
-	linear: WorkflowLinearClient,
-	state: RunState,
-	runtime: WorkflowRuntime,
-): Promise<void> {
-	if (state.pullRequestApprovedAt) {
-		return;
-	}
-
-	const score = state.complexityScore ?? DEFAULT_PLANNER_COMPLEXITY_SCORE;
-	if (!shouldSquashMergePullRequestForComplexityScore(score)) {
-		const reason = `Planning complexity score ${score}/10 requires human PR approval (threshold >= ${HUMAN_REVIEW_COMPLEXITY_THRESHOLD}).`;
-		if (!state.humanReviewNotifiedAt) {
-			await linear.comment(
-				state.issue.id,
-				[
-					`Human PR approval required for ${state.issue.key}.`,
-					reason,
-					state.pullRequest?.url ? `PR: ${state.pullRequest.url}` : undefined,
-				]
-					.filter(Boolean)
-					.join("\n"),
-			);
-			await safeNotifyHumanReviewRequired(
-				notifications,
-				state,
-				score,
-				reason,
-				runtime,
-			);
-			state.humanReviewNotifiedAt = new Date().toISOString();
-			await saveRunState(config.workspacePath, state);
-		}
-		return;
-	}
-
-	const merged = await safeSquashMergePullRequest(config, state, runtime);
-	if (!merged) {
-		return;
-	}
-
-	await finalizeIssueAfterReviewMerge(
-		config,
-		notifications,
-		linear,
-		state,
-		undefined,
-		runtime,
-	);
-}
-
 export function appendCodexUsage(
 	state: RunState,
 	stage: CodexUsageRecord["stage"],
@@ -1363,6 +919,72 @@ export function appendCodexUsage(
 	];
 }
 
+export function buildPrioritizedIssueQueue(
+	assignedIssues: WorkflowIssue[],
+	staleRetryIssues: WorkflowIssue[],
+): WorkflowIssue[] {
+	return sortIssuesByPriority(
+		buildPrioritizedIssueQueueHelper(assignedIssues, staleRetryIssues),
+	);
+}
+
+export function selectIssueQueueForCycle(
+	issueArg: string | undefined,
+	assignedIssues: WorkflowIssue[],
+	staleRetryIssues: WorkflowIssue[],
+	options: Pick<RunOptions, "reviewOnly"> = {},
+): WorkflowIssue[] {
+	if (options.reviewOnly) {
+		return [];
+	}
+	if (issueArg !== undefined) {
+		return assignedIssues;
+	}
+	return buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
+}
+
+export function isRunStateStaleForRetry(
+	state: RunState,
+	nowMs: number,
+	timeoutMs: number,
+): boolean {
+	return isRunStateStaleForRetryHelper(
+		state,
+		nowMs,
+		timeoutMs,
+		isRunLeaseExpired,
+	);
+}
+
+export function selectStaleRunIssueKeys(
+	runStates: RunState[],
+	nowMs: number,
+	timeoutMs: number,
+): string[] {
+	return selectStaleRunIssueKeysHelper(
+		runStates,
+		nowMs,
+		timeoutMs,
+		isRunLeaseExpired,
+	);
+}
+
+export {
+	isReviewOnlyEligibleRunState,
+	isReviewOnlyExecutableStage,
+	selectReviewOnlyIssueKeys,
+	shouldRetryRunStage,
+	shouldSkipReviewOnlyRunState,
+	buildReviewOnlyIssueQueue,
+} from "./workflow-queue";
+export { resolveReviewOnlyBootstrapStage } from "./workflow-stages";
+export { fixedBugsForImplementationComment } from "./workflow-stage-implement";
+export {
+	resolvePollingSettings,
+	shouldStopPolling,
+	sleep,
+} from "./workflow-polling";
+export { routeProjectsForIssueProjectId } from "./workflow-routing";
 export {
 	applyPlannerIssueRefinement,
 	parsePlannerComplexityScore,
@@ -1378,141 +1000,3 @@ export {
 	readyPullRequestAfterPassingReview,
 	resolveReviewFailureStage,
 } from "./review-stage";
-
-async function safeLinearComment(
-	linear: WorkflowLinearClient,
-	issueId: string,
-	body: string,
-): Promise<void> {
-	const runLogger = logger.child({ issueId });
-	try {
-		await linear.comment(issueId, body);
-	} catch (error) {
-		runLogger.error(
-			{ err: normalizeError(error) },
-			"Failed to add Linear comment",
-		);
-	}
-}
-
-async function safePrComment(
-	config: ResolvedProjectConfig,
-	state: RunState,
-	body: string,
-	runtime: WorkflowRuntime,
-): Promise<void> {
-	if (!state.pullRequest) {
-		return;
-	}
-	const runLogger = logger.child({
-		projectId: state.projectId,
-		issueKey: state.issue.key,
-		pr: state.pullRequest.url ?? state.pullRequest.number,
-	});
-	try {
-		runLogger.info(
-			{
-				commentBody: body,
-				runState: state,
-			},
-			"Adding GitHub PR comment",
-		);
-		await runtime.commentOnPr(config, state.pullRequest, body);
-	} catch (error) {
-		runLogger.error(
-			{ err: normalizeError(error) },
-			"Failed to add GitHub PR comment",
-		);
-	}
-}
-
-async function safeSquashMergePullRequest(
-	config: ResolvedProjectConfig,
-	state: RunState,
-	runtime: WorkflowRuntime,
-): Promise<boolean> {
-	if (!state.pullRequest) {
-		return false;
-	}
-	const runLogger = logger.child({
-		projectId: state.projectId,
-		issueKey: state.issue.key,
-		pr: state.pullRequest.url ?? state.pullRequest.number,
-	});
-	try {
-		return await runtime.squashMergePullRequest(config, state.pullRequest);
-	} catch (error) {
-		runLogger.error(
-			{ err: normalizeError(error) },
-			"Failed to squash-merge GitHub PR",
-		);
-		return false;
-	}
-}
-
-async function safeNotifyTaskOutcome(
-	notifications: ResolvedNotificationConfig,
-	state: RunState,
-	outcome: "done" | "blocked",
-	errorMessage?: string,
-	runtime: WorkflowRuntime = createWorkflowRuntime(),
-): Promise<void> {
-	const runLogger = logger.child({
-		projectId: state.projectId,
-		issueKey: state.issue.key,
-		outcome,
-	});
-	try {
-		await runtime.sendTaskOutcomeEmail(
-			notifications.email,
-			state,
-			outcome,
-			errorMessage,
-		);
-	} catch (error) {
-		runLogger.error(
-			{ err: normalizeError(error) },
-			"Failed to send task outcome email notification",
-		);
-	}
-}
-
-async function safeNotifyHumanReviewRequired(
-	notifications: ResolvedNotificationConfig,
-	state: RunState,
-	complexityScore: number,
-	reason: string,
-	runtime: WorkflowRuntime,
-): Promise<void> {
-	const runLogger = logger.child({
-		projectId: state.projectId,
-		issueKey: state.issue.key,
-		outcome: "human_review_required",
-	});
-	try {
-		await runtime.sendHumanReviewRequiredEmail(notifications.email, state, {
-			complexityScore,
-			reason,
-		});
-	} catch (error) {
-		runLogger.error(
-			{ err: normalizeError(error) },
-			"Failed to send human review required email notification",
-		);
-	}
-}
-
-async function safeLinearMoveToCanceled(
-	linear: WorkflowLinearClient,
-	issueId: string,
-): Promise<void> {
-	const runLogger = logger.child({ issueId, stage: "canceled" });
-	try {
-		await linear.markCanceled(issueId);
-	} catch (error) {
-		runLogger.error(
-			{ err: normalizeError(error) },
-			"Failed to move Linear issue to Canceled",
-		);
-	}
-}
