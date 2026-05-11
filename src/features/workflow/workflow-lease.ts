@@ -1,10 +1,10 @@
+import type { RunState } from "../../core/types";
 import {
 	applyRunLease,
 	clearRunLease,
 	hasRunLeaseConflict,
 	saveRunState,
 } from "./state";
-import type { RunState } from "./types";
 
 export function buildRunLeaseOwnerId(nowMs = Date.now()): string {
 	return `${process.pid}-${nowMs}-${Math.floor(Math.random() * 100000)}`;

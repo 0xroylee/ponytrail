@@ -1,10 +1,10 @@
-import { shouldSquashMergePullRequestForComplexityScore } from "./plan";
 import type {
 	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
 	RunState,
 	WorkflowStage,
-} from "./types";
+} from "../../core/types";
+import { shouldSquashMergePullRequestForComplexityScore } from "./plan";
 import type { WorkflowLinearClient, WorkflowRuntime } from "./workflow-runtime";
 import type { WorkflowIssue } from "./workflow.types";
 

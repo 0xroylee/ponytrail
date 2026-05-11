@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { handleCommand } from "../src/commands/handlers";
 import type { LoadedConfig } from "../src/core/config";
-import { saveRunState } from "../src/core/state";
 import type { ResolvedProjectConfig, RunState } from "../src/core/types";
+import { saveRunState } from "../src/features/workflow/state";
 
 const originalStdoutWrite = process.stdout.write.bind(process.stdout);
 

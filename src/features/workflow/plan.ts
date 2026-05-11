@@ -1,7 +1,7 @@
-import type { AgentAdapter } from "../integrations/agent-adapters";
+import type { AgentAdapter } from "../../integrations/agent-adapters";
 import { selectPlanningSupplementalSkills } from "../skills/catalog";
 import { buildPlanPrompt } from "../skills/prompts";
-import { buildPlanComment, buildPlanSplitComment } from "../utils/comments";
+import { buildPlanComment, buildPlanSplitComment } from "../../utils/comments";
 import type {
 	HandlePlanningStageDeps,
 	PlannerDecision,
@@ -14,7 +14,8 @@ import type {
 	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
 	RunState,
-} from "./types";
+} from "../../core/types";
+
 export type {
 	HandlePlanningStageDeps,
 	PlannerDecision,

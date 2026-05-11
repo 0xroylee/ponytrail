@@ -1,11 +1,8 @@
-import type { AgentAdapter } from "../integrations/agent-adapters";
-import { issueBranchName } from "../integrations/github";
-import { sortIssuesByPriority } from "../integrations/linear";
-import { buildFixPrompt, buildImplementPrompt } from "../skills/prompts";
-import { buildImplementationComment } from "../utils/comments";
-import { logger, normalizeError } from "../utils/logger";
+import { type LoadedConfig, getProjectById } from "../../core/config";
+import { buildFixPrompt, buildImplementPrompt } from "../../skills/prompts";
+import { buildImplementationComment } from "../../utils/comments";
+import { logger, normalizeError } from "../../utils/logger";
 import { runAgentWithChatLog } from "./agent-chat-log";
-import { type LoadedConfig, getProjectById } from "./config";
 import {
 	handlePlanningStage,
 	shouldSquashMergePullRequestForComplexityScore,
@@ -59,7 +56,10 @@ import type {
 	RunOptions,
 	RunState,
 	WorkflowStage,
-} from "./types";
+} from "../../core/types";
+import { sortIssuesByPriority } from "../../integrations/linear";
+import { AgentAdapter } from "../../integrations/agent-adapters";
+import { issueBranchName } from "../../integrations/github";
 export type {
 	IssueJobLogFields,
 	IssueProjectRoutingResult,

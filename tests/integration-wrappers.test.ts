@@ -1,4 +1,9 @@
 import { describe, expect, it, mock } from "bun:test";
+import type {
+	ResolvedNotificationConfig,
+	ResolvedProjectConfig,
+	RunState,
+} from "../src/core/types";
 import {
 	safeLinearComment,
 	safeLinearMoveToCanceled,
@@ -6,12 +11,7 @@ import {
 	safeNotifyTaskOutcome,
 	safePrComment,
 	safeSquashMergePullRequest,
-} from "../src/core/integration-wrappers";
-import type {
-	ResolvedNotificationConfig,
-	ResolvedProjectConfig,
-	RunState,
-} from "../src/core/types";
+} from "../src/features/workflow/integration-wrappers";
 
 function createState(): RunState {
 	const now = new Date().toISOString();

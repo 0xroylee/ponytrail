@@ -2,23 +2,20 @@ import { mkdtemp } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { LoadedConfig } from "../src/core/config";
-import { loadRunState, saveRunState } from "../src/core/state";
 import type {
 	LinearIssue,
 	ResolvedProjectConfig,
 	RunOptions,
 	RunState,
 } from "../src/core/types";
+import { loadRunState, saveRunState } from "../src/features/workflow/state";
 import {
 	type WorkflowLinearClient,
 	type WorkflowRuntime,
 	createWorkflowRuntime,
-} from "../src/core/workflow-runtime";
-import type {
-	AgentAdapter,
-	AgentResult,
-} from "../src/integrations/agent-adapters";
+} from "../src/features/workflow/workflow-runtime";
 import { pr, project } from "./smoke-fixtures";
+import { AgentAdapter, AgentResult } from "../src/integrations/agent-adapters";
 
 export interface SmokeHarness {
 	config: LoadedConfig;
@@ -93,7 +90,7 @@ export async function createSmokeHarness(): Promise<SmokeHarness> {
 			return selected;
 		},
 		run: (options) =>
-			import("../src/core/workflow").then(({ runWorkflow }) =>
+			import("../src/features/workflow/workflow").then(({ runWorkflow }) =>
 				runWorkflow(config, options, runtime),
 			),
 		state: (projectId, issueKey) =>

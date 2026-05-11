@@ -1,9 +1,9 @@
-import { logger, normalizeError } from "../utils/logger";
 import type {
 	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
 	RunState,
-} from "./types";
+} from "../../core/types";
+import { logger, normalizeError } from "../../utils/logger";
 import type { WorkflowLinearClient, WorkflowRuntime } from "./workflow-runtime";
 import { createWorkflowRuntime } from "./workflow-runtime";
 

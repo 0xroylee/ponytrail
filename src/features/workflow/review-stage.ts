@@ -1,7 +1,6 @@
-import type { AgentAdapter } from "../integrations/agent-adapters";
-import { markPrReadyForReview } from "../integrations/github";
+import type { AgentAdapter } from "../../integrations/agent-adapters";
+import { markPrReadyForReview } from "../../integrations/github";
 import { buildReviewPrompt } from "../skills/prompts";
-import { buildReviewComment } from "../utils/comments";
 import type { ReviewOutcome } from "./review";
 import { parseReviewOutcome } from "./review";
 import type {
@@ -9,7 +8,8 @@ import type {
 	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
 	RunState,
-} from "./types";
+} from "../../core/types";
+import { buildReviewComment } from "../../utils/comments";
 
 interface HandleReviewTestingStageDeps {
 	runAgentWithChatLog: (input: {

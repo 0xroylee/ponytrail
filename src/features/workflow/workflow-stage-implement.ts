@@ -1,9 +1,14 @@
-import type { AgentAdapter } from "../integrations/agent-adapters";
-import { issueBranchName } from "../integrations/github";
-import { buildFixPrompt, buildImplementPrompt } from "../skills/prompts";
-import { buildImplementationComment } from "../utils/comments";
-import { logger } from "../utils/logger";
-import type { ResolvedProjectConfig, RunState, WorkflowStage } from "./types";
+
+import type {
+	ResolvedProjectConfig,
+	RunState,
+	WorkflowStage,
+} from "../../core/types";
+import { AgentAdapter } from "../../integrations/agent-adapters";
+import { issueBranchName } from "../../integrations/github";
+import { buildFixPrompt, buildImplementPrompt } from "../../skills/prompts";
+import { buildImplementationComment } from "../../utils/comments";
+import { logger } from "../../utils/logger";
 import type { WorkflowLinearClient, WorkflowRuntime } from "./workflow-runtime";
 
 export function fixedBugsForImplementationComment(

@@ -4,7 +4,6 @@ import {
 	type IssueLabel as LinearSdkIssueLabel,
 	type WorkflowState as LinearSdkWorkflowState,
 } from "@linear/sdk";
-import { normalizeIssueKey } from "../../core/state";
 import type {
 	LinearIssue,
 	PlannedSplitTask,
@@ -22,6 +21,7 @@ import type {
 	WorkflowLabelStage,
 	WorkflowLabelUpdate,
 } from "./linear.types";
+import { normalizeIssueKey } from "../../features/workflow/state";
 
 const LINEAR_MAX_REQUESTS_PER_HOUR = 1800;
 const LINEAR_REQUEST_INTERVAL_MS = Math.ceil(

@@ -1,10 +1,10 @@
-import { normalizeIssueKey } from "./state";
 import type {
 	PullRequestRef,
 	RunOptions,
 	RunState,
 	WorkflowStage,
-} from "./types";
+} from "../../core/types";
+import { normalizeIssueKey } from "./state";
 import type {
 	ReviewOnlyQueueBuildResult,
 	ReviewOnlyQueueInput,

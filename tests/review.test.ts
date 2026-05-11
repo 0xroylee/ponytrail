@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseReviewOutcome } from "../src/core/review";
+import { parseReviewOutcome } from "../src/features/workflow/review";
 
 describe("parseReviewOutcome", () => {
 	it("parses pass with no bugs", () => {

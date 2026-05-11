@@ -1,4 +1,4 @@
-import type { PollingConfig, RunOptions } from "./types";
+import type { PollingConfig, RunOptions } from "../../core/types";
 import type { PollingSettings } from "./workflow.types";
 
 export function resolvePollingSettings(

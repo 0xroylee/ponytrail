@@ -4,7 +4,7 @@ import type {
 	PlannedSplitTask,
 	ResolvedNotificationConfig,
 	RunState,
-} from "./types";
+} from "../../core/types";
 
 export interface PlanningLinearClient {
 	updateIssueDetails(

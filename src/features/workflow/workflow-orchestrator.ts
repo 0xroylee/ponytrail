@@ -1,8 +1,7 @@
-import type { AgentAdapter } from "../integrations/agent-adapters";
-import { sortIssuesByPriority } from "../integrations/linear";
-import { logger, normalizeError } from "../utils/logger";
+
+import { type LoadedConfig, getProjectById } from "../../core/config";
+import { logger, normalizeError } from "../../utils/logger";
 import { runAgentWithChatLog } from "./agent-chat-log";
-import { type LoadedConfig, getProjectById } from "./config";
 import {
 	handlePlanningStage,
 	shouldSquashMergePullRequestForComplexityScore,
@@ -83,7 +82,9 @@ import type {
 	ResolvedProjectConfig,
 	RunOptions,
 	RunState,
-} from "./types";
+} from "../../core/types";
+import { sortIssuesByPriority } from "../../integrations/linear";
+import { AgentAdapter } from "../../integrations/agent-adapters";
 export type {
 	IssueProjectRoutingResult,
 	ReviewOnlyQueueBuildResult,

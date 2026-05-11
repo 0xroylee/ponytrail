@@ -2,19 +2,19 @@ import { describe, expect, it, mock } from "bun:test";
 import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { handlePlanningStage } from "../src/core/plan";
-import {
-	agentChatLogPath,
-	applyRunLease,
-	isRunLeaseExpired,
-	transitionStage,
-} from "../src/core/state";
 import type {
 	IssueRef,
 	PollingConfig,
 	ResolvedProjectConfig,
 	RunState,
 } from "../src/core/types";
+import { handlePlanningStage } from "../src/features/workflow/plan";
+import {
+	agentChatLogPath,
+	applyRunLease,
+	isRunLeaseExpired,
+	transitionStage,
+} from "../src/features/workflow/state";
 import {
 	appendCodexUsage,
 	applyPlannerIssueRefinement,
@@ -47,9 +47,9 @@ import {
 	shouldSquashMergePullRequestForComplexityScore,
 	shouldStopPolling,
 	withExecutionPathLock,
-} from "../src/core/workflow";
-import { processIssueQueueBounded } from "../src/core/workflow-queue";
-import type { AgentAdapter } from "../src/integrations/agent-adapters";
+} from "../src/features/workflow/workflow";
+import { processIssueQueueBounded } from "../src/features/workflow/workflow-queue";
+import { AgentAdapter } from "../src/integrations/agent-adapters";
 
 describe("resolvePollingSettings", () => {
 	const polling: PollingConfig = {

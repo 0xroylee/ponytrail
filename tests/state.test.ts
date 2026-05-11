@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import type { RunState } from "../src/core/types";
 import {
 	AGENT_CHAT_LOG_RETENTION,
 	agentChatLogPath,
@@ -14,8 +15,7 @@ import {
 	normalizeIssueKey,
 	projectErrorLogPath,
 	transitionStage,
-} from "../src/core/state";
-import type { RunState } from "../src/core/types";
+} from "../src/features/workflow/state";
 
 describe("state helpers", () => {
 	it("normalizes issue key from URL", () => {
