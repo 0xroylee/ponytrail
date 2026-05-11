@@ -5,11 +5,11 @@ This repository orchestrates multi-project agent workflows. Keep behavior projec
 ## Must-Follow Rules
 
 1. Before executing agent workflow work, pull the latest code from `main` so runs start from current repository state. Fetch `origin/main`, update the local `main` with a fast-forward-only pull, and do not proceed from stale code.
-2. Resolve env vars and config only in `src/config.ts`.
-3. Keep stage transitions and sequencing in `src/workflow.ts`.
-4. Keep integrations isolated in `src/linear.ts`, `src/github.ts`, and `src/codex.ts`.
-5. Keep run-state path logic in `src/state.ts`.
-6. Keep CLI parsing and dispatch in `src/args.ts` and `src/index.ts`.
+2. Resolve env vars and config only in `packages/cli/src/core/config.ts`.
+3. Keep stage transitions and sequencing in `packages/cli/src/features/workflow/`.
+4. Keep integrations isolated in `packages/cli/src/integrations/linear/`, `packages/cli/src/integrations/github/`, and `packages/cli/src/integrations/agent-adapters/`.
+5. Keep run-state path logic in `packages/cli/src/features/workflow/state.ts`.
+6. Keep CLI parsing and dispatch in `packages/cli/src/args.ts` and `packages/cli/src/index.ts`.
 7. Do not construct raw shell command strings in workflow logic; use helper modules.
 8. Keep TypeScript files under 250 lines; split files before they grow beyond that limit.
 9. Keep TypeScript interfaces/type aliases in dedicated `*.types.ts` modules separate from runtime implementation when adding or changing contracts.

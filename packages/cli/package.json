@@ -1,0 +1,36 @@
+{
+	"name": "adhdai",
+	"version": "0.0.1",
+	"license": "MIT",
+	"private": false,
+	"type": "module",
+	"files": ["dist", "README.md", "LICENSE"],
+	"bin": {
+		"adhd": "dist/index.js"
+	},
+	"scripts": {
+		"build": "bun build ./src/index.ts --target bun --outdir dist",
+		"start": "bun run ./src/index.ts",
+		"smoke": "bun test tests/smoke-flow.test.ts",
+		"publish:version": "bun run ./scripts/publish-version.ts",
+		"review:hourly": "bun run ./src/index.ts cron --job hourly-pr-review",
+		"test": "cd ../.. && bun test packages/cli/tests",
+		"typecheck": "bunx tsc --noEmit",
+		"format": "biome format --write .",
+		"lint": "biome lint .",
+		"check": "biome check .",
+		"check:write": "biome check --write .",
+		"cron:once": "bun run ./src/index.ts cron --once",
+		"review:hourly:once": "bun run ./src/index.ts cron --once --job hourly-pr-review",
+		"prepare:publish": "bun run check && bun run typecheck && bun run test && bun run build && npm --cache ./.npm-cache pack --dry-run --ignore-scripts"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.2",
+		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"@linear/sdk": "^83.0.0",
+		"pino": "^10.3.1",
+		"pino-pretty": "^13.1.3"
+	}
+}

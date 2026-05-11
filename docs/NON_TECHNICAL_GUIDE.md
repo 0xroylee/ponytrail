@@ -59,8 +59,8 @@ ADHD.ai runs agent stages using a configurable backend and model settings.
 
 1. Run `adhd-ai setup` and answer prompts.
 2. Run `adhd-ai setup --check` to validate config and required tooling.
-3. Run `bun run src/index.ts projects` to confirm project resolution.
-4. Start one scoped run: `bun run src/index.ts run --project <PROJECT_ID>`.
+3. Run `bun run packages/cli/src/index.ts projects` to confirm project resolution.
+4. Start one scoped run: `bun run packages/cli/src/index.ts run --project <PROJECT_ID>`.
 5. Confirm run state appears under `.piv-loop/projects/<project-id>/runs`.
 
 More detail:

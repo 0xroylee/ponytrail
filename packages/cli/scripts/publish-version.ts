@@ -1,3 +1,4 @@
+import path from "node:path";
 import { type CommandResult, runCommand } from "../src/utils/shell";
 
 export type RunCommandFn = (
@@ -54,5 +55,5 @@ export async function runPublishVersion(
 }
 
 if (import.meta.main) {
-	await runPublishVersion(process.cwd());
+	await runPublishVersion(path.resolve(import.meta.dir, "../../.."));
 }

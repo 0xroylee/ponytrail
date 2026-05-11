@@ -13,31 +13,31 @@ For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_T
 
 ```bash
 bun install
-bun run packages/cli/src/index.ts setup
-bun run packages/cli/src/index.ts setup --check
-bun run packages/cli/src/index.ts run --project <PROJECT_ID>
+bun run src/index.ts setup
+bun run src/index.ts setup --check
+bun run src/index.ts run --project <PROJECT_ID>
 ```
 
-Use `bun run packages/cli/src/index.ts projects` to list available project IDs, then pass one of those values as `<PROJECT_ID>`.
+Use `bun run src/index.ts projects` to list available project IDs, then pass one of those values as `<PROJECT_ID>`.
 
 ## Common Commands
 
 ```bash
 # setup and validation
-bun run packages/cli/src/index.ts setup
-bun run packages/cli/src/index.ts setup --check
+bun run src/index.ts setup
+bun run src/index.ts setup --check
 
 # inspect configured projects
-bun run packages/cli/src/index.ts projects
+bun run src/index.ts projects
 
 # run one issue
-bun run packages/cli/src/index.ts run --project <PROJECT_ID> --issue ENG-123
+bun run src/index.ts run --project <PROJECT_ID> --issue ENG-123
 
 # local polling mode
-bun run packages/cli/src/index.ts run --project <PROJECT_ID> --poll
+bun run src/index.ts run --project <PROJECT_ID> --poll
 
 # unattended scheduled mode
-bun run packages/cli/src/index.ts cron
+bun run src/index.ts cron
 
 # run the first enabled automation job once now
 bun run cron:once
@@ -58,13 +58,13 @@ bun run publish:version
 git push --follow-tags
 
 # inspect run state for one issue
-bun run packages/cli/src/index.ts status --project <PROJECT_ID> --issue ENG-123
+bun run src/index.ts status --project <PROJECT_ID> --issue ENG-123
 
 # skills management
-bun run packages/cli/src/index.ts skills list [--project <PROJECT_ID>]
-bun run packages/cli/src/index.ts skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>" [--project <PROJECT_ID>]
-bun run packages/cli/src/index.ts skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"] [--project <PROJECT_ID>]
-bun run packages/cli/src/index.ts skills remove <NAME> [--project <PROJECT_ID>]
+bun run src/index.ts skills list [--project <PROJECT_ID>]
+bun run src/index.ts skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>" [--project <PROJECT_ID>]
+bun run src/index.ts skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"] [--project <PROJECT_ID>]
+bun run src/index.ts skills remove <NAME> [--project <PROJECT_ID>]
 ```
 
 After linking/installing the package bin, you can also use `adhd-ai ...` directly.

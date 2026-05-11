@@ -2,6 +2,7 @@ node_modules/
 dist/
 .piv-loop/
 *.log
+.npm-cache/
 
 .env
 # Local dev docs (not for sync)

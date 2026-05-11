@@ -13,10 +13,10 @@ Planning output should remain concise and implementation-focused, including:
 
 ## Operating Commands
 
-1. `bun run src/index.ts run --project default`
-2. `bun run src/index.ts run --all-projects`
-3. `bun run src/index.ts status --project default --issue ENG-123`
-4. `bun run src/index.ts projects`
+1. `bun run packages/cli/src/index.ts run --project default`
+2. `bun run packages/cli/src/index.ts run --all-projects`
+3. `bun run packages/cli/src/index.ts status --project default --issue ENG-123`
+4. `bun run packages/cli/src/index.ts projects`
 
 ## Parallel Processing Operating Guidance
 

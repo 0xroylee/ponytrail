@@ -6,17 +6,17 @@ ADHD.ai is a multi-project orchestration hub that pulls eligible Linear issues a
 
 ## Ownership Boundaries
 
-1. `src/core/config.ts` is the only runtime config resolver for env vars and config files.
-2. `src/core/workflow.ts` owns stage transitions, retries, and orchestration order.
-3. Integration modules stay isolated under `src/integrations/` and `src/integrations/agent-adapters/`:
-   - `src/integrations/linear/linear.ts`
-   - `src/integrations/github/github.ts`
-   - `src/integrations/agent-adapters/codex.ts`
-   - `src/integrations/agent-adapters/claude-code.ts`
-   - `src/integrations/cron/cron.ts`
-   - `src/integrations/notifications/notifications.ts`
-4. `src/core/state.ts` owns run-state paths and legacy fallback behavior.
-5. `src/args.ts` and `src/index.ts` own CLI parsing and command dispatch with command handlers in `src/commands/`.
+1. `packages/cli/src/core/config.ts` is the only runtime config resolver for env vars and config files.
+2. `packages/cli/src/features/workflow/` owns stage transitions, retries, and orchestration order.
+3. Integration modules stay isolated under `packages/cli/src/integrations/` and `packages/cli/src/integrations/agent-adapters/`:
+   - `packages/cli/src/integrations/linear/linear.ts`
+   - `packages/cli/src/integrations/github/github.ts`
+   - `packages/cli/src/integrations/agent-adapters/codex.ts`
+   - `packages/cli/src/integrations/agent-adapters/claude-code.ts`
+   - `packages/cli/src/integrations/cron/cron.ts`
+   - `packages/cli/src/integrations/notifications/notifications.ts`
+4. `packages/cli/src/features/workflow/state.ts` owns run-state paths and legacy fallback behavior.
+5. `packages/cli/src/args.ts` and `packages/cli/src/index.ts` own CLI parsing and command dispatch with command handlers in `packages/cli/src/commands/`.
 
 ## Stage Model
 
@@ -31,8 +31,8 @@ The workflow advances through planning -> implementing -> review/testing and syn
 ```mermaid
 flowchart TD
     operator[Operator] --> linearIssue[Linear Issue Intake]
-    linearIssue --> config[src/core/config.ts<br/>project + runtime resolution]
-    config --> workflow[src/core/workflow.ts<br/>stage orchestration]
+    linearIssue --> config[packages/cli/src/core/config.ts<br/>project + runtime resolution]
+    config --> workflow[packages/cli/src/features/workflow<br/>stage orchestration]
 
     workflow --> planning[Planning Agent]
     planning --> complexity{Complexity Score < 5?}
@@ -40,7 +40,7 @@ flowchart TD
     complexity -->|Yes| implementing[Implementation Agent]
     complexity -->|No| humanReview[Human Review Pause]
 
-    implementing --> github[src/integrations/github/github.ts<br/>branch + draft PR updates]
+    implementing --> github[packages/cli/src/integrations/github/github.ts<br/>branch + draft PR updates]
     github --> reviewTesting[Review/Testing Agent]
 
     reviewTesting --> reviewPass{RESULT: PASS?}
@@ -50,15 +50,15 @@ flowchart TD
     workflow --> blocked[Blocked]
     humanReview --> reviewingStage[Reviewing Stage in Linear]
 
-    workflow --> linearSvc[src/integrations/linear/linear.ts<br/>status + comments + child tasks]
-    workflow --> notify[src/integrations/notifications/notifications.ts<br/>human review and outcome email]
-    workflow --> state[src/core/state.ts<br/>run state + leases]
+    workflow --> linearSvc[packages/cli/src/integrations/linear/linear.ts<br/>status + comments + child tasks]
+    workflow --> notify[packages/cli/src/integrations/notifications/notifications.ts<br/>human review and outcome email]
+    workflow --> state[packages/cli/src/features/workflow/state.ts<br/>run state + leases]
 
     state --> runFiles[.piv-loop/projects/<project-id>/runs/*.json]
     state --> chatLogs[.piv-loop/projects/<project-id>/chat-logs/*.json]
 
-    planning --> codexAdapter[src/integrations/agent-adapters/codex.ts]
-    planning --> claudeAdapter[src/integrations/agent-adapters/claude-code.ts]
+    planning --> codexAdapter[packages/cli/src/integrations/agent-adapters/codex.ts]
+    planning --> claudeAdapter[packages/cli/src/integrations/agent-adapters/claude-code.ts]
     implementing --> codexAdapter
     implementing --> claudeAdapter
     reviewTesting --> codexAdapter
