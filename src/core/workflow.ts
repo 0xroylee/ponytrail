@@ -346,7 +346,7 @@ async function runProjectCycle(
 
 	await processIssueQueueBounded(
 		issueQueue,
-		options.concurrency,
+		config.workflow.issueConcurrency,
 		async (issue) =>
 			processIssue(
 				config,
