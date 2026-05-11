@@ -20,7 +20,8 @@
 
 ## Docker Isolation Caveats
 
-1. Docker isolation for Codex does not remove access to host paths that are explicitly mounted into the container.
-2. Host/container UID or GID mismatches can create files with unexpected ownership (for example root-owned artifacts) on mounted paths.
-3. Mounting `CODEX_HOME` into the container can expose Codex credentials and configuration present in that directory.
-4. Prefer minimal container privileges; avoid workflows that require privileged containers or Docker socket mounting.
+1. Docker-isolated Codex execution is planned work (ROY-95) and not active in this branch.
+2. When Docker mode is implemented, container isolation will not remove access to host paths that are explicitly mounted into the container.
+3. Host/container UID or GID mismatches can create files with unexpected ownership (for example root-owned artifacts) on mounted paths.
+4. Mounting `CODEX_HOME` into the container can expose Codex credentials and configuration present in that directory.
+5. Prefer minimal container privileges; avoid workflows that require privileged containers or Docker socket mounting.

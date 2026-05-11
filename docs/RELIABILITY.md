@@ -33,60 +33,19 @@ When `COMPLEXITY: COMPLEX` is returned, ADHD.ai creates child Linear tasks from 
 
 ## Docker Isolated Codex Execution
 
-Docker-backed Codex execution is optional. Host execution remains the default unless Docker is explicitly enabled with `codex.docker.enabled: true` or `CODEX_DOCKER_ENABLED=true`.
+Docker-backed Codex execution is not implemented in this branch yet. Isolation work is tracked under ROY-95, and this section documents current behavior plus implementation expectations.
 
-Supported Docker configuration:
+Current behavior:
 
-- `codex.docker.enabled` / `CODEX_DOCKER_ENABLED`
-- `codex.docker.image` / `CODEX_DOCKER_IMAGE`
-- `codex.docker.binary` / `CODEX_DOCKER_BINARY`
-- `codex.docker.workspacePath` / `CODEX_DOCKER_WORKSPACE_PATH`
-- `codex.docker.executionPath` / `CODEX_DOCKER_EXECUTION_PATH`
-- `codex.docker.codexHomePath` / `CODEX_DOCKER_CODEX_HOME_PATH`
-- `codex.codexHome` / `CODEX_HOME`
+1. ADHD.ai runs Codex directly on the host using `codex.binary`.
+2. `CODEX_HOME` (or `codex.codexHome`) is passed to the host Codex process when configured.
+3. No `codex.docker.*` config block or `CODEX_DOCKER_*` env variable is currently read by the runtime config loader.
 
-Runtime mount behavior (from `src/agent-adapters/codex-docker.ts`):
+Planned Docker execution expectations (ROY-95 scope):
 
-1. `workspacePath` mounts to `/workspace` by default.
-2. If `executionPath` is inside `workspacePath`, the container execution path is mapped under `/workspace` (for example `/workspace/repo/subdir`).
-3. If `executionPath` is outside `workspacePath`, it is mounted separately and defaults to `/workspace/repo`.
-4. If `CODEX_HOME` is set, it is mounted and exported inside the container as `/codex-home` by default.
-
-Image expectations:
-
-1. The image must include the configured Codex binary (default: `codex`).
-2. The image should include workflow dependencies such as `git`, `gh`, `bun`, and any project-required build/test tooling.
-3. The container user must be able to read and write mounted repository paths, `.piv-loop` state/output paths, and mounted `CODEX_HOME` when present.
-
-Example: enable Docker via environment
-
-```bash
-CODEX_DOCKER_ENABLED=true
-CODEX_DOCKER_IMAGE=codex:latest
-CODEX_DOCKER_BINARY=docker
-CODEX_DOCKER_WORKSPACE_PATH=/workspace
-CODEX_DOCKER_EXECUTION_PATH=/workspace/repo
-CODEX_DOCKER_CODEX_HOME_PATH=/codex-home
-CODEX_HOME=/Users/you/.codex
-```
-
-Example: enable Docker in config (`adhd-ai.config.ts`)
-
-```ts
-export default {
-  codex: {
-    docker: {
-      enabled: true,
-      image: "codex:latest",
-      binary: "docker",
-      workspacePath: "/workspace",
-      executionPath: "/workspace/repo",
-      codexHomePath: "/codex-home",
-    },
-    codexHome: "/Users/you/.codex",
-  },
-  projects: [{ id: "default" }],
-};
-```
+1. Host execution remains the default unless Docker mode is explicitly enabled.
+2. Docker image should include the configured Codex binary (default: `codex`) and required workflow tooling (`git`, `gh`, `bun`, project dependencies).
+3. Mount/path behavior should preserve workspace and execution path correctness and support `CODEX_HOME` mapping when provided.
+4. Container user permissions must allow read/write access for repository paths and ADHD.ai state/output files.
 
 For security caveats around mounted paths, permissions, and credential exposure, see [docs/SECURITY.md](SECURITY.md).
