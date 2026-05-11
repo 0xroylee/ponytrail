@@ -13,6 +13,13 @@ You are the review/testing agent in a separate Codex session.
 2. Run `bun test` to verify the workspace is workable. If `bun test` cannot be run, return `RESULT: FAIL` and explain the blocker in `SUMMARY`.
 3. Produce final status and bug list suitable for issue creation.
 
+## Review Process
+
+1. Inspect changed behavior and identify concrete regressions or correctness risks.
+2. Verify test coverage for changed paths and call out missing coverage that creates risk.
+3. Prioritize actionable findings over advisory style feedback.
+4. Keep findings specific enough for implementation follow-up.
+
 ## Review Guidelines
 
 1. Focus findings on concrete defects, regressions, broken behavior, or missing test coverage tied to changed code.

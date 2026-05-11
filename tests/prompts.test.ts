@@ -60,6 +60,23 @@ describe("buildImplementPrompt", () => {
 		expect(prompt).toContain("do not run git fetch or git pull");
 		expect(prompt).toContain("Plan summary:");
 	});
+
+	it("includes implementation process guidance from the repo implementation skill", async () => {
+		const prompt = await buildImplementPrompt(
+			path.resolve(process.cwd(), "skills/piv-implement/SKILL.md"),
+			issue,
+			"Update workflow stage transitions.",
+		);
+
+		expect(prompt).toContain("## Implementation Process");
+		expect(prompt).toContain(
+			"Re-state scope from the plan before editing code.",
+		);
+		expect(prompt).toContain("## Validation and Reporting");
+		expect(prompt).toContain(
+			"List the exact checks/tests run and their outcome.",
+		);
+	});
 });
 
 describe("buildReviewPrompt", () => {
@@ -83,6 +100,7 @@ describe("buildReviewPrompt", () => {
 			pr,
 		);
 
+		expect(prompt).toContain("## Review Process");
 		expect(prompt).toContain("## Review Guidelines");
 		expect(prompt).toContain("Do not fail solely for style");
 		expect(prompt).toContain("When reporting `RESULT: PASS`");
@@ -116,6 +134,22 @@ describe("buildPlanPrompt", () => {
 		} finally {
 			await rm(tmpDir, { recursive: true, force: true });
 		}
+	});
+
+	it("includes planning process guidance from the repo plan skill", async () => {
+		const prompt = await buildPlanPrompt(
+			path.resolve(process.cwd(), "skills/piv-plan/SKILL.md"),
+			issue,
+		);
+
+		expect(prompt).toContain("## Planning Process");
+		expect(prompt).toContain(
+			"Keep scope aligned to user intent; do not add unrelated feature work.",
+		);
+		expect(prompt).toContain("## Scope Guardrails");
+		expect(prompt).toContain(
+			"Preserve stable contracts used by downstream parsing and routing.",
+		);
 	});
 
 	it("includes auto-selected supplemental skills when provided", async () => {
