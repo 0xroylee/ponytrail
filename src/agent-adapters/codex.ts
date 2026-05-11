@@ -5,7 +5,7 @@ import type {
 	ResolvedProjectConfig,
 } from "../core/types";
 import { assertCommandOk, runCommand } from "../utils/shell";
-import type { AgentAdapter, AgentResult } from "./index";
+import type { AgentAdapter, AgentResult } from "./types";
 
 export class CodexAdapter implements AgentAdapter {
 	constructor(private config: ResolvedProjectConfig) {}
@@ -123,21 +123,18 @@ export class CodexAdapter implements AgentAdapter {
 	}
 
 	private async runCodex(args: string[]): Promise<AgentResult> {
-		const outputFile = args[args.indexOf("--output-last-message") + 1] ?? "";
-		const envOverrides = this.config.codex.codexHome
-			? { CODEX_HOME: this.config.codex.codexHome }
-			: {};
-		const result = await runCommand(this.config.codex.binary, args, {
-			cwd: this.config.executionPath,
-			env: envOverrides,
+		const invocation = buildCodexRuntimeInvocation(this.config, args);
+		const result = await runCommand(invocation.command, invocation.args, {
+			cwd: invocation.cwd,
+			env: invocation.env,
 			streamStdout: this.config.codex.streamLogs,
 			streamStderr: this.config.codex.streamLogs,
 			stdinMode: "ignore",
 		});
 
-		assertCommandOk(this.config.codex.binary, args, result);
+		assertCommandOk(invocation.command, invocation.args, result);
 		const sessionId = extractSessionId(result.stdout);
-		const finalMessage = await readOutputFile(outputFile);
+		const finalMessage = await readOutputFile(invocation.hostOutputFile);
 		const usage = extractUsage(result.stdout);
 		return {
 			sessionId,
