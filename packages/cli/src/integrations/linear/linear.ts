@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import type {
 	Issue as LinearSdkIssue,
 	IssueLabel as LinearSdkIssueLabel,
@@ -35,6 +36,7 @@ const LINEAR_RATE_LIMIT_RETRY_DELAYS_MS = [
 
 let linearRequestTail: Promise<void> = Promise.resolve();
 let nextLinearRequestAt = 0;
+const require = createRequire(import.meta.url);
 
 export function buildSplitTaskIssueTitle(
 	parentIssueKey: string,
@@ -874,7 +876,9 @@ export class LinearClient {
 		if (this.client) {
 			return this.client as Awaited<ReturnType<LinearClient["getClient"]>>;
 		}
-		const sdk = await import("@linear/sdk");
+		const sdk = require("@linear/sdk") as {
+			LinearClient: new (input: { apiKey: string; apiUrl?: string }) => unknown;
+		};
 		this.client = new sdk.LinearClient({
 			apiKey: this.config.linear.apiKey,
 			apiUrl: this.config.linear.apiUrl,
