@@ -104,6 +104,78 @@ function resolveInvocation(
 	| { status: "ok"; invocation: CliCommandInvocation }
 	| { status: "error"; error: string } {
 	if (request.action === "run") {
+		const projectIdValidation = validateOptionalStringField(
+			request.projectId,
+			"run",
+			"projectId",
+		);
+		if (projectIdValidation.status !== "ok") {
+			return projectIdValidation;
+		}
+		const issueKeyValidation = validateOptionalStringField(
+			request.issueKey,
+			"run",
+			"issueKey",
+		);
+		if (issueKeyValidation.status !== "ok") {
+			return issueKeyValidation;
+		}
+		const allProjectsValidation = validateOptionalBooleanField(
+			request.allProjects,
+			"run",
+			"allProjects",
+		);
+		if (allProjectsValidation.status !== "ok") {
+			return allProjectsValidation;
+		}
+		const pollValidation = validateOptionalBooleanField(
+			request.poll,
+			"run",
+			"poll",
+		);
+		if (pollValidation.status !== "ok") {
+			return pollValidation;
+		}
+		const noExitWhenIdleValidation = validateOptionalBooleanField(
+			request.noExitWhenIdle,
+			"run",
+			"noExitWhenIdle",
+		);
+		if (noExitWhenIdleValidation.status !== "ok") {
+			return noExitWhenIdleValidation;
+		}
+		const isolatedWorktreesValidation = validateOptionalBooleanField(
+			request.isolatedWorktrees,
+			"run",
+			"isolatedWorktrees",
+		);
+		if (isolatedWorktreesValidation.status !== "ok") {
+			return isolatedWorktreesValidation;
+		}
+		const concurrencyValidation = validateOptionalPositiveIntegerField(
+			request.concurrency,
+			"run",
+			"concurrency",
+		);
+		if (concurrencyValidation.status !== "ok") {
+			return concurrencyValidation;
+		}
+		const pollIntervalValidation = validateOptionalPositiveIntegerField(
+			request.pollIntervalMs,
+			"run",
+			"pollIntervalMs",
+		);
+		if (pollIntervalValidation.status !== "ok") {
+			return pollIntervalValidation;
+		}
+		const maxPollCyclesValidation = validateOptionalPositiveIntegerField(
+			request.maxPollCycles,
+			"run",
+			"maxPollCycles",
+		);
+		if (maxPollCyclesValidation.status !== "ok") {
+			return maxPollCyclesValidation;
+		}
 		const runRequest = request as Extract<
 			SupportedCliCommandRequest,
 			{ action: "run" }
@@ -112,7 +184,21 @@ function resolveInvocation(
 			status: "ok",
 			invocation: {
 				command,
-				args: [...baseArgs, ...buildRunArgs(runRequest)],
+				args: [
+					...baseArgs,
+					...buildRunArgs({
+						...runRequest,
+						projectId: projectIdValidation.value,
+						issueKey: issueKeyValidation.value,
+						allProjects: allProjectsValidation.value,
+						poll: pollValidation.value,
+						noExitWhenIdle: noExitWhenIdleValidation.value,
+						isolatedWorktrees: isolatedWorktreesValidation.value,
+						concurrency: concurrencyValidation.value,
+						pollIntervalMs: pollIntervalValidation.value,
+						maxPollCycles: maxPollCyclesValidation.value,
+					}),
+				],
 			},
 		};
 	}
@@ -505,6 +591,44 @@ function validateOptionalStringField(
 		return {
 			status: "error",
 			error: `Malformed ${actionLabel} request: ${fieldName} must be a non-empty string`,
+		};
+	}
+	return { status: "ok", value };
+}
+
+function validateOptionalBooleanField(
+	value: unknown,
+	actionLabel: string,
+	fieldName: string,
+):
+	| { status: "ok"; value: boolean | undefined }
+	| { status: "error"; error: string } {
+	if (value === undefined) {
+		return { status: "ok", value: undefined };
+	}
+	if (typeof value !== "boolean") {
+		return {
+			status: "error",
+			error: `Malformed ${actionLabel} request: ${fieldName} must be a boolean`,
+		};
+	}
+	return { status: "ok", value };
+}
+
+function validateOptionalPositiveIntegerField(
+	value: unknown,
+	actionLabel: string,
+	fieldName: string,
+):
+	| { status: "ok"; value: number | undefined }
+	| { status: "error"; error: string } {
+	if (value === undefined) {
+		return { status: "ok", value: undefined };
+	}
+	if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
+		return {
+			status: "error",
+			error: `Malformed ${actionLabel} request: ${fieldName} must be a positive integer`,
 		};
 	}
 	return { status: "ok", value };

@@ -504,6 +504,12 @@ describe("CliCommandExecutor", () => {
 			request: "Build a better setup flow",
 			projectId: 42,
 		} as unknown as { action: string });
+		const malformedRunFields = await executor.execute({
+			action: "run",
+			projectId: ["bad"],
+			poll: "yes",
+			concurrency: 0,
+		} as unknown as { action: string });
 
 		expect(malformedSkillsAction.status).toBe("rejected");
 		expect(malformedSkillsAction.error).toContain("skillsAction is required");
@@ -533,6 +539,10 @@ describe("CliCommandExecutor", () => {
 		);
 		expect(malformedTaskProject.status).toBe("rejected");
 		expect(malformedTaskProject.error).toContain(
+			"projectId must be a non-empty string",
+		);
+		expect(malformedRunFields.status).toBe("rejected");
+		expect(malformedRunFields.error).toContain(
 			"projectId must be a non-empty string",
 		);
 		expect(callCount).toBe(0);
