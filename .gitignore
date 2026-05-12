@@ -3,6 +3,8 @@ dist/
 .piv-loop/
 *.log
 .npm-cache/
+packages/web/.next/
+packages/web/tsconfig.tsbuildinfo
 
 .env
 # Local dev docs (not for sync)
