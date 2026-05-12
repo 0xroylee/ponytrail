@@ -1,4 +1,4 @@
-import { createRequire } from "node:module";
+import { LinearClient as LinearSdkClient } from "@linear/sdk";
 import type {
 	LinearIssue,
 	PlannedSplitTask,
@@ -96,13 +96,6 @@ type LinearSdkClientInstance = {
 	}>;
 	issueLabel: (id: string) => Promise<LinearSdkIssueLabel | null>;
 };
-
-type LinearSdkClientCtor = new (input: {
-	apiKey: string;
-	apiUrl?: string;
-}) => LinearSdkClientInstance;
-
-const require = createRequire(import.meta.url);
 
 const LINEAR_MAX_REQUESTS_PER_HOUR = 1800;
 const LINEAR_REQUEST_INTERVAL_MS = Math.ceil(
@@ -236,11 +229,10 @@ export class LinearClient {
 	private issueLabelsCache: LinearLabelRecord[] | null = null;
 
 	constructor(private readonly config: ResolvedProjectConfig) {
-		const LinearSdkClient = resolveLinearSdkClient();
 		this.client = new LinearSdkClient({
 			apiKey: config.linear.apiKey,
 			apiUrl: config.linear.apiUrl,
-		});
+		}) as unknown as LinearSdkClientInstance;
 	}
 
 	async fetchWork(issueArg?: string): Promise<LinearIssue[]> {
@@ -1117,23 +1109,6 @@ export class LinearClient {
 			name: label.name,
 			teamId: label.teamId ?? undefined,
 		};
-	}
-}
-
-function resolveLinearSdkClient(): LinearSdkClientCtor {
-	try {
-		const loaded = require("@linear/sdk") as {
-			LinearClient?: LinearSdkClientCtor;
-		};
-		if (typeof loaded.LinearClient !== "function") {
-			throw new Error("missing LinearClient export");
-		}
-		return loaded.LinearClient;
-	} catch (error) {
-		const detail = error instanceof Error ? error.message : String(error);
-		throw new Error(
-			`Failed to load '@linear/sdk'. Install project dependencies before running Linear-integrated commands. ${detail}`,
-		);
 	}
 }
 
