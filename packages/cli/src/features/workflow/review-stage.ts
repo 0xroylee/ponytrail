@@ -5,11 +5,22 @@ import type {
 	RunState,
 } from "../../core/types";
 import type { AgentAdapter } from "../../integrations/agent-adapters";
-import { markPrReadyForReview } from "../../integrations/github";
-import { buildReviewComment } from "../../utils/comments";
+import {
+	buildImplementationFeedbackComment,
+	buildReviewComment,
+} from "../../utils/comments";
 import { buildGithubCommentPrompt, buildReviewPrompt } from "../skills/prompts";
-import type { ReviewOutcome } from "./review";
 import { parseReviewOutcome } from "./review";
+import {
+	normalizeFailedReviewBugs,
+	readyPullRequestAfterPassingReview,
+	resolveReviewFailureStage,
+} from "./review-stage-helpers";
+export {
+	normalizeFailedReviewBugs,
+	readyPullRequestAfterPassingReview,
+	resolveReviewFailureStage,
+} from "./review-stage-helpers";
 
 interface HandleReviewTestingStageDeps {
 	runAgentWithChatLog: (input: {
@@ -61,7 +72,6 @@ interface HandleReviewTestingStageDeps {
 		options?: { resumed?: boolean },
 	) => Record<string, unknown>;
 }
-
 interface FinalizeReviewMergeDeps {
 	saveRunState: (cwd: string, state: RunState) => Promise<void>;
 	safeNotifyTaskOutcome: (
@@ -78,48 +88,6 @@ interface ReviewLinearClient {
 	clearWorkflowStageLabels(issueId: string): Promise<void>;
 	comment(issueId: string, body: string): Promise<void>;
 }
-
-export function resolveReviewFailureStage(
-	state: Pick<RunState, "codexSessionId">,
-): Extract<RunState["stage"], "implementing" | "human_review"> {
-	return state.codexSessionId ? "implementing" : "human_review";
-}
-
-export function normalizeFailedReviewBugs(
-	outcome: ReviewOutcome,
-): RunState["bugs"] {
-	if (outcome.passed) {
-		return [];
-	}
-	if (outcome.bugs.length > 0) {
-		return outcome.bugs;
-	}
-	const summary =
-		outcome.summary.trim() ||
-		"Review/testing failed but no structured BUGS_JSON details were provided.";
-	return [
-		{
-			title: "Review/testing failed without structured bug details",
-			body: summary,
-		},
-	];
-}
-
-export async function readyPullRequestAfterPassingReview(
-	config: ResolvedProjectConfig,
-	pullRequest: RunState["pullRequest"],
-	passed: boolean,
-	deps?: {
-		markPrReadyForReview?: typeof markPrReadyForReview;
-	},
-): Promise<boolean> {
-	if (!passed || config.dryRun || !pullRequest) {
-		return false;
-	}
-	const markReady = deps?.markPrReadyForReview ?? markPrReadyForReview;
-	return markReady(config, pullRequest);
-}
-
 export async function handleReviewTestingStage(
 	config: ResolvedProjectConfig,
 	agent: AgentAdapter,
@@ -214,6 +182,16 @@ export async function handleReviewTestingStage(
 	await linear.comment(state.issue.id, reviewComment);
 
 	if (!outcome.passed) {
+		const implementationFeedbackComment = buildImplementationFeedbackComment({
+			issueKey: state.issue.key,
+			summary: outcome.summary,
+			bugs: retryBugs,
+		});
+		if (!config.dryRun && state.pullRequest) {
+			await deps.safePrComment(config, state, implementationFeedbackComment);
+		}
+		await linear.comment(state.issue.id, implementationFeedbackComment);
+
 		const nextStage = resolveReviewFailureStage(state);
 		Object.assign(state, deps.transitionStage(state, nextStage));
 		await deps.saveRunState(config.workspacePath, state);

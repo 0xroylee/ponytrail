@@ -165,4 +165,59 @@ describe("handleReviewTestingStage", () => {
 
 		expect(prComments[0]).toContain("ADHD.ai review for ENG-1");
 	});
+
+	it("posts implementation feedback to Linear and PR when review fails", async () => {
+		const config = createConfig();
+		const state = { ...createState(), codexSessionId: "implement-session" };
+		const linearComments: string[] = [];
+		const prComments: string[] = [];
+
+		const agent = {
+			runPlan: async () => ({ finalMessage: "", stdout: "" }),
+			resume: async () => ({ finalMessage: "", stdout: "" }),
+			runReview: async () => ({
+				finalMessage:
+					'RESULT: FAIL\nSUMMARY: Tests failed.\nBUGS_JSON:\n[{"title":"Broken retry","body":"The retry test is failing."}]',
+				stdout: "",
+				sessionId: "review-session",
+			}),
+			runGithubComment: async () => ({
+				finalMessage: "Generated review failure comment",
+				stdout: "",
+			}),
+		};
+
+		await handleReviewTestingStage(
+			config,
+			agent,
+			{
+				markStage: async () => {},
+				applyStageLabel: async () => {},
+				clearWorkflowStageLabels: async () => {},
+				comment: async (_issueId, body) => {
+					linearComments.push(body);
+				},
+			},
+			state,
+			{
+				runAgentWithChatLog: async (input) => input.invoke(),
+				appendCodexUsage: () => {},
+				transitionStage: (current, to) => ({ ...current, stage: to }),
+				saveRunState: async () => {},
+				safePrComment: async (_cfg, _state, body) => {
+					prComments.push(body);
+				},
+				readyPullRequestAfterPassingReview: async () => false,
+				loggerInfo: () => {},
+				buildIssueJobLogFields: () => ({}),
+			},
+		);
+
+		const feedback = "ADHD.ai implementation feedback for ENG-1";
+		expect(linearComments.join("\n")).toContain(feedback);
+		expect(linearComments.join("\n")).toContain("Broken retry");
+		expect(linearComments.join("\n")).toContain("The retry test is failing.");
+		expect(prComments).toContain("Generated review failure comment");
+		expect(prComments.join("\n")).toContain(feedback);
+	});
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
 	buildBugsCanceledComment,
 	buildImplementationComment,
+	buildImplementationFeedbackComment,
 	buildPlanComment,
 	buildReviewComment,
 	formatCodexUsageLine,
@@ -96,6 +97,47 @@ describe("buildImplementationComment", () => {
 		expect(comment).toContain("- Bug A");
 		expect(comment).toContain("- Bug B");
 		expect(comment).toContain("Token usage 🧮: input 2, output 3, total 5");
+	});
+});
+
+describe("buildImplementationFeedbackComment", () => {
+	it("renders failed review feedback with bug details", () => {
+		const comment = buildImplementationFeedbackComment({
+			issueKey: "ENG-1",
+			summary: "Tests failed after the retry path regressed.",
+			bugs: [
+				{
+					title: "Retry path regressed",
+					body: "The retry branch no longer saves run state.",
+				},
+			],
+		});
+
+		expect(comment).toContain("ADHD.ai implementation feedback for ENG-1");
+		expect(comment).toContain("Review/testing summary:");
+		expect(comment).toContain("Tests failed after the retry path regressed.");
+		expect(comment).toContain("Bugs to fix:");
+		expect(comment).toContain("1. Retry path regressed");
+		expect(comment).toContain("The retry branch no longer saves run state.");
+	});
+
+	it("renders fallback bug text when details are missing", () => {
+		const comment = buildImplementationFeedbackComment({
+			issueKey: "ENG-1",
+			summary: "",
+			bugs: [
+				{
+					title: "Review/testing failed without structured bug details",
+					body: "Review output was malformed.",
+				},
+			],
+		});
+
+		expect(comment).toContain("(No review/testing summary provided.)");
+		expect(comment).toContain(
+			"Review/testing failed without structured bug details",
+		);
+		expect(comment).toContain("Review output was malformed.");
 	});
 });
 

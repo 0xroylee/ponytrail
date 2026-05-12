@@ -56,6 +56,10 @@ describe("deterministic workflow smoke flow", () => {
 		expect(h.linear("default").comments.join("\n")).toContain(
 			"Review/testing failed",
 		);
+		expect(h.linear("default").comments.join("\n")).toContain(
+			"ADHD.ai implementation feedback for ENG-2",
+		);
+		expect(h.linear("default").comments.join("\n")).toContain("Fix it");
 	});
 
 	it("splits complex planner output into child Linear tasks", async () => {

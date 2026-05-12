@@ -100,6 +100,34 @@ export function buildImplementationComment(
 	return [statusLine, ...fixedBugLines, formatCodexUsageLine(usage)].join("\n");
 }
 
+export function buildImplementationFeedbackComment(input: {
+	issueKey: string;
+	summary: string;
+	bugs: BugRecord[];
+}): string {
+	const bugLines =
+		input.bugs.length > 0
+			? input.bugs.flatMap((bug, index) => [
+					`${index + 1}. ${bug.title}`,
+					bug.body || "(No details provided.)",
+					...(bug.issueUrl ? [`Issue: ${bug.issueUrl}`] : []),
+					"",
+				])
+			: ["(No structured bugs were provided.)"];
+
+	return [
+		`ADHD.ai implementation feedback for ${input.issueKey}`,
+		"",
+		"Review/testing summary:",
+		input.summary.trim() || "(No review/testing summary provided.)",
+		"",
+		"Bugs to fix:",
+		...bugLines,
+	]
+		.join("\n")
+		.trimEnd();
+}
+
 export function buildReviewComment(input: {
 	issueKey: string;
 	passed: boolean;
