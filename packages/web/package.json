@@ -1,0 +1,15 @@
+{
+	"name": "adhdai-web",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"typecheck": "bunx tsc --noEmit",
+		"test": "bun test tests"
+	},
+	"dependencies": {
+		"@tanstack/react-query": "^5.90.10"
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.2"
+	}
+}
