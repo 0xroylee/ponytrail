@@ -4,7 +4,6 @@ import type {
 	RunState,
 	WorkflowStage,
 } from "../../core/types";
-import { sortIssuesByPriority } from "../../integrations/linear";
 import { normalizeIssueKey } from "./state";
 import type {
 	ReviewOnlyQueueBuildResult,
@@ -18,6 +17,18 @@ export interface WorkflowQueueIssue {
 		value: number;
 		name: string;
 	};
+}
+
+const PRIORITY_SORT_ORDER: Record<number, number> = {
+	1: 0,
+	2: 1,
+	3: 2,
+	4: 3,
+	0: 4,
+};
+
+function getPriorityRank(priority: number): number {
+	return PRIORITY_SORT_ORDER[priority] ?? PRIORITY_SORT_ORDER[0];
 }
 
 export function dedupeIssuesByKey<T extends WorkflowQueueIssue>(
@@ -40,9 +51,18 @@ export function buildPrioritizedIssueQueue<T extends WorkflowQueueIssue>(
 	assignedIssues: T[],
 	staleRetryIssues: T[],
 ): T[] {
-	return sortIssuesByPriority(
-		dedupeIssuesByKey([...assignedIssues, ...staleRetryIssues]),
-	) as T[];
+	return dedupeIssuesByKey([...assignedIssues, ...staleRetryIssues])
+		.map((issue, index) => ({ issue, index }))
+		.sort((left, right) => {
+			const rankDiff =
+				getPriorityRank(left.issue.priority.value) -
+				getPriorityRank(right.issue.priority.value);
+			if (rankDiff !== 0) {
+				return rankDiff;
+			}
+			return left.index - right.index;
+		})
+		.map((entry) => entry.issue);
 }
 
 export function selectIssueQueueForCycle<T extends WorkflowQueueIssue>(
