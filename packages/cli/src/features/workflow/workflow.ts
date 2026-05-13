@@ -41,7 +41,7 @@ import {
 } from "./workflow-runtime";
 import {
 	cleanupTerminalIsolatedWorktree,
-	prepareIsolatedExecutionConfig,
+	prepareIsolatedExecutionWorkspace,
 	shouldUseIsolatedWorktree,
 } from "./workflow-worktree";
 import type {
@@ -855,8 +855,7 @@ async function processIssue(
 		const executionConfig =
 			isolatedWorktreesEnabled && !config.dryRun && runState.stage !== "done"
 				? await withExecutionPathLock(config.executionPath, async () => {
-						issueLogger.info("Preparing isolated issue worktree");
-						const isolatedConfig = await prepareIsolatedExecutionConfig(
+						const isolatedConfig = await prepareIsolatedExecutionWorkspace(
 							config,
 							runState,
 							runtime,
@@ -869,10 +868,13 @@ async function processIssue(
 						return isolatedConfig;
 					})
 				: config;
-		issueLogger.info(
-			{ stage: runState.stage, executionPath: executionConfig.executionPath },
-			"Starting issue stage execution",
-		);
+		if (
+			isolatedWorktreesEnabled &&
+			!config.dryRun &&
+			runState.stage !== "done"
+		) {
+			await runtime.prepareWorktreeDependencies(executionConfig.executionPath);
+		}
 		await executeIssue(
 			executionConfig,
 			notifications,
