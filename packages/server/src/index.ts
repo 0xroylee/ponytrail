@@ -1,9 +1,16 @@
-import { handleRequest } from "./app";
+import { CliCommandExecutor } from "adhdai/features/server";
+import { createHandleRequest } from "./app";
 
 export const startServer = (port = 3000): Bun.Server<undefined> =>
 	Bun.serve({
 		port,
-		fetch: handleRequest,
+		fetch: createHandleRequest({
+			cliExecutor: new CliCommandExecutor({
+				cwd: process.cwd(),
+				command: "bun",
+				baseArgs: ["run", "./packages/cli/src/index.ts"],
+			}),
+		}),
 	});
 
 if (import.meta.main) {
