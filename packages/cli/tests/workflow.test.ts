@@ -58,6 +58,7 @@ import {
 	cleanupTerminalIsolatedWorktree,
 	isolatedWorktreePath,
 	prepareIsolatedExecutionConfig,
+	prepareIsolatedExecutionWorkspace,
 	shouldUseIsolatedWorktree,
 } from "../src/features/workflow/workflow-worktree";
 import type { AgentAdapter } from "../src/integrations/agent-adapters";
@@ -1704,7 +1705,37 @@ describe("isolated worktree workflow helpers", () => {
 		]);
 	});
 
-	it("does not record isolated execution state when dependency setup fails", async () => {
+	it("prepares isolated workspace metadata without installing dependencies", async () => {
+		const config = createProject("default");
+		config.workflow.isolatedWorktrees = { enabled: true };
+		const state = createRunState("ENG-42", "implementing", Date.now());
+		const ensureBaseBranchFresh = mock(async () => {});
+		const ensureIssueWorktree = mock(async () => "codex/eng-42");
+		const prepareWorktreeDependencies = mock(async () => {});
+		const runtime = {
+			ensureBaseBranchFresh,
+			ensureIssueWorktree,
+			prepareWorktreeDependencies,
+		} as unknown as WorkflowRuntime;
+
+		const isolatedConfig = await prepareIsolatedExecutionWorkspace(
+			config,
+			state,
+			runtime,
+		);
+
+		expect(isolatedConfig.executionPath).toBe(
+			"/tmp/workspace/.piv-loop/projects/default/worktrees/eng-42",
+		);
+		expect(prepareWorktreeDependencies).not.toHaveBeenCalled();
+		expect(state.executionWorkspace).toMatchObject({
+			mode: "git-worktree",
+			path: isolatedConfig.executionPath,
+			branch: "codex/eng-42",
+		});
+	});
+
+	it("records isolated execution state before dependency setup and rethrows failures", async () => {
 		const config = createProject("default");
 		config.workflow.isolatedWorktrees = { enabled: true };
 		const state = createRunState("ENG-42", "implementing", Date.now());
@@ -1723,7 +1754,11 @@ describe("isolated worktree workflow helpers", () => {
 		expect(prepareWorktreeDependencies).toHaveBeenCalledWith(
 			"/tmp/workspace/.piv-loop/projects/default/worktrees/eng-42",
 		);
-		expect(state.executionWorkspace).toBeUndefined();
+		expect(state.executionWorkspace).toMatchObject({
+			mode: "git-worktree",
+			path: "/tmp/workspace/.piv-loop/projects/default/worktrees/eng-42",
+			branch: "codex/eng-42",
+		});
 	});
 
 	it("cleans terminal worktrees and keeps dirty retained worktrees in state", async () => {
