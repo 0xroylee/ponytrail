@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { PGlite } from "@electric-sql/pglite";
 import { eq } from "drizzle-orm";
 import {
 	type NewAgentRow,
@@ -332,5 +336,67 @@ describe("server drizzle schema", () => {
 		testDatabase = await createDrizzleServerTestDatabase();
 		const reopened = await initializeServerDatabase(testDatabase.path);
 		await reopened.close();
+	});
+
+	it("migrates existing token_usage tables created with the old schema", async () => {
+		const tempDir = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-server-pg-old-"),
+		);
+		const databasePath = path.join(tempDir, "db");
+
+		try {
+			const oldClient = new PGlite(databasePath);
+			await oldClient.exec(`
+				CREATE TABLE token_usage (
+					id text PRIMARY KEY,
+					run_id text NOT NULL,
+					stage text NOT NULL,
+					input_tokens integer NOT NULL,
+					output_tokens integer NOT NULL,
+					total_tokens integer NOT NULL,
+					recorded_at timestamp NOT NULL
+				);
+			`);
+			await oldClient.exec(`
+				INSERT INTO token_usage (
+					id, run_id, stage, input_tokens, output_tokens, total_tokens, recorded_at
+				) VALUES (
+					'tu-old-1', 'run-old-1', 'planning', 11, 22, 33, '2026-05-12 03:00:00'
+				);
+			`);
+			await oldClient.close();
+
+			const migrated = await initializeServerDatabase(databasePath);
+			const [existingRow] = await migrated.db
+				.select()
+				.from(tokenUsageTable)
+				.where(eq(tokenUsageTable.id, "tu-old-1"));
+
+			expect(existingRow?.taskId).toBeNull();
+			expect(existingRow?.taskExecutionLogId).toBeNull();
+
+			await migrated.db.insert(tokenUsageTable).values({
+				id: "tu-old-2",
+				runId: "run-old-2",
+				taskId: null,
+				taskExecutionLogId: null,
+				stage: "implement",
+				inputTokens: 7,
+				outputTokens: 8,
+				totalTokens: 15,
+				recordedAt: "2026-05-12 03:10:00",
+			});
+
+			const [insertedRow] = await migrated.db
+				.select()
+				.from(tokenUsageTable)
+				.where(eq(tokenUsageTable.id, "tu-old-2"));
+			expect(insertedRow?.taskId).toBeNull();
+			expect(insertedRow?.taskExecutionLogId).toBeNull();
+
+			await migrated.close();
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
 	});
 });
