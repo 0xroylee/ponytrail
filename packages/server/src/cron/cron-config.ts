@@ -17,30 +17,41 @@ type RawCronRoot = {
 export async function loadCronJobsFromConfig(
 	cwd: string,
 ): Promise<CronJobConfig[]> {
-	const configPath = await findConfigPath(cwd);
-	if (!configPath) {
-		return [];
+	const configPaths = await findConfigPaths(cwd);
+	for (const configPath of configPaths) {
+		const moduleUrl = pathToFileURL(configPath).href;
+		const loaded = await import(`${moduleUrl}?t=${Date.now()}`);
+		const root = (loaded.default ?? loaded) as RawCronRoot;
+		const rawJobs = root.automations?.jobs ?? root.cron?.jobs;
+		if (!Array.isArray(rawJobs)) {
+			continue;
+		}
+		const jobs = rawJobs.flatMap(toCronJobConfig);
+		if (jobs.length > 0) {
+			return jobs;
+		}
 	}
-
-	const moduleUrl = pathToFileURL(configPath).href;
-	const loaded = await import(`${moduleUrl}?t=${Date.now()}`);
-	const root = (loaded.default ?? loaded) as RawCronRoot;
-	const rawJobs = root.automations?.jobs ?? root.cron?.jobs;
-	if (!Array.isArray(rawJobs)) {
-		return [];
-	}
-	return rawJobs.flatMap(toCronJobConfig);
+	return [];
 }
 
-async function findConfigPath(cwd: string): Promise<string | null> {
-	for (const fileName of CONFIG_CANDIDATES) {
-		const absolute = path.join(cwd, fileName);
-		try {
-			await access(absolute);
-			return absolute;
-		} catch {}
+async function findConfigPaths(cwd: string): Promise<string[]> {
+	const found: string[] = [];
+	let currentDir = path.resolve(cwd);
+	while (true) {
+		for (const fileName of CONFIG_CANDIDATES) {
+			const absolute = path.join(currentDir, fileName);
+			try {
+				await access(absolute);
+				found.push(absolute);
+			} catch {}
+		}
+		const parentDir = path.dirname(currentDir);
+		if (parentDir === currentDir) {
+			break;
+		}
+		currentDir = parentDir;
 	}
-	return null;
+	return found;
 }
 
 function toCronJobConfig(value: unknown): CronJobConfig[] {

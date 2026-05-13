@@ -6,7 +6,31 @@ import type {
 
 const cwd = process.cwd();
 
-const config: DeepPartial<AdhdAiRootConfig> = {
+type ServerCronConfig = {
+	automations: {
+		jobs: Array<{
+			id: string;
+			name?: string;
+			enabled?: boolean;
+			schedule: Record<string, unknown>;
+			run: Record<string, unknown>;
+			skills?: Record<string, string>;
+		}>;
+	};
+};
+
+const config: DeepPartial<AdhdAiRootConfig> & ServerCronConfig = {
+	automations: {
+		jobs: [
+			{
+				id: "hourly-pr-review",
+				name: "Hourly PR Review",
+				enabled: true,
+				schedule: { frequency: "hourly", every: 1, minute: 0 },
+				run: { allProjects: true, reviewOnly: true },
+			},
+		],
+	},
 	projects: [
 		{
 			id: "adhd-47ea7f022b5d",
