@@ -163,6 +163,7 @@ function createDeps(overrides?: {
 		: never;
 }): AppDeps {
 	return {
+		db: {} as AppDeps["db"],
 		cliExecutor: {
 			execute:
 				overrides?.execute ??

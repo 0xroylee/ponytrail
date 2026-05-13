@@ -1,4 +1,5 @@
 import type { AppDeps, RouteHandler } from "./app.types";
+import { handleEntityCrudRequest, matchCrudRoute } from "./routes/entity-crud";
 
 const UNSAFE_RAW_COMMAND_FIELDS = ["command", "cmd", "args", "argv", "shell"];
 
@@ -29,6 +30,15 @@ export function createHandleRequest(deps: AppDeps): RouteHandler {
 			return Response.json(result, {
 				status: result.status === "rejected" ? 400 : 200,
 			});
+		}
+
+		const crudRoute = matchCrudRoute(pathname);
+		if (crudRoute) {
+			const result = await handleEntityCrudRequest(request, deps, crudRoute);
+			if (result?.body === undefined) {
+				return new Response(null, { status: result.status });
+			}
+			return Response.json(result.body, { status: result.status });
 		}
 
 		return new Response("Not Found", { status: 404 });
