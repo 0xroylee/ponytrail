@@ -17,8 +17,11 @@ const DEFAULT_SERVER_DB_PATH = path.join(
 	"config",
 	"server-db",
 );
+const DEFAULT_SERVER_PORT = 3001;
 
-export async function startServer(port = 3000): Promise<Bun.Server<undefined>> {
+export async function startServer(
+	port = resolveServerPort(process.env),
+): Promise<Bun.Server<undefined>> {
 	const databasePath =
 		process.env.PIV_SERVER_DATABASE_PATH ?? DEFAULT_SERVER_DB_PATH;
 	const serverDatabase = await initializeServerDatabase(databasePath);
@@ -47,4 +50,16 @@ export async function startServer(port = 3000): Promise<Bun.Server<undefined>> {
 
 if (import.meta.main) {
 	void startServer();
+}
+
+function resolveServerPort(env: NodeJS.ProcessEnv): number {
+	const rawPort = env.PIV_SERVER_PORT ?? env.PORT;
+	if (!rawPort) {
+		return DEFAULT_SERVER_PORT;
+	}
+	const port = Number(rawPort);
+	if (!Number.isInteger(port) || port <= 0) {
+		throw new Error("Server port must be a positive integer");
+	}
+	return port;
 }
