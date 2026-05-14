@@ -27,7 +27,9 @@ export const startServer = async (
 				command: "bun",
 				baseArgs: ["run", "./packages/cli/src/index.ts"],
 			}),
-			repositories,
+			repository: {
+				database: null,
+			},
 		}),
 	});
 };

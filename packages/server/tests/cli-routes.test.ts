@@ -60,6 +60,23 @@ describe("CLI server routes", () => {
 		expect(await response.json()).toEqual(history);
 	});
 
+	it("rejects unsupported methods for CLI routes", async () => {
+		const app = createHandleRequest(createDeps());
+		const historyMethod = await app(
+			new Request("http://localhost/api/cli/history", { method: "POST" }),
+		);
+		const dispatchMethod = await app(
+			new Request("http://localhost/api/cli/dispatch", { method: "GET" }),
+		);
+
+		expect(historyMethod.status).toBe(405);
+		expect(await historyMethod.json()).toEqual({ error: "Method Not Allowed" });
+		expect(dispatchMethod.status).toBe(405);
+		expect(await dispatchMethod.json()).toEqual({
+			error: "Method Not Allowed",
+		});
+	});
+
 	it("rejects malformed JSON and invalid request body shapes", async () => {
 		const app = createHandleRequest(createDeps());
 		const malformedJson = await app(
@@ -208,14 +225,8 @@ function createDeps(overrides?: {
 				})),
 			getHistory: () => overrides?.history ?? [],
 		},
-		repositories:
-			overrides?.repositories ??
-			({
-				listTokenUsage: async () => [],
-				listJobs: async () => [],
-				listAgents: async () => [],
-				listSkills: async () => [],
-				listCommandHistory: async () => [],
-			} satisfies AppDeps["repositories"]),
+		repository: {
+			database: null,
+		},
 	};
 }
