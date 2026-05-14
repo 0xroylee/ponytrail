@@ -12,7 +12,7 @@ export interface CliExecutor {
 
 export interface AppDeps {
 	cliExecutor: CliExecutor;
-	db: ServerDatabase["db"];
+	persistence: ServerDatabase;
 }
 
 export type RouteHandler = (request: Request) => Response | Promise<Response>;
