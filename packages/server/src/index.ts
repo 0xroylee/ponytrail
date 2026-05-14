@@ -1,10 +1,12 @@
 import path from "node:path";
+import { loadConfig } from "devos/features/config";
 import { CliCommandExecutor } from "devos/features/server/cli-command-executor";
 import { createHandleRequest } from "./app";
 import { createBoardRepository } from "./board";
 import { initializeServerDatabase } from "./db";
 import { createExpressApp, listenExpressApp } from "./express-server";
 import type { ServerInstance } from "./express-server.types";
+import { startLinearTaskPollingScheduler } from "./features/polling";
 import {
 	logger,
 	normalizeError,
@@ -32,16 +34,18 @@ export async function startServer(
 	const databasePath =
 		process.env.PIV_SERVER_DATABASE_PATH ?? DEFAULT_SERVER_DB_PATH;
 	const cwd = process.cwd();
+	const config = await loadConfig(cwd);
 	logger.info({ port, databasePath, cwd }, "Starting server");
 	const serverDatabase = await initializeServerDatabase(databasePath);
+	const cliExecutor = new CliCommandExecutor({
+		cwd,
+		command: "bun",
+		baseArgs: ["run", "./packages/cli/src/index.ts"],
+	});
 	const app = createExpressApp(
 		createHandleRequest({
 			db: serverDatabase.db,
-			cliExecutor: new CliCommandExecutor({
-				cwd,
-				command: "npx",
-				baseArgs: ["devos"],
-			}),
+			cliExecutor,
 			boardRepository: createBoardRepository(serverDatabase.db),
 			notificationSender: createNotificationSender({
 				resendApiKey: process.env.RESEND_API_KEY,
@@ -54,7 +58,15 @@ export async function startServer(
 			logger,
 		}),
 	);
+	const linearPolling = startLinearTaskPollingScheduler({
+		config,
+		cliExecutor,
+		logger,
+	});
 	const server = await listenExpressApp(app, port);
+	server.once("close", () => {
+		linearPolling.stop();
+	});
 	const address = server.address();
 	const listeningPort = typeof address === "object" ? address?.port : port;
 	logger.info(
