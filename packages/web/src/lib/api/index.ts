@@ -11,15 +11,20 @@ export type {
 	HealthStatus,
 	JobRecord,
 	ProjectBoardRecord,
+	ProjectBoardStatusColumn,
 	ProjectBoardTaskRecord,
 	SkillRecord,
+	TaskMutationRequest,
 	TaskCreateAnswer,
 	TaskCreateRequest,
 	TaskCreateResponse,
 	TokenUsageRecord,
 	WorkspaceProjectRecord,
+	WorkspaceProjectsResponse,
 } from "./client.types";
 export type {
+	BoardTaskMutationInput,
+	BoardTaskUpdateMutationInput,
 	ServerStateQueryOptions,
 	TaskCreateMutationInput,
 } from "./queries.types";

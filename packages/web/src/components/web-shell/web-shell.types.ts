@@ -9,6 +9,8 @@ export interface SidebarNavItem {
 		| "issues"
 		| "projects"
 		| "inbox"
-		| "autopilot";
+		| "autopilot"
+		| "squads"
+		| "usage";
 	label: string;
 }

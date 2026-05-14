@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-	color-scheme: light;
+	color-scheme: dark;
 }
 
 * {
@@ -15,6 +15,28 @@ body {
 	min-height: 100vh;
 	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 		"Segoe UI", sans-serif;
-	background: #f8fafc;
-	color: #0f172a;
+	background: #0f1013;
+	color: #f4f4f5;
+}
+
+@layer components {
+	.issue-input {
+		@apply rounded-md border border-zinc-800 bg-[#141519] px-3 py-2 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-zinc-500;
+	}
+
+	.issue-primary-button {
+		@apply inline-flex items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-700 disabled:cursor-not-allowed;
+	}
+
+	.issue-secondary-button {
+		@apply inline-flex items-center justify-center rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800;
+	}
+
+	.issue-tool-button {
+		@apply inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-md border border-zinc-800 px-3 text-sm text-zinc-300 hover:bg-zinc-900;
+	}
+
+	.issue-icon-button {
+		@apply grid h-8 w-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200;
+	}
 }

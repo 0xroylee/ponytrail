@@ -16,7 +16,7 @@
 		"dev:landing": "bun run --filter landing dev",
 		"dev:server": "PIV_SERVER_PORT=3001 bun run --filter devos-server start",
 		"dev:web": "bun run --filter web dev",
-		"dev": "bun -e \"console.log('Server/web workspace packages are not present in this branch yet. Use bun run start for the CLI.')\"",
+		"dev": "bun run ./scripts/dev.ts",
 		"start": "bun run ./packages/cli/src/index.ts",
 		"smoke": "bun test packages/cli/tests/smoke-flow.test.ts",
 		"publish:version": "bun run --filter devos publish:version",

@@ -582,3 +582,16 @@ components:
           type: string
         updatedAt:
           type: string
+    CommandHistoryRecord:
+      type: object
+      additionalProperties: false
+      required: [id, command, exitCode, executedAt]
+      properties:
+        id:
+          type: string
+        command:
+          type: string
+        exitCode:
+          type: integer
+        executedAt:
+          type: string

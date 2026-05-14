@@ -10,14 +10,16 @@ import type {
 import { WebSidebar } from "@/components/web-shell/web-sidebar";
 
 const navItems: SidebarNavItem[] = [
+	{ key: "inbox", label: "Inbox" },
+	{ key: "issues", label: "Issues" },
+	{ key: "projects", label: "Projects" },
+	{ key: "autopilot", label: "Autopilot" },
 	{ key: "agents", label: "Agents" },
+	{ key: "squads", label: "Squads" },
+	{ key: "usage", label: "Usage" },
 	{ key: "runtimes", label: "Runtimes" },
 	{ key: "skills", label: "Skills" },
 	{ key: "settings", label: "Settings" },
-	{ key: "issues", label: "Issues" },
-	{ key: "projects", label: "Projects" },
-	{ key: "inbox", label: "Inbox" },
-	{ key: "autopilot", label: "Autopilot" },
 ];
 
 function nextMode(
@@ -43,8 +45,9 @@ export function WebOperatorShell(): ReactElement {
 	const [sidebarMode, setSidebarMode] =
 		useState<SidebarDisplayMode>("expanded");
 	const [activeNavKey, setActiveNavKey] =
-		useState<SidebarNavItem["key"]>("agents");
+		useState<SidebarNavItem["key"]>("issues");
 	const [isCompactViewport, setIsCompactViewport] = useState<boolean>(false);
+	const [createIssueRequest, setCreateIssueRequest] = useState(0);
 	const canShowSidebar = sidebarMode !== "hidden";
 	const showFloatingToggle = sidebarMode === "hidden";
 
@@ -76,7 +79,7 @@ export function WebOperatorShell(): ReactElement {
 				minHeight: "100vh",
 				display: "grid",
 				gridTemplateColumns: viewportColumns,
-				background: "#f8fafc",
+				background: "#0f1013",
 				position: "relative",
 				overflowX: "clip",
 			}}
@@ -92,9 +95,10 @@ export function WebOperatorShell(): ReactElement {
 						left: "0.75rem",
 						zIndex: 10,
 						padding: "0.5rem 0.7rem",
-						border: "1px solid #94a3b8",
+						border: "1px solid #3f3f46",
 						borderRadius: "6px",
-						background: "#ffffff",
+						background: "#18191d",
+						color: "#f4f4f5",
 						cursor: "pointer",
 					}}
 				>
@@ -107,12 +111,19 @@ export function WebOperatorShell(): ReactElement {
 					activeKey={activeNavKey}
 					navItems={navItems}
 					onNavSelect={setActiveNavKey}
+					onNewIssue={() => {
+						setActiveNavKey("issues");
+						setCreateIssueRequest((value) => value + 1);
+					}}
 					onToggleMode={() =>
 						setSidebarMode((current) => nextMode(current, isCompactViewport))
 					}
 				/>
 			) : null}
-			<WebJobBoard activeKey={activeNavKey} />
+			<WebJobBoard
+				activeKey={activeNavKey}
+				createIssueRequest={createIssueRequest}
+			/>
 		</main>
 	);
 }

@@ -7,3 +7,19 @@ export interface TaskCreateMutationInput {
 	projectId?: string;
 	answers?: Array<{ question: string; answer: string }>;
 }
+
+export interface BoardTaskMutationInput {
+	projectId: string;
+	title: string;
+	content: string;
+	priority: number;
+	status: string;
+	creatorId: string;
+	dueDate?: string | null;
+	linkedPr?: string | null;
+}
+
+export interface BoardTaskUpdateMutationInput {
+	taskId: string;
+	task: Partial<BoardTaskMutationInput>;
+}

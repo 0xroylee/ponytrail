@@ -94,15 +94,16 @@ export function TaskCreatePanel(): ReactElement {
 	return (
 		<section
 			style={{
-				border: "1px solid #cbd5e1",
+				border: "1px solid #27272a",
 				borderRadius: "8px",
-				background: "#ffffff",
+				background: "#18191d",
+				color: "#f4f4f5",
 				padding: "1rem",
 				width: "100%",
 			}}
 		>
 			<h2 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Create Task</h2>
-			<p style={{ marginTop: 0, color: "#334155" }}>{statusText}</p>
+			<p style={{ marginTop: 0, color: "#a1a1aa" }}>{statusText}</p>
 			<label
 				htmlFor="task-create-requirement"
 				style={{ display: "block", marginBottom: "0.5rem" }}
@@ -118,8 +119,10 @@ export function TaskCreatePanel(): ReactElement {
 				style={{
 					width: "100%",
 					resize: "vertical",
-					border: "1px solid #94a3b8",
+					border: "1px solid #3f3f46",
 					borderRadius: "6px",
+					background: "#141519",
+					color: "#f4f4f5",
 					padding: "0.5rem",
 					marginBottom: "0.75rem",
 				}}
@@ -138,8 +141,10 @@ export function TaskCreatePanel(): ReactElement {
 				placeholder="default"
 				style={{
 					width: "100%",
-					border: "1px solid #94a3b8",
+					border: "1px solid #3f3f46",
 					borderRadius: "6px",
+					background: "#141519",
+					color: "#f4f4f5",
 					padding: "0.5rem",
 					marginBottom: "0.75rem",
 				}}
@@ -148,6 +153,7 @@ export function TaskCreatePanel(): ReactElement {
 				type="button"
 				onClick={handleInitialSubmit}
 				disabled={!canSubmitInitial}
+				style={buttonStyle}
 			>
 				Submit Requirement
 			</button>
@@ -164,8 +170,10 @@ export function TaskCreatePanel(): ReactElement {
 								placeholder="Type your answer"
 								style={{
 									width: "100%",
-									border: "1px solid #94a3b8",
+									border: "1px solid #3f3f46",
 									borderRadius: "6px",
+									background: "#141519",
+									color: "#f4f4f5",
 									padding: "0.5rem",
 								}}
 							/>
@@ -175,6 +183,7 @@ export function TaskCreatePanel(): ReactElement {
 						type="button"
 						onClick={handleClarificationSubmit}
 						disabled={!canSubmitClarifications}
+						style={buttonStyle}
 					>
 						Submit Answers
 					</button>
@@ -191,3 +200,12 @@ export function TaskCreatePanel(): ReactElement {
 		</section>
 	);
 }
+
+const buttonStyle = {
+	border: "1px solid #3f3f46",
+	borderRadius: "6px",
+	background: "#27272a",
+	color: "#f4f4f5",
+	cursor: "pointer",
+	padding: "0.5rem 0.75rem",
+} as const;

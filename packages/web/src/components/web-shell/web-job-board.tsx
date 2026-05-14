@@ -3,11 +3,13 @@
 import type { ReactElement } from "react";
 
 import { AgentMonitorShell } from "@/components/agent-monitor/agent-monitor-shell";
+import { IssuesBoard } from "@/components/issues-board/issues-board";
 import { TaskCreatePanel } from "@/components/task-create/task-create-panel";
 import type { SidebarNavItem } from "@/components/web-shell/web-shell.types";
 
 interface WebJobBoardProps {
 	activeKey: SidebarNavItem["key"];
+	createIssueRequest: number;
 }
 
 const sectionDescriptions: Record<SidebarNavItem["key"], string> = {
@@ -19,9 +21,18 @@ const sectionDescriptions: Record<SidebarNavItem["key"], string> = {
 	projects: "Coordinate project-level work streams and status.",
 	inbox: "Handle incoming task requests and clarifications.",
 	autopilot: "Observe automation status and intervention needs.",
+	squads: "Coordinate grouped agents and ownership boundaries.",
+	usage: "Inspect workflow usage and operating volume.",
 };
 
-export function WebJobBoard({ activeKey }: WebJobBoardProps): ReactElement {
+export function WebJobBoard({
+	activeKey,
+	createIssueRequest,
+}: WebJobBoardProps): ReactElement {
+	if (activeKey === "issues") {
+		return <IssuesBoard createIssueRequest={createIssueRequest} />;
+	}
+
 	const heading = activeKey.charAt(0).toUpperCase() + activeKey.slice(1);
 	const description = sectionDescriptions[activeKey];
 
@@ -38,14 +49,15 @@ export function WebJobBoard({ activeKey }: WebJobBoardProps): ReactElement {
 		>
 			<header
 				style={{
-					border: "1px solid #cbd5e1",
+					border: "1px solid #27272a",
 					borderRadius: "8px",
-					background: "#ffffff",
+					background: "#18191d",
+					color: "#f4f4f5",
 					padding: "1rem",
 				}}
 			>
 				<h1 style={{ margin: "0 0 0.45rem" }}>{heading} Job Board</h1>
-				<p style={{ margin: 0, color: "#334155" }}>{description}</p>
+				<p style={{ margin: 0, color: "#a1a1aa" }}>{description}</p>
 			</header>
 			<div
 				style={{

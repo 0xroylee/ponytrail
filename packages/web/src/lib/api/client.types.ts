@@ -53,10 +53,10 @@ export interface CommandHistoryRecord {
 export interface WorkspaceProjectRecord {
 	id: string;
 	boardId: string;
+	workspaceId: string;
 	externalProjectId: string | null;
 	name: string;
 	description: string | null;
-	ownerId: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -76,14 +76,29 @@ export interface ProjectBoardTaskRecord {
 }
 
 export interface ProjectBoardRecord {
-	id: string;
-	name: string;
-	description: string | null;
-	ownerId: string;
-	createdAt: string;
-	updatedAt: string;
-	projects: WorkspaceProjectRecord[];
+	project: WorkspaceProjectRecord;
+	statusColumns: ProjectBoardStatusColumn[];
+}
+
+export interface ProjectBoardStatusColumn {
+	status: string;
 	tasks: ProjectBoardTaskRecord[];
+}
+
+export interface WorkspaceProjectsResponse {
+	workspaceId: string;
+	projects: WorkspaceProjectRecord[];
+}
+
+export interface TaskMutationRequest {
+	projectId: string;
+	title: string;
+	content: string;
+	priority: number;
+	status: string;
+	creatorId: string;
+	dueDate?: string | null;
+	linkedPr?: string | null;
 }
 
 export interface TaskCreateAnswer {
@@ -147,4 +162,17 @@ export interface ApiClient {
 		request: TaskCreateRequest,
 		options?: HealthRequestOptions,
 	): Promise<TaskCreateResponse>;
+	createBoardTask(
+		request: TaskMutationRequest,
+		options?: HealthRequestOptions,
+	): Promise<ProjectBoardTaskRecord>;
+	updateBoardTask(
+		taskId: string,
+		request: Partial<TaskMutationRequest>,
+		options?: HealthRequestOptions,
+	): Promise<ProjectBoardTaskRecord>;
+	deleteBoardTask(
+		taskId: string,
+		options?: HealthRequestOptions,
+	): Promise<ProjectBoardTaskRecord>;
 }

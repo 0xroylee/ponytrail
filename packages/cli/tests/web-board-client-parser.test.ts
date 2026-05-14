@@ -12,18 +12,21 @@ describe("web board client parser", () => {
 	it("parses workspace project payloads", async () => {
 		const fetchFn = (async (input: URL | RequestInfo) => {
 			expect(String(input)).toBe("/api/server/api/workspaces/ws-1/projects");
-			return okJsonResponse([
-				{
-					id: "project-1",
-					boardId: "board-1",
-					externalProjectId: "ext-1",
-					name: "Project 1",
-					description: null,
-					ownerId: "owner-1",
-					createdAt: "2026-05-14T00:00:00.000Z",
-					updatedAt: "2026-05-14T00:00:00.000Z",
-				},
-			]);
+			return okJsonResponse({
+				workspaceId: "ws-1",
+				projects: [
+					{
+						id: "project-1",
+						boardId: "board-1",
+						workspaceId: "ws-1",
+						externalProjectId: "ext-1",
+						name: "Project 1",
+						description: null,
+						createdAt: "2026-05-14T00:00:00.000Z",
+						updatedAt: "2026-05-14T00:00:00.000Z",
+					},
+				],
+			});
 		}) as typeof fetch;
 		const client = createApiClient({ baseUrl: "/api/server", fetchFn });
 
@@ -37,33 +40,41 @@ describe("web board client parser", () => {
 	it("rejects invalid board task payloads", async () => {
 		const fetchFn = (async () =>
 			okJsonResponse({
-				id: "board-1",
-				name: "Board 1",
-				description: null,
-				ownerId: "owner-1",
-				createdAt: "2026-05-14T00:00:00.000Z",
-				updatedAt: "2026-05-14T00:00:00.000Z",
-				projects: [],
-				tasks: [
+				project: {
+					id: "project-1",
+					boardId: "board-1",
+					workspaceId: "ws-1",
+					externalProjectId: null,
+					name: "Project 1",
+					description: null,
+					createdAt: "2026-05-14T00:00:00.000Z",
+					updatedAt: "2026-05-14T00:00:00.000Z",
+				},
+				statusColumns: [
 					{
-						id: "task-1",
-						projectId: "project-1",
-						title: "Task",
-						content: "content",
-						priority: "high",
 						status: "open",
-						dueDate: null,
-						creatorId: "owner-1",
-						linkedPr: null,
-						createdAt: "2026-05-14T00:00:00.000Z",
-						updatedAt: "2026-05-14T00:00:00.000Z",
+						tasks: [
+							{
+								id: "task-1",
+								projectId: "project-1",
+								title: "Task",
+								content: "content",
+								priority: "high",
+								status: "open",
+								dueDate: null,
+								creatorId: "owner-1",
+								linkedPr: null,
+								createdAt: "2026-05-14T00:00:00.000Z",
+								updatedAt: "2026-05-14T00:00:00.000Z",
+							},
+						],
 					},
 				],
 			})) as unknown as typeof fetch;
 		const client = createApiClient({ baseUrl: "/api/server", fetchFn });
 
 		await expect(client.getProjectBoard("ws-1", "project-1")).rejects.toThrow(
-			"Invalid /api/workspaces/:workspaceId/projects/:projectId/board response field 'priority'",
+			"Invalid /api/tasks response field 'priority'",
 		);
 	});
 });

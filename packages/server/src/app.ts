@@ -55,21 +55,6 @@ export function createHandleRequest(deps: AppDeps): RouteHandler {
 			}
 		}
 
-		const crudRoute = matchCrudRoute(pathname);
-		if (crudRoute) {
-			if (!deps.db) {
-				return serverErrorResponse("Server database not configured");
-			}
-			const result = await handleEntityCrudRequest(
-				request,
-				{ db: deps.db },
-				crudRoute,
-			);
-			if (result?.body === undefined) {
-				return new Response(null, { status: result.status });
-			}
-			return jsonSuccess(result.body, { status: result.status });
-		}
 		const projectMatch = pathname.match(WORKSPACE_PROJECTS_ROUTE);
 		if (projectMatch) {
 			if (request.method !== "GET") {
@@ -108,6 +93,22 @@ export function createHandleRequest(deps: AppDeps): RouteHandler {
 				return notFoundJsonResponse();
 			}
 			return jsonSuccess(board);
+		}
+
+		const crudRoute = matchCrudRoute(pathname);
+		if (crudRoute) {
+			if (!deps.db) {
+				return serverErrorResponse("Server database not configured");
+			}
+			const result = await handleEntityCrudRequest(
+				request,
+				{ db: deps.db },
+				crudRoute,
+			);
+			if (result?.body === undefined) {
+				return new Response(null, { status: result.status });
+			}
+			return jsonSuccess(result.body, { status: result.status });
 		}
 
 		if (pathname === "/api/notifications") {

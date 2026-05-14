@@ -1,189 +1,58 @@
 import type {
 	HealthRequestOptions,
 	ProjectBoardRecord,
-	ProjectBoardTaskRecord,
+	ProjectBoardStatusColumn,
 	WorkspaceProjectRecord,
+	WorkspaceProjectsResponse,
 } from "./client.types";
+import {
+	assertObjectRecord,
+	encodePathSegment,
+	parseListResponse,
+	readNullableString,
+	readString,
+} from "./response-utils";
+import { parseProjectBoardTaskRecord } from "./task-client";
 
 const WORKSPACE_PROJECTS_BASE_PATH = "/api/workspaces";
 
-function assertObjectRecord(
-	payload: unknown,
-	endpoint: string,
-): Record<string, unknown> {
-	if (typeof payload !== "object" || payload === null) {
-		throw new Error(`Invalid ${endpoint} response payload`);
-	}
-	return payload as Record<string, unknown>;
-}
-
-function readString(
-	record: Record<string, unknown>,
-	key: string,
-	endpoint: string,
-): string {
-	const value = record[key];
-	if (typeof value !== "string") {
-		throw new Error(`Invalid ${endpoint} response field '${key}'`);
-	}
-	return value;
-}
-
-function readNumber(
-	record: Record<string, unknown>,
-	key: string,
-	endpoint: string,
-): number {
-	const value = record[key];
-	if (typeof value !== "number") {
-		throw new Error(`Invalid ${endpoint} response field '${key}'`);
-	}
-	return value;
-}
-
-function readNullableString(
-	record: Record<string, unknown>,
-	key: string,
-	endpoint: string,
-): string | null {
-	const value = record[key];
-	if (value === null || typeof value === "string") {
-		return value;
-	}
-	throw new Error(`Invalid ${endpoint} response field '${key}'`);
-}
-
 function parseWorkspaceProjectRecord(payload: unknown): WorkspaceProjectRecord {
-	const row = assertObjectRecord(
-		payload,
-		"/api/workspaces/:workspaceId/projects",
-	);
-	return {
-		id: readString(row, "id", "/api/workspaces/:workspaceId/projects"),
-		boardId: readString(
-			row,
-			"boardId",
-			"/api/workspaces/:workspaceId/projects",
-		),
-		externalProjectId: readNullableString(
-			row,
-			"externalProjectId",
-			"/api/workspaces/:workspaceId/projects",
-		),
-		name: readString(row, "name", "/api/workspaces/:workspaceId/projects"),
-		description: readNullableString(
-			row,
-			"description",
-			"/api/workspaces/:workspaceId/projects",
-		),
-		ownerId: readString(
-			row,
-			"ownerId",
-			"/api/workspaces/:workspaceId/projects",
-		),
-		createdAt: readString(
-			row,
-			"createdAt",
-			"/api/workspaces/:workspaceId/projects",
-		),
-		updatedAt: readString(
-			row,
-			"updatedAt",
-			"/api/workspaces/:workspaceId/projects",
-		),
-	};
-}
-
-function parseProjectBoardTaskRecord(payload: unknown): ProjectBoardTaskRecord {
-	const row = assertObjectRecord(
-		payload,
-		"/api/workspaces/:workspaceId/projects/:projectId/board",
-	);
-	return {
-		id: readString(
-			row,
-			"id",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		projectId: readString(
-			row,
-			"projectId",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		title: readString(
-			row,
-			"title",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		content: readString(
-			row,
-			"content",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		priority: readNumber(
-			row,
-			"priority",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		status: readString(
-			row,
-			"status",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		dueDate: readNullableString(
-			row,
-			"dueDate",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		creatorId: readString(
-			row,
-			"creatorId",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		linkedPr: readNullableString(
-			row,
-			"linkedPr",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		createdAt: readString(
-			row,
-			"createdAt",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-		updatedAt: readString(
-			row,
-			"updatedAt",
-			"/api/workspaces/:workspaceId/projects/:projectId/board",
-		),
-	};
-}
-
-function parseListResponse<T>(
-	payload: unknown,
-	endpoint: string,
-	parseItem: (item: unknown) => T,
-): T[] {
-	if (!Array.isArray(payload)) {
-		throw new Error(`Invalid ${endpoint} response payload`);
-	}
-	return payload.map(parseItem);
-}
-
-function parseProjectBoardRecord(payload: unknown): ProjectBoardRecord {
-	const endpoint = "/api/workspaces/:workspaceId/projects/:projectId/board";
+	const endpoint = "/api/workspaces/:workspaceId/projects";
 	const row = assertObjectRecord(payload, endpoint);
 	return {
 		id: readString(row, "id", endpoint),
+		boardId: readString(row, "boardId", endpoint),
+		workspaceId: readString(row, "workspaceId", endpoint),
+		externalProjectId: readNullableString(row, "externalProjectId", endpoint),
 		name: readString(row, "name", endpoint),
 		description: readNullableString(row, "description", endpoint),
-		ownerId: readString(row, "ownerId", endpoint),
 		createdAt: readString(row, "createdAt", endpoint),
 		updatedAt: readString(row, "updatedAt", endpoint),
+	};
+}
+
+function parseWorkspaceProjectsResponse(
+	payload: unknown,
+): WorkspaceProjectsResponse {
+	const endpoint = "/api/workspaces/:workspaceId/projects";
+	const row = assertObjectRecord(payload, endpoint);
+	return {
+		workspaceId: readString(row, "workspaceId", endpoint),
 		projects: parseListResponse(
 			row.projects,
 			`${endpoint}:projects`,
 			parseWorkspaceProjectRecord,
 		),
+	};
+}
+
+function parseProjectBoardStatusColumn(
+	payload: unknown,
+): ProjectBoardStatusColumn {
+	const endpoint = "/api/workspaces/:workspaceId/projects/:projectId/board";
+	const row = assertObjectRecord(payload, endpoint);
+	return {
+		status: readString(row, "status", endpoint),
 		tasks: parseListResponse(
 			row.tasks,
 			`${endpoint}:tasks`,
@@ -192,8 +61,17 @@ function parseProjectBoardRecord(payload: unknown): ProjectBoardRecord {
 	};
 }
 
-function encodePathSegment(value: string): string {
-	return encodeURIComponent(value);
+function parseProjectBoardRecord(payload: unknown): ProjectBoardRecord {
+	const endpoint = "/api/workspaces/:workspaceId/projects/:projectId/board";
+	const row = assertObjectRecord(payload, endpoint);
+	return {
+		project: parseWorkspaceProjectRecord(row.project),
+		statusColumns: parseListResponse(
+			row.statusColumns,
+			`${endpoint}:statusColumns`,
+			parseProjectBoardStatusColumn,
+		),
+	};
 }
 
 function workspaceProjectsPath(workspaceId: string): string {
@@ -217,33 +95,26 @@ export interface BoardApiMethods {
 }
 
 export function createBoardApiMethods(
-	requestJson: (
+	requestWithBase: (
 		path: string,
+		method: "GET" | "POST" | "PATCH" | "DELETE",
 		options?: HealthRequestOptions,
+		body?: unknown,
 	) => Promise<unknown>,
 ): BoardApiMethods {
 	return {
-		async listWorkspaceProjects(
-			workspaceId: string,
-			options?: HealthRequestOptions,
-		): Promise<WorkspaceProjectRecord[]> {
-			const payload = await requestJson(
+		async listWorkspaceProjects(workspaceId, options) {
+			const payload = await requestWithBase(
 				workspaceProjectsPath(workspaceId),
+				"GET",
 				options,
 			);
-			return parseListResponse(
-				payload,
-				"/api/workspaces/:workspaceId/projects",
-				parseWorkspaceProjectRecord,
-			);
+			return parseWorkspaceProjectsResponse(payload).projects;
 		},
-		async getProjectBoard(
-			workspaceId: string,
-			projectId: string,
-			options?: HealthRequestOptions,
-		): Promise<ProjectBoardRecord> {
-			const payload = await requestJson(
+		async getProjectBoard(workspaceId, projectId, options) {
+			const payload = await requestWithBase(
 				projectBoardPath(workspaceId, projectId),
+				"GET",
 				options,
 			);
 			return parseProjectBoardRecord(payload);

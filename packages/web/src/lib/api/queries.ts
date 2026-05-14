@@ -5,18 +5,22 @@ import {
 	type UseQueryResult,
 	useMutation,
 	useQuery,
+	useQueryClient,
 } from "@tanstack/react-query";
 import type {
 	AgentRecord,
 	CommandHistoryRecord,
 	JobRecord,
 	ProjectBoardRecord,
+	ProjectBoardTaskRecord,
 	SkillRecord,
 	TaskCreateResponse,
 	TokenUsageRecord,
 	WorkspaceProjectRecord,
 } from "./client.types";
 import type {
+	BoardTaskMutationInput,
+	BoardTaskUpdateMutationInput,
 	ServerStateQueryOptions,
 	TaskCreateMutationInput,
 } from "./queries.types";
@@ -103,5 +107,81 @@ export function useCreateTaskMutation(): UseMutationResult<
 				projectId: input.projectId,
 				answers: input.answers,
 			}),
+	});
+}
+
+export function useWorkspaceProjectsQuery(
+	workspaceId: string | null,
+	options?: ServerStateQueryOptions,
+): UseQueryResult<WorkspaceProjectRecord[], Error> {
+	return useQuery({
+		queryKey: serverStateQueryKeys.workspaceProjects(workspaceId),
+		queryFn: () => apiClient.listWorkspaceProjects(workspaceId ?? ""),
+		enabled: Boolean(workspaceId) && options?.enabled !== false,
+	});
+}
+
+export function useProjectBoardQuery(
+	workspaceId: string | null,
+	projectId: string | null,
+	options?: ServerStateQueryOptions,
+): UseQueryResult<ProjectBoardRecord, Error> {
+	return useQuery({
+		queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
+		queryFn: () =>
+			apiClient.getProjectBoard(workspaceId ?? "", projectId ?? ""),
+		enabled: Boolean(workspaceId && projectId) && options?.enabled !== false,
+	});
+}
+
+export function useCreateBoardTaskMutation(
+	workspaceId: string | null,
+	projectId: string | null,
+): UseMutationResult<ProjectBoardTaskRecord, Error, BoardTaskMutationInput> {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationKey: ["board-task", "create"] as const,
+		mutationFn: (input) => apiClient.createBoardTask(input),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
+			});
+		},
+	});
+}
+
+export function useUpdateBoardTaskMutation(
+	workspaceId: string | null,
+	projectId: string | null,
+): UseMutationResult<
+	ProjectBoardTaskRecord,
+	Error,
+	BoardTaskUpdateMutationInput
+> {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationKey: ["board-task", "update"] as const,
+		mutationFn: (input) => apiClient.updateBoardTask(input.taskId, input.task),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
+			});
+		},
+	});
+}
+
+export function useDeleteBoardTaskMutation(
+	workspaceId: string | null,
+	projectId: string | null,
+): UseMutationResult<ProjectBoardTaskRecord, Error, string> {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationKey: ["board-task", "delete"] as const,
+		mutationFn: (taskId) => apiClient.deleteBoardTask(taskId),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
+			});
+		},
 	});
 }
