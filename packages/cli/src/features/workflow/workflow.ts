@@ -112,10 +112,11 @@ export async function runWorkflow(
 		cycle += 1;
 		let totalIssues = 0;
 		let cycleHadError = false;
+		let cycleHadBusyProject = false;
 
 		for (const context of projectContexts) {
 			try {
-				totalIssues += await runProjectCycle(
+				const result = await runProjectCycle(
 					context.config,
 					config.notifications,
 					options,
@@ -124,6 +125,8 @@ export async function runWorkflow(
 					globalPolling,
 					runtime,
 				);
+				totalIssues += result.issueCount;
+				cycleHadBusyProject ||= result.projectBusy;
 			} catch (error) {
 				if (!globalPolling.enabled || options.issueArg) {
 					throw error;
@@ -179,6 +182,7 @@ export async function runWorkflow(
 				cycle,
 				totalIssues,
 				cycleHadError,
+				cycleHadBusyProject,
 			)
 		) {
 			return;
@@ -306,6 +310,7 @@ export function shouldStopPolling(
 	cycle: number,
 	totalIssues: number,
 	cycleHadError = false,
+	cycleHadBusyProject = false,
 ): boolean {
 	if (!polling.enabled || options.issueArg) {
 		return true;
@@ -313,7 +318,12 @@ export function shouldStopPolling(
 	if (polling.maxCycles !== undefined && cycle >= polling.maxCycles) {
 		return true;
 	}
-	if (totalIssues === 0 && polling.exitWhenIdle && !cycleHadError) {
+	if (
+		totalIssues === 0 &&
+		polling.exitWhenIdle &&
+		!cycleHadError &&
+		!cycleHadBusyProject
+	) {
 		return true;
 	}
 	return false;
@@ -327,20 +337,22 @@ async function runProjectCycle(
 	cycle: number,
 	polling: PollingSettings,
 	runtime: WorkflowRuntime,
-): Promise<number> {
+): Promise<{ issueCount: number; projectBusy: boolean }> {
 	const projectLogger = logger.child({ projectId: config.id });
-	const { issueQueue, staleRetryCount } = await buildIssueQueueForProjectCycle(
-		config,
-		options,
-		linear,
-		polling,
-		runtime,
-	);
+	const { issueQueue, staleRetryCount, projectBusy } =
+		await buildIssueQueueForProjectCycle(
+			config,
+			options,
+			linear,
+			polling,
+			runtime,
+		);
 	projectLogger.info(
 		{
 			cycle,
 			issueCount: issueQueue.length,
 			staleRetryCount,
+			projectBusy,
 			pollingEnabled: polling.enabled,
 		},
 		"Fetched eligible Linear issues",
@@ -371,7 +383,10 @@ async function runProjectCycle(
 			),
 	);
 
-	return issueQueue.length;
+	return {
+		issueCount: issueQueue.length,
+		projectBusy,
+	};
 }
 
 async function buildIssueQueueForProjectCycle(
@@ -380,7 +395,11 @@ async function buildIssueQueueForProjectCycle(
 	linear: WorkflowLinearClient,
 	polling: PollingSettings,
 	runtime: WorkflowRuntime,
-): Promise<{ issueQueue: WorkflowIssue[]; staleRetryCount: number }> {
+): Promise<{
+	issueQueue: WorkflowIssue[];
+	staleRetryCount: number;
+	projectBusy: boolean;
+}> {
 	if (options.reviewOnly) {
 		const runStates = await listRunStates(config.workspacePath, config.id);
 		const reviewOnlyIssues = await fetchReviewOnlyIssues(
@@ -392,6 +411,7 @@ async function buildIssueQueueForProjectCycle(
 		return {
 			issueQueue: sortIssuesByPriority(reviewOnlyIssues),
 			staleRetryCount: 0,
+			projectBusy: false,
 		};
 	}
 	if (polling.enabled && options.issueArg === undefined) {
@@ -400,6 +420,7 @@ async function buildIssueQueueForProjectCycle(
 			return {
 				issueQueue: [],
 				staleRetryCount: 0,
+				projectBusy: true,
 			};
 		}
 	}
@@ -414,6 +435,7 @@ async function buildIssueQueueForProjectCycle(
 				options,
 			),
 			staleRetryCount: 0,
+			projectBusy: false,
 		};
 	}
 	const staleRetryIssues = await fetchStaleIssuesForRetry(
@@ -433,6 +455,7 @@ async function buildIssueQueueForProjectCycle(
 			},
 		),
 		staleRetryCount: staleRetryIssues.length,
+		projectBusy: false,
 	};
 }
 

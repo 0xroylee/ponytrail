@@ -980,6 +980,63 @@ describe("polling busy guard", () => {
 		expect(fetchWork).not.toHaveBeenCalled();
 		expect(createAgentAdapter).not.toHaveBeenCalled();
 	});
+
+	it("continues polling past a busy cycle and resumes fetching after lease expiry", async () => {
+		const workspacePath = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-workflow-poll-busy-resume-"),
+		);
+		const config = createProject("default");
+		config.workspacePath = workspacePath;
+		config.executionPath = workspacePath;
+
+		const nowMs = Date.now();
+		const state = createRunState("ENG-40", "implementing", nowMs - 1000);
+		state.lease = {
+			ownerId: "other-worker",
+			acquiredAt: new Date(nowMs - 3000).toISOString(),
+			heartbeatAt: new Date(nowMs - 1000).toISOString(),
+			expiresAt: new Date(nowMs + 1).toISOString(),
+		};
+		await saveRunState(workspacePath, state);
+
+		const fetchWork = mock(async () => [
+			createWorkflowIssue("ENG-41", 1, "Urgent"),
+		]);
+		const createAgentAdapter = mock(() => ({}) as AgentAdapter);
+		const isAssignedState = mock(async () => false);
+		const runtime = {
+			createLinearClient: () =>
+				({
+					fetchWork,
+					isAssignedState,
+				}) as unknown,
+			createAgentAdapter,
+		} as unknown as WorkflowRuntime;
+
+		const loadedConfig: LoadedConfig = {
+			projects: [config],
+			polling: {
+				intervalMs: 10,
+				maxCycles: 2,
+				exitWhenIdle: true,
+				staleRunTimeoutMs: 60000,
+			},
+			notifications: {
+				email: {
+					enabled: false,
+					resendApiKey: undefined,
+					from: undefined,
+					to: [],
+				},
+			},
+		};
+
+		await runWorkflow(loadedConfig, { poll: true }, runtime);
+
+		expect(fetchWork).toHaveBeenCalledTimes(1);
+		expect(isAssignedState).toHaveBeenCalledTimes(1);
+		expect(createAgentAdapter).not.toHaveBeenCalled();
+	});
 });
 
 describe("buildRunLeaseOwnerId", () => {
