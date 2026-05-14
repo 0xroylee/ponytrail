@@ -1,7 +1,7 @@
 import type { AppDeps, RouteHandler } from "./app.types";
-import { handleCliRoute } from "./http/cli-routes";
-import { handleProjectsRoute } from "./http/projects-routes";
-import { handleTasksRoute } from "./http/tasks-routes";
+import { handleEntityCrudRequest, matchCrudRoute } from "./routes/entity-crud";
+
+const UNSAFE_RAW_COMMAND_FIELDS = ["command", "cmd", "args", "argv", "shell"];
 
 export function createHandleRequest(deps: AppDeps): RouteHandler {
 	return async (request) => {
@@ -36,7 +36,16 @@ export function createHandleRequest(deps: AppDeps): RouteHandler {
 			return taskResponse;
 		}
 
-		return notFoundResponse();
+		const crudRoute = matchCrudRoute(pathname);
+		if (crudRoute) {
+			const result = await handleEntityCrudRequest(request, deps, crudRoute);
+			if (result?.body === undefined) {
+				return new Response(null, { status: result.status });
+			}
+			return Response.json(result.body, { status: result.status });
+		}
+
+		return new Response("Not Found", { status: 404 });
 	};
 }
 

@@ -216,6 +216,7 @@ function createDeps(overrides?: {
 	repositories?: AppDeps["repositories"];
 }): AppDeps {
 	return {
+		db: {} as AppDeps["db"],
 		cliExecutor: {
 			execute:
 				overrides?.execute ??
