@@ -28,11 +28,12 @@ export function WebJobBoard({ activeKey }: WebJobBoardProps): ReactElement {
 	return (
 		<section
 			style={{
-				padding: "1.25rem",
+				padding: "clamp(0.75rem, 3vw, 1.25rem)",
 				display: "grid",
 				gap: "1rem",
 				alignContent: "start",
 				minHeight: "100vh",
+				minWidth: 0,
 			}}
 		>
 			<header
@@ -50,7 +51,9 @@ export function WebJobBoard({ activeKey }: WebJobBoardProps): ReactElement {
 				style={{
 					display: "grid",
 					gap: "1rem",
-					gridTemplateColumns: "repeat(auto-fit, minmax(20rem, 1fr))",
+					gridTemplateColumns:
+						"repeat(auto-fit, minmax(min(100%, 20rem), 1fr))",
+					minWidth: 0,
 				}}
 			>
 				<TaskCreatePanel />

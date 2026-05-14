@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useMemo, useState } from "react";
+import { type ReactElement, useEffect, useMemo, useState } from "react";
 
 import { WebJobBoard } from "@/components/web-shell/web-job-board";
 import type {
@@ -20,7 +20,16 @@ const navItems: SidebarNavItem[] = [
 	{ key: "autopilot", label: "Autopilot" },
 ];
 
-function nextMode(mode: SidebarDisplayMode): SidebarDisplayMode {
+function nextMode(
+	mode: SidebarDisplayMode,
+	isCompactViewport: boolean,
+): SidebarDisplayMode {
+	if (isCompactViewport) {
+		if (mode === "hidden") {
+			return "collapsed";
+		}
+		return "hidden";
+	}
 	if (mode === "expanded") {
 		return "collapsed";
 	}
@@ -35,8 +44,27 @@ export function WebOperatorShell(): ReactElement {
 		useState<SidebarDisplayMode>("expanded");
 	const [activeNavKey, setActiveNavKey] =
 		useState<SidebarNavItem["key"]>("agents");
+	const [isCompactViewport, setIsCompactViewport] = useState<boolean>(false);
 	const canShowSidebar = sidebarMode !== "hidden";
 	const showFloatingToggle = sidebarMode === "hidden";
+
+	useEffect(() => {
+		const mediaQuery = window.matchMedia("(max-width: 900px)");
+		const syncViewport = (): void => {
+			setIsCompactViewport(mediaQuery.matches);
+		};
+		syncViewport();
+		mediaQuery.addEventListener("change", syncViewport);
+		return () => {
+			mediaQuery.removeEventListener("change", syncViewport);
+		};
+	}, []);
+
+	useEffect(() => {
+		if (isCompactViewport && sidebarMode === "expanded") {
+			setSidebarMode("collapsed");
+		}
+	}, [isCompactViewport, sidebarMode]);
 
 	const viewportColumns = useMemo(() => {
 		return canShowSidebar ? "auto minmax(0, 1fr)" : "minmax(0, 1fr)";
@@ -50,6 +78,7 @@ export function WebOperatorShell(): ReactElement {
 				gridTemplateColumns: viewportColumns,
 				background: "#f8fafc",
 				position: "relative",
+				overflowX: "clip",
 			}}
 		>
 			{showFloatingToggle ? (
@@ -78,7 +107,9 @@ export function WebOperatorShell(): ReactElement {
 					activeKey={activeNavKey}
 					navItems={navItems}
 					onNavSelect={setActiveNavKey}
-					onToggleMode={() => setSidebarMode((current) => nextMode(current))}
+					onToggleMode={() =>
+						setSidebarMode((current) => nextMode(current, isCompactViewport))
+					}
 				/>
 			) : null}
 			<WebJobBoard activeKey={activeNavKey} />
