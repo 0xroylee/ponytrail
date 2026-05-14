@@ -57,6 +57,17 @@ export async function runTaskIntake(
 		}
 		clarificationRounds += 1;
 		for (const question of decision.questions) {
+			const providedAnswer = providedAnswers.get(question);
+			if (providedAnswer) {
+				answers.push({
+					question,
+					answer: providedAnswer,
+				});
+				continue;
+			}
+			if (options.nonInteractive) {
+				return { status: "needs_info", questions: decision.questions };
+			}
 			answers.push({
 				question,
 				answer: await options.askQuestion(question),
