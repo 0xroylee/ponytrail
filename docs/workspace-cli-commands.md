@@ -8,6 +8,7 @@ Use one of these forms:
 
 - Workspace source entrypoint: `bun run packages/cli/src/index.ts <command> ...`
 - Package-local entrypoint: `bun run src/index.ts <command> ...` (from `packages/cli`)
+- Local npx entrypoint: `npx devos <command> ...` (after `bun install` and `bun run build`)
 - Installed binary: `devos <command> ...` (help text form)
 
 ## Prerequisites

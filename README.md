@@ -9,18 +9,21 @@ For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_T
 ## Quick Start
 
 1. Install dependencies.
-2. Run guided setup.
-3. Validate your setup.
-4. Run one scoped workflow.
+2. Build the local CLI package.
+3. Run guided setup.
+4. Validate your setup.
+5. Run one scoped workflow.
 
 ```bash
 bun install
-bun run packages/cli/src/index.ts setup
-bun run packages/cli/src/index.ts setup --check
-bun run packages/cli/src/index.ts run --project <PROJECT_ID>
+bun run build
+npx devos help
+npx devos setup
+npx devos setup --check
+npx devos run --project <PROJECT_ID>
 ```
 
-Use `bun run packages/cli/src/index.ts projects` to list available project IDs, then pass one of those values as `<PROJECT_ID>`.
+Use `npx devos projects` to list available project IDs, then pass one of those values as `<PROJECT_ID>`.
 
 ## Common Commands
 
@@ -28,9 +31,13 @@ Use `bun run packages/cli/src/index.ts projects` to list available project IDs, 
 # install dependencies
 bun install
 
+# build and test the local CLI bin with npx
+bun run build
+npx devos help
+
 # setup and validation
-bun run packages/cli/src/index.ts setup
-bun run packages/cli/src/index.ts setup --check
+npx devos setup
+npx devos setup --check
 
 # local workspace startup/build shortcuts
 bun run dev:server
@@ -80,7 +87,7 @@ bun run packages/cli/src/index.ts skills update <NAME> [--title "<TITLE>"] [--de
 bun run packages/cli/src/index.ts skills remove <NAME> [--project <PROJECT_ID>]
 ```
 
-After linking/installing the package bin, you can also use `devos ...` directly.
+After `bun install` and `bun run build`, use `npx devos ...` from the repo root to test the local workspace CLI package.
 
 ## Local Server/Web Notes
 
