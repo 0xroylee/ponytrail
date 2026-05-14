@@ -394,6 +394,15 @@ async function buildIssueQueueForProjectCycle(
 			staleRetryCount: 0,
 		};
 	}
+	if (polling.enabled && options.issueArg === undefined) {
+		const runStates = await listRunStates(config.workspacePath, config.id);
+		if (isProjectRunBusy(runStates, Date.now())) {
+			return {
+				issueQueue: [],
+				staleRetryCount: 0,
+			};
+		}
+	}
 
 	const assignedIssues = await linear.fetchWork(options.issueArg);
 	if (options.issueArg !== undefined) {
@@ -418,7 +427,10 @@ async function buildIssueQueueForProjectCycle(
 			options.issueArg,
 			assignedIssues,
 			staleRetryIssues,
-			options,
+			{
+				reviewOnly: options.reviewOnly,
+				pollingEnabled: polling.enabled,
+			},
 		),
 		staleRetryCount: staleRetryIssues.length,
 	};
@@ -437,7 +449,7 @@ export function selectIssueQueueForCycle(
 	issueArg: string | undefined,
 	assignedIssues: WorkflowIssue[],
 	staleRetryIssues: WorkflowIssue[],
-	options: Pick<RunOptions, "reviewOnly"> = {},
+	options: Pick<RunOptions, "reviewOnly"> & { pollingEnabled?: boolean } = {},
 ): WorkflowIssue[] {
 	if (options.reviewOnly) {
 		return [];
@@ -445,7 +457,11 @@ export function selectIssueQueueForCycle(
 	if (issueArg !== undefined) {
 		return assignedIssues;
 	}
-	return buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
+	const queue = buildPrioritizedIssueQueue(assignedIssues, staleRetryIssues);
+	if (options.pollingEnabled) {
+		return queue.slice(0, 1);
+	}
+	return queue;
 }
 
 export function isReviewOnlyEligibleRunState(state: RunState): boolean {
@@ -616,6 +632,16 @@ export function selectStaleRunIssueKeys(
 	return runStates
 		.filter((state) => isRunStateStaleForRetry(state, nowMs, timeoutMs))
 		.map((state) => normalizeIssueKey(state.issue.key));
+}
+
+export function isProjectRunBusy(
+	runStates: RunState[],
+	nowMs: number,
+): boolean {
+	return runStates.some(
+		(state) =>
+			shouldRetryRunStage(state.stage) && !isRunLeaseExpired(state, nowMs),
+	);
 }
 
 async function fetchStaleIssuesForRetry(

@@ -28,6 +28,7 @@ import {
 	finalizeIssueAfterReviewMerge,
 	fixedBugsForImplementationComment,
 	handleReviewTestingStage,
+	isProjectRunBusy,
 	isReviewOnlyEligibleRunState,
 	isReviewOnlyExecutableStage,
 	isRunStateStaleForRetry,
@@ -290,6 +291,19 @@ describe("buildPrioritizedIssueQueue", () => {
 			staleRetryIssues,
 		);
 		expect(queue.map((issue) => issue.identifier)).toEqual(["ROY-8", "ROY-9"]);
+	});
+
+	it("limits polling to one queued issue per cycle", () => {
+		const assignedIssues = [createWorkflowIssue("ROY-9", 4, "Low")];
+		const staleRetryIssues = [createWorkflowIssue("ROY-8", 1, "Urgent")];
+
+		const queue = selectIssueQueueForCycle(
+			undefined,
+			assignedIssues,
+			staleRetryIssues,
+			{ pollingEnabled: true },
+		);
+		expect(queue.map((issue) => issue.identifier)).toEqual(["ROY-8"]);
 	});
 });
 
@@ -886,6 +900,85 @@ describe("stale run retry helpers", () => {
 		const state = createRunState("ENG-9", "planning", Date.now());
 		state.updatedAt = "not-a-date";
 		expect(isRunStateStaleForRetry(state, Date.now(), 1000)).toBe(false);
+	});
+
+	it("treats active leased retryable stages as project busy", () => {
+		const nowMs = Date.parse("2026-05-07T12:00:00.000Z");
+		const active = createRunState("ENG-21", "implementing", nowMs - 1000);
+		active.lease = {
+			ownerId: "worker-a",
+			acquiredAt: new Date(nowMs - 3000).toISOString(),
+			heartbeatAt: new Date(nowMs - 1000).toISOString(),
+			expiresAt: new Date(nowMs + 60000).toISOString(),
+		};
+		expect(isProjectRunBusy([active], nowMs)).toBe(true);
+	});
+
+	it("does not treat expired leases as project busy", () => {
+		const nowMs = Date.parse("2026-05-07T12:00:00.000Z");
+		const expired = createRunState("ENG-22", "planning", nowMs - 1000);
+		expired.lease = {
+			ownerId: "worker-a",
+			acquiredAt: new Date(nowMs - 3000).toISOString(),
+			heartbeatAt: new Date(nowMs - 1000).toISOString(),
+			expiresAt: new Date(nowMs - 1).toISOString(),
+		};
+		expect(isProjectRunBusy([expired], nowMs)).toBe(false);
+	});
+});
+
+describe("polling busy guard", () => {
+	it("does not fetch new polling work while another run is actively leased", async () => {
+		const workspacePath = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-workflow-poll-busy-"),
+		);
+		const config = createProject("default");
+		config.workspacePath = workspacePath;
+		config.executionPath = workspacePath;
+
+		const state = createRunState("ENG-30", "implementing", Date.now() - 1000);
+		state.lease = {
+			ownerId: "other-worker",
+			acquiredAt: new Date(Date.now() - 3000).toISOString(),
+			heartbeatAt: new Date(Date.now() - 1000).toISOString(),
+			expiresAt: new Date(Date.now() + 60000).toISOString(),
+		};
+		await saveRunState(workspacePath, state);
+
+		const fetchWork = mock(async () => [
+			createWorkflowIssue("ENG-31", 1, "Urgent"),
+		]);
+		const createAgentAdapter = mock(() => ({}) as AgentAdapter);
+		const runtime = {
+			createLinearClient: () =>
+				({
+					fetchWork,
+				}) as unknown,
+			createAgentAdapter,
+		} as unknown as WorkflowRuntime;
+
+		const loadedConfig: LoadedConfig = {
+			projects: [config],
+			polling: {
+				intervalMs: 1,
+				maxCycles: 1,
+				exitWhenIdle: true,
+				staleRunTimeoutMs: 60000,
+			},
+			notifications: {
+				email: {
+					enabled: false,
+					resendApiKey: undefined,
+					from: undefined,
+					to: [],
+				},
+			},
+		};
+
+		await runWorkflow(loadedConfig, { poll: true }, runtime);
+
+		expect(fetchWork).not.toHaveBeenCalled();
+		expect(createAgentAdapter).not.toHaveBeenCalled();
 	});
 });
 
