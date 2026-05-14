@@ -1530,6 +1530,140 @@ describe("parsePlannerDecision", () => {
 });
 
 describe("handlePlanningStage", () => {
+	it("resumes the parent task session when child issue planning has a parent run", async () => {
+		const workspacePath = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-parent-session-"),
+		);
+		const config = createProject("default");
+		config.workspacePath = workspacePath;
+		const parentState = createRunState("ROY-80", "done", Date.now());
+		parentState.codexSessionId = "parent-session";
+		await saveRunState(workspacePath, parentState);
+
+		const state = createRunState("ROY-81", "planning", Date.now());
+		state.issue.parentIssue = {
+			id: parentState.issue.id,
+			key: parentState.issue.key,
+			title: parentState.issue.title,
+			url: parentState.issue.url,
+		};
+		const planSummary = [
+			"SUCCESS_GOAL: Ship the child task.",
+			"COMPLEXITY: SIMPLE",
+		].join("\n");
+		const agent: AgentAdapter = {
+			runPlan: mock(async () => ({ finalMessage: "", stdout: "" })),
+			runTaskIntake: mock(async () => ({ finalMessage: "", stdout: "" })),
+			resume: mock(async () => ({
+				finalMessage: planSummary,
+				stdout: "",
+				sessionId: "child-session",
+			})),
+			runReview: mock(async () => ({ finalMessage: "", stdout: "" })),
+			runGithubComment: mock(async () => ({ finalMessage: "", stdout: "" })),
+		};
+		const markStage = mock(async () => {});
+
+		await handlePlanningStage(
+			config,
+			agent,
+			{ email: { enabled: false, to: [] } },
+			{
+				createTodoIssueFromPlan: mock(async () => ({
+					id: "lin_child",
+					identifier: "ROY-82",
+					title: "unused",
+					url: "https://linear.example/ROY-82",
+				})),
+				markStage,
+				clearWorkflowStageLabels: mock(async () => {}),
+				comment: mock(async () => {}),
+				updateIssueDetails: mock(async () => {}),
+			} as never,
+			state,
+			{
+				runAgentWithChatLog: async ({ invoke }) => invoke(),
+				appendCodexUsage: () => {},
+				saveRunState: mock(async () => {}),
+				transitionStage,
+				safeNotifyTaskOutcome: mock(async () => {}),
+				loggerInfo: () => {},
+				buildIssueJobLogFields: () => ({}),
+			},
+		);
+
+		expect(agent.resume).toHaveBeenCalledWith(
+			"parent-session",
+			expect.stringContaining("Parent issue: ROY-80 - ROY-80"),
+		);
+		expect(agent.runPlan).not.toHaveBeenCalled();
+		expect(state.codexSessionId).toBe("child-session");
+		expect(markStage).toHaveBeenCalledWith(state.issue.id, "implementing");
+	});
+
+	it("starts a new planning session when no parent session exists", async () => {
+		const workspacePath = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-parent-session-missing-"),
+		);
+		const config = createProject("default");
+		config.workspacePath = workspacePath;
+
+		const state = createRunState("ROY-91", "planning", Date.now());
+		state.issue.parentIssue = {
+			id: "lin_ROY-90",
+			key: "ROY-90",
+			title: "Parent without local state",
+			url: "https://linear.example/ROY-90",
+		};
+		const planSummary = [
+			"SUCCESS_GOAL: Ship the child task.",
+			"COMPLEXITY: SIMPLE",
+		].join("\n");
+		const agent: AgentAdapter = {
+			runPlan: mock(async () => ({
+				finalMessage: planSummary,
+				stdout: "",
+				sessionId: "new-child-session",
+			})),
+			runTaskIntake: mock(async () => ({ finalMessage: "", stdout: "" })),
+			resume: mock(async () => ({ finalMessage: "", stdout: "" })),
+			runReview: mock(async () => ({ finalMessage: "", stdout: "" })),
+			runGithubComment: mock(async () => ({ finalMessage: "", stdout: "" })),
+		};
+
+		await handlePlanningStage(
+			config,
+			agent,
+			{ email: { enabled: false, to: [] } },
+			{
+				createTodoIssueFromPlan: mock(async () => ({
+					id: "lin_child",
+					identifier: "ROY-92",
+					title: "unused",
+					url: "https://linear.example/ROY-92",
+				})),
+				markStage: mock(async () => {}),
+				clearWorkflowStageLabels: mock(async () => {}),
+				comment: mock(async () => {}),
+				updateIssueDetails: mock(async () => {}),
+			} as never,
+			state,
+			{
+				runAgentWithChatLog: async ({ invoke }) => invoke(),
+				appendCodexUsage: () => {},
+				saveRunState: mock(async () => {}),
+				transitionStage,
+				safeNotifyTaskOutcome: mock(async () => {}),
+				loggerInfo: () => {},
+				buildIssueJobLogFields: () => ({}),
+			},
+		);
+
+		expect(agent.runPlan).toHaveBeenCalled();
+		expect(agent.resume).not.toHaveBeenCalled();
+		expect(state.codexSessionId).toBe("new-child-session");
+	});
+
 	it("moves the parent issue to backlog after creating split sub-issues", async () => {
 		const config = createProject("default");
 		const state = createRunState("ROY-80", "planning", Date.now());

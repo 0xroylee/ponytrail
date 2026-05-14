@@ -574,6 +574,7 @@ async function processIssue(
 				teamId: issue.teamId,
 				creatorId: issue.creatorId,
 				assigneeId: issue.assigneeId,
+				parentIssue: issue.parentIssue,
 			},
 			stage: options.reviewOnly
 				? resolveReviewOnlyBootstrapStage(issue.state, config.linear.statusMap)

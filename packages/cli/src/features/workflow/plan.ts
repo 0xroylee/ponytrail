@@ -15,6 +15,7 @@ import type {
 	PlannerIssueRefinement,
 	PlanningLinearClient,
 } from "./plan.types";
+import { loadRunState } from "./state";
 
 export type {
 	HandlePlanningStageDeps,
@@ -46,6 +47,11 @@ export async function handlePlanningStage(
 		supplementalSkills: supplemental.selected,
 		autoSelectWarnings: supplemental.warnings,
 	});
+	const parentSessionId = await resolveParentPlanningSessionId(
+		config.workspacePath,
+		config.id,
+		state,
+	);
 	const result = await deps.runAgentWithChatLog({
 		workspacePath: config.workspacePath,
 		projectId: config.id,
@@ -53,7 +59,10 @@ export async function handlePlanningStage(
 		agentRole: "planning",
 		skillPath: config.skills.plan,
 		prompt,
-		invoke: () => agent.runPlan(prompt),
+		invoke: () =>
+			parentSessionId
+				? agent.resume(parentSessionId, prompt)
+				: agent.runPlan(prompt),
 	});
 	state.codexSessionId = result.sessionId ?? state.codexSessionId;
 	state.planSummary = result.finalMessage || result.stdout;
@@ -106,6 +115,23 @@ export async function handlePlanningStage(
 		deps.buildIssueJobLogFields(state, "planning"),
 		"Plan completed",
 	);
+}
+
+export async function resolveParentPlanningSessionId(
+	workspacePath: string,
+	projectId: string,
+	state: RunState,
+): Promise<string | undefined> {
+	const parentIssueKey = state.issue.parentIssue?.key;
+	if (!parentIssueKey) {
+		return undefined;
+	}
+	const parentState = await loadRunState(
+		workspacePath,
+		projectId,
+		parentIssueKey,
+	);
+	return parentState?.codexSessionId;
 }
 
 export function parsePlannerDecision(planSummary: string): PlannerDecision {

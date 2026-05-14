@@ -19,6 +19,7 @@ export async function buildPlanPrompt(
 	const supplementalSkills = options?.supplementalSkills ?? [];
 	const warnings = options?.autoSelectWarnings ?? [];
 	const issueDescription = issue.description?.trim();
+	const parentIssue = issue.parentIssue;
 
 	const supplementalSection =
 		supplementalSkills.length > 0 || warnings.length > 0
@@ -55,6 +56,13 @@ export async function buildPlanPrompt(
 		`Title: ${issue.title}`,
 		...(issueDescription ? [`Description: ${issueDescription}`] : []),
 		`URL: ${issue.url}`,
+		...(parentIssue
+			? [
+					`Parent issue: ${parentIssue.key} - ${parentIssue.title}`,
+					`Parent URL: ${parentIssue.url}`,
+					"Continue under the parent task context; keep this child issue scoped to its assigned subtask.",
+				]
+			: []),
 		supplementalSection,
 		"",
 		"Include ISSUE_REFINEMENT_JSON with a refined title and description that preserve original user intent and do not invent scope.",

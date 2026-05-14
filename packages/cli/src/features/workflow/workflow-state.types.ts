@@ -20,6 +20,7 @@ export interface LinearIssue {
 	teamId?: string;
 	creatorId?: string;
 	assigneeId?: string;
+	parentIssue?: ParentIssueRef;
 	priority: {
 		value: number;
 		name: string;
@@ -39,6 +40,18 @@ export interface IssueRef {
 	key: string;
 	title: string;
 	description?: string;
+	url: string;
+	projectId?: string;
+	teamId?: string;
+	creatorId?: string;
+	assigneeId?: string;
+	parentIssue?: ParentIssueRef;
+}
+
+export interface ParentIssueRef {
+	id: string;
+	key: string;
+	title: string;
 	url: string;
 	projectId?: string;
 	teamId?: string;

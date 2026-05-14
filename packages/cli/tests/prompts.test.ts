@@ -120,6 +120,23 @@ describe("buildPlanPrompt", () => {
 		);
 	});
 
+	it("includes parent task guardrails for child issue planning", async () => {
+		const prompt = await buildPlanPrompt("/tmp/missing-skill-file.md", {
+			...issue,
+			parentIssue: {
+				id: "lin_parent",
+				key: "ENG-0",
+				title: "Parent workflow",
+				url: "https://linear.app/acme/issue/ENG-0/parent-workflow",
+			},
+		});
+
+		expect(prompt).toContain("Parent issue: ENG-0 - Parent workflow");
+		expect(prompt).toContain(
+			"Continue under the parent task context; keep this child issue scoped",
+		);
+	});
+
 	it("includes auto-selected supplemental skills when provided", async () => {
 		const tmpDir = await mkdtemp(path.join(os.tmpdir(), "adhd-plan-skill-"));
 		const skillPath = path.join(tmpDir, "SKILL.md");

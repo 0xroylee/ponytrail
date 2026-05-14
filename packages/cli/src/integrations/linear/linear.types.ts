@@ -1,7 +1,10 @@
 import type {
+	ParentIssueRef,
 	PlannedSplitTask,
 	ResolvedProjectConfig,
 } from "../../features/types";
+
+export type { ParentIssueRef };
 
 export type WorkflowLabelStage =
 	keyof ResolvedProjectConfig["linear"]["labelMap"];
@@ -12,17 +15,6 @@ export interface LinearLabelRecord {
 	id: string;
 	name: string;
 	teamId?: string;
-}
-
-export interface ParentIssueRef {
-	id: string;
-	key: string;
-	title: string;
-	url: string;
-	projectId?: string;
-	teamId?: string;
-	creatorId?: string;
-	assigneeId?: string;
 }
 
 export interface CreatedLinearIssueRef {

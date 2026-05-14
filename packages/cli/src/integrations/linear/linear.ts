@@ -53,6 +53,7 @@ type LinearSdkIssue = {
 	priority?: number | null;
 	priorityLabel?: string | null;
 	project?: Promise<{ id?: string | null } | null>;
+	parent?: Promise<LinearSdkIssue | null>;
 	state?: Promise<{ id: string; name: string } | null>;
 	creator?: Promise<{ id?: string | null } | null>;
 	assignee?: Promise<{ id?: string | null } | null>;
@@ -945,6 +946,7 @@ export class LinearClient {
 	): Promise<LinearIssue> {
 		const state = await this.linearRequest(() => issue.state);
 		const project = await this.linearRequest(() => issue.project);
+		const parentIssue = await this.mapSdkParentIssue(issue);
 		const creator = includeActorRefs
 			? await this.linearRequest(() => issue.creator)
 			: undefined;
@@ -972,6 +974,7 @@ export class LinearClient {
 			teamId: issue.teamId ?? undefined,
 			creatorId: creator?.id ?? undefined,
 			assigneeId: assignee?.id ?? undefined,
+			parentIssue,
 			priority: {
 				value: issue.priority ?? 0,
 				name: issue.priorityLabel ?? "No priority",
@@ -981,6 +984,21 @@ export class LinearClient {
 				name: state.name,
 			},
 			labels,
+		};
+	}
+
+	private async mapSdkParentIssue(
+		issue: LinearSdkIssue,
+	): Promise<LinearIssue["parentIssue"]> {
+		const parent = await this.linearRequest(() => issue.parent);
+		if (!parent?.id || !parent.identifier || !parent.title || !parent.url) {
+			return undefined;
+		}
+		return {
+			id: parent.id,
+			key: parent.identifier,
+			title: parent.title,
+			url: parent.url,
 		};
 	}
 

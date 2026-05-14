@@ -468,6 +468,44 @@ describe("LinearClient.createBacklogTask", () => {
 	});
 });
 
+describe("LinearClient.fetchIssueByIdentifier", () => {
+	it("maps Linear parent issue metadata", async () => {
+		const client = new LinearClient(createLinearProject());
+		disableLinearRequestThrottle(client);
+		replaceLinearSdkClient(client, {
+			issue: async () => ({
+				id: "lin_child",
+				identifier: "ROY-101",
+				title: "Child task",
+				url: "https://linear.example/ROY-101",
+				teamId: "team_123",
+				priority: 2,
+				priorityLabel: "High",
+				project: Promise.resolve({ id: "proj_123" }),
+				parent: Promise.resolve({
+					id: "lin_parent",
+					identifier: "ROY-100",
+					title: "Parent task",
+					url: "https://linear.example/ROY-100",
+				}),
+				state: Promise.resolve({ id: "state_todo", name: "Todo" }),
+				creator: Promise.resolve({ id: "user_creator" }),
+				assignee: Promise.resolve({ id: "user_assignee" }),
+				labels: async () => ({ nodes: [] }),
+			}),
+		});
+
+		const issue = await client.fetchIssueByIdentifier("ROY-101");
+
+		expect(issue?.parentIssue).toEqual({
+			id: "lin_parent",
+			key: "ROY-100",
+			title: "Parent task",
+			url: "https://linear.example/ROY-100",
+		});
+	});
+});
+
 describe("Linear rate limit handling", () => {
 	it("detects Linear rate limit errors by status and message", () => {
 		expect(isLinearRateLimitError({ status: 429 })).toBe(true);

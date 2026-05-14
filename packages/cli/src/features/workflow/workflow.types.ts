@@ -1,4 +1,5 @@
 import type {
+	ParentIssueRef,
 	PullRequestRef,
 	ResolvedNotificationEmailConfig,
 	ResolvedProjectConfig,
@@ -18,6 +19,7 @@ export interface WorkflowIssue {
 	teamId?: string;
 	creatorId?: string;
 	assigneeId?: string;
+	parentIssue?: ParentIssueRef;
 	priority: {
 		value: number;
 		name: string;
