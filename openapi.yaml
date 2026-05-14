@@ -50,12 +50,108 @@ paths:
       responses:
         '200':
           description: Job rows.
-  /api/command-history:
+  /api/projects:
     get:
-      tags: [Read Models]
+      tags: [Board]
       responses:
         '200':
-          description: Command history rows.
+          description: Project rows.
+    post:
+      tags: [Board]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '201':
+          description: Created project.
+        '400':
+          $ref: '#/components/responses/TypedError'
+  /api/projects/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Board]
+      responses:
+        '200':
+          description: Project row.
+        '404':
+          $ref: '#/components/responses/TypedError'
+    patch:
+      tags: [Board]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdateRequest'
+      responses:
+        '200':
+          description: Updated project.
+        '400':
+          $ref: '#/components/responses/TypedError'
+        '404':
+          $ref: '#/components/responses/TypedError'
+    delete:
+      tags: [Board]
+      responses:
+        '200':
+          description: Deleted project.
+        '404':
+          $ref: '#/components/responses/TypedError'
+  /api/tasks:
+    get:
+      tags: [Board]
+      responses:
+        '200':
+          description: Task rows.
+    post:
+      tags: [Board]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+      responses:
+        '201':
+          description: Created task.
+        '400':
+          $ref: '#/components/responses/TypedError'
+  /api/tasks/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Board]
+      responses:
+        '200':
+          description: Task row.
+        '404':
+          $ref: '#/components/responses/TypedError'
+    patch:
+      tags: [Board]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdateRequest'
+      responses:
+        '200':
+          description: Updated task.
+        '400':
+          $ref: '#/components/responses/TypedError'
+        '404':
+          $ref: '#/components/responses/TypedError'
+    delete:
+      tags: [Board]
+      responses:
+        '200':
+          description: Deleted task.
+        '404':
+          $ref: '#/components/responses/TypedError'
   /api/agents:
     get:
       tags: [Read Models]
@@ -98,11 +194,15 @@ paths:
           description: Updated agent.
         '400':
           $ref: '#/components/responses/TypedError'
+        '404':
+          $ref: '#/components/responses/TypedError'
     delete:
       tags: [Read Models]
       responses:
         '204':
           description: Deleted agent.
+        '404':
+          $ref: '#/components/responses/TypedError'
   /api/skills:
     get:
       tags: [Read Models]
@@ -145,95 +245,66 @@ paths:
           description: Updated skill.
         '400':
           $ref: '#/components/responses/TypedError'
+        '404':
+          $ref: '#/components/responses/TypedError'
     delete:
       tags: [Read Models]
       responses:
         '204':
           description: Deleted skill.
-  /api/projects:
-    get:
-      tags: [Board]
-      responses:
-        '200':
-          description: Project rows.
-    post:
-      tags: [Board]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectCreateRequest'
-      responses:
-        '201':
-          description: Created project.
-        '400':
+        '404':
           $ref: '#/components/responses/TypedError'
-  /api/projects/{id}:
-    parameters:
-      - $ref: '#/components/parameters/Id'
+  /api/command-history:
     get:
-      tags: [Board]
+      tags: [Read Models]
       responses:
         '200':
-          description: Project row.
-    patch:
-      tags: [Board]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectUpdateRequest'
-      responses:
-        '200':
-          description: Updated project.
-    delete:
-      tags: [Board]
-      responses:
-        '200':
-          description: Deleted project.
-  /api/tasks:
+          description: Command history rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommandHistoryRecord'
+  /api/project-boards:
     get:
-      tags: [Board]
+      tags: [Read Models]
+      summary: Read project board records
       responses:
         '200':
-          description: Task rows.
-    post:
-      tags: [Board]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TaskCreateRequest'
-      responses:
-        '201':
-          description: Created task.
-  /api/tasks/{id}:
-    parameters:
-      - $ref: '#/components/parameters/Id'
+          description: Project board rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectBoardRecord'
+  /api/board-projects:
     get:
-      tags: [Board]
+      tags: [Read Models]
+      summary: Read board project records
       responses:
         '200':
-          description: Task row.
-    patch:
-      tags: [Board]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TaskUpdateRequest'
+          description: Board project rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BoardProjectRecord'
+  /api/board-tasks:
+    get:
+      tags: [Read Models]
+      summary: Read board task records
       responses:
         '200':
-          description: Updated task.
-    delete:
-      tags: [Board]
-      responses:
-        '200':
-          description: Deleted task.
+          description: Board task rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BoardTaskRecord'
   /api/workspaces/{workspaceId}/projects:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -241,7 +312,7 @@ paths:
       tags: [Board]
       responses:
         '200':
-          description: Workspace projects.
+          description: Workspace project list.
   /api/workspaces/{workspaceId}/projects/{projectId}/board:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -251,6 +322,8 @@ paths:
       responses:
         '200':
           description: Workspace project board.
+        '404':
+          $ref: '#/components/responses/TypedError'
   /api/notifications:
     post:
       tags: [Notifications]
@@ -259,10 +332,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationServerRequest'
+              type: object
+              additionalProperties: true
       responses:
         '202':
           description: Notification accepted.
+        '400':
+          $ref: '#/components/responses/TypedError'
   /api/notifications/email:
     post:
       tags: [Notifications]
@@ -271,10 +347,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationEmailRequest'
+              type: object
+              additionalProperties: true
       responses:
         '200':
-          description: Notification email sent.
+          description: Notification sent.
+        '400':
+          $ref: '#/components/responses/TypedError'
 components:
   parameters:
     Id:
@@ -373,8 +452,12 @@ components:
         boardId: { type: string, minLength: 1 }
         name: { type: string, minLength: 1 }
         ownerId: { type: string, minLength: 1 }
-        externalProjectId: { type: string, nullable: true }
-        description: { type: string, nullable: true }
+        externalProjectId:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
     ProjectUpdateRequest:
       allOf:
         - $ref: '#/components/schemas/ProjectPatchFields'
@@ -386,8 +469,12 @@ components:
         boardId: { type: string, minLength: 1 }
         name: { type: string, minLength: 1 }
         ownerId: { type: string, minLength: 1 }
-        externalProjectId: { type: string, nullable: true }
-        description: { type: string, nullable: true }
+        externalProjectId:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
     TaskCreateRequest:
       type: object
       additionalProperties: false
@@ -399,8 +486,12 @@ components:
         priority: { type: integer }
         status: { type: string, minLength: 1 }
         creatorId: { type: string, minLength: 1 }
-        dueDate: { type: string, nullable: true }
-        linkedPr: { type: string, nullable: true }
+        dueDate:
+          type: string
+          nullable: true
+        linkedPr:
+          type: string
+          nullable: true
     TaskUpdateRequest:
       allOf:
         - $ref: '#/components/schemas/TaskPatchFields'
@@ -415,70 +506,79 @@ components:
         priority: { type: integer }
         status: { type: string, minLength: 1 }
         creatorId: { type: string, minLength: 1 }
-        dueDate: { type: string, nullable: true }
-        linkedPr: { type: string, nullable: true }
-    EmailPayload:
+        dueDate:
+          type: string
+          nullable: true
+        linkedPr:
+          type: string
+          nullable: true
+    ProjectBoardRecord:
       type: object
       additionalProperties: false
-      required: [from, to, subject, text]
+      required: [id, name, ownerId, createdAt, updatedAt]
       properties:
-        from: { type: string }
-        to:
-          type: array
-          items: { type: string }
-        subject: { type: string }
-        text: { type: string }
-    RunState:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    BoardProjectRecord:
       type: object
-      additionalProperties: true
-      required: [projectId, projectName, updatedAt, issue]
+      additionalProperties: false
+      required: [id, boardId, name, ownerId, createdAt, updatedAt]
       properties:
-        projectId: { type: string }
-        projectName: { type: string }
-        updatedAt: { type: string }
-        issue:
-          type: object
-          additionalProperties: true
-          required: [key, title, url]
-          properties:
-            key: { type: string }
-            title: { type: string }
-            url: { type: string }
-    NotificationServerRequest:
-      oneOf:
-        - type: object
-          additionalProperties: false
-          required: [type, payload]
-          properties:
-            type: { type: string, enum: [task-outcome] }
-            payload:
-              $ref: '#/components/schemas/EmailPayload'
-        - type: object
-          additionalProperties: false
-          required: [type, payload, complexityScore, reason]
-          properties:
-            type: { type: string, enum: [human-review-required] }
-            payload:
-              $ref: '#/components/schemas/EmailPayload'
-            complexityScore: { type: number }
-            reason: { type: string, minLength: 1 }
-    NotificationEmailRequest:
-      oneOf:
-        - type: object
-          additionalProperties: false
-          required: [type, state, outcome]
-          properties:
-            type: { type: string, enum: [task_outcome] }
-            state:
-              $ref: '#/components/schemas/RunState'
-            outcome: { type: string, enum: [done, blocked] }
-            errorMessage: { type: string }
-        - type: object
-          additionalProperties: false
-          required: [type, state, complexityScore, reason]
-          properties:
-            type: { type: string, enum: [human_review_required] }
-            state:
-              $ref: '#/components/schemas/RunState'
-            complexityScore: { type: number }
-            reason: { type: string, minLength: 1 }
+        id:
+          type: string
+        boardId:
+          type: string
+        externalProjectId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    BoardTaskRecord:
+      type: object
+      additionalProperties: false
+      required: [id, projectId, title, content, priority, status, creatorId, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        priority:
+          type: integer
+        status:
+          type: string
+        dueDate:
+          type: string
+          nullable: true
+        creatorId:
+          type: string
+        linkedPr:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
