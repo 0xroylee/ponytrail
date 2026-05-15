@@ -17,6 +17,7 @@ import {
 	SquareKanban,
 	UsersRound,
 } from "lucide-react";
+import Link from "next/link";
 import type { ComponentType, ReactElement } from "react";
 
 import type {
@@ -29,7 +30,6 @@ interface WebSidebarProps {
 	mode: SidebarDisplayMode;
 	activeKey: SidebarNavItem["key"];
 	navItems: SidebarNavItem[];
-	onNavSelect: (key: SidebarNavItem["key"]) => void;
 	onNewIssue: () => void;
 	onSearch: () => void;
 	onToggleMode: () => void;
@@ -56,7 +56,7 @@ function nextSidebarLabel(mode: SidebarDisplayMode): string {
 		return "Collapse sidebar";
 	}
 	if (mode === "collapsed") {
-		return "Hide sidebar";
+		return "Expand sidebar";
 	}
 	return "Show sidebar";
 }
@@ -65,7 +65,6 @@ export function WebSidebar({
 	mode,
 	activeKey,
 	navItems,
-	onNavSelect,
 	onNewIssue,
 	onSearch,
 	onToggleMode,
@@ -77,7 +76,7 @@ export function WebSidebar({
 			aria-label="Primary navigation"
 			className="grid h-[100dvh] max-h-[100dvh] border-r border-zinc-900 bg-[#15161a] text-zinc-400"
 			style={{
-				width: isHidden ? "0" : isExpanded ? "17.5rem" : "4.5rem",
+				width: isHidden ? "0" : isExpanded ? "17.5rem" : "6.5rem",
 				opacity: isHidden ? 0 : 1,
 				pointerEvents: isHidden ? "none" : "auto",
 				transition: "width 180ms ease, opacity 120ms ease",
@@ -123,14 +122,12 @@ export function WebSidebar({
 					activeKey={activeKey}
 					isExpanded={isExpanded}
 					items={navItems.slice(0, 7)}
-					onNavSelect={onNavSelect}
 					title="Workspace"
 				/>
 				<NavGroup
 					activeKey={activeKey}
 					isExpanded={isExpanded}
 					items={navItems.slice(7)}
-					onNavSelect={onNavSelect}
 					title="Configure"
 				/>
 			</nav>
@@ -149,13 +146,11 @@ function NavGroup({
 	items,
 	activeKey,
 	isExpanded,
-	onNavSelect,
 }: {
 	title: string;
 	items: SidebarNavItem[];
 	activeKey: SidebarNavItem["key"];
 	isExpanded: boolean;
-	onNavSelect: (key: SidebarNavItem["key"]) => void;
 }): ReactElement {
 	return (
 		<div className="grid gap-1">
@@ -166,7 +161,7 @@ function NavGroup({
 				const Icon = iconByKey[item.key];
 				const isActive = item.key === activeKey;
 				return (
-					<button
+					<Link
 						aria-current={isActive ? "page" : undefined}
 						className={cn(
 							"flex h-10 items-center gap-3 rounded-md px-2 text-sm font-medium",
@@ -175,14 +170,13 @@ function NavGroup({
 								: "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200",
 							!isExpanded && "justify-center",
 						)}
+						href={item.href}
 						key={item.key}
-						onClick={() => onNavSelect(item.key)}
 						title={item.label}
-						type="button"
 					>
 						<Icon size={18} />
 						{isExpanded ? <span>{item.label}</span> : null}
-					</button>
+					</Link>
 				);
 			})}
 		</div>

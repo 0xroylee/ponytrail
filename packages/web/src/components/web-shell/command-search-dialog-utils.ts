@@ -1,8 +1,4 @@
-import type {
-	CommandHistoryRecord,
-	ProjectBoardRecord,
-	ProjectBoardTaskRecord,
-} from "@/lib/api";
+import type { CommandHistoryRecord, ProjectBoardTaskRecord } from "@/lib/api";
 
 import { getStatusLabel } from "@/components/issues-board/issues-board-utils";
 
@@ -16,15 +12,15 @@ const MAX_ISSUE_RESULTS = 8;
 const MAX_HISTORY_RESULTS = 6;
 
 export function buildCommandSearchGroups({
-	board,
 	commandHistory,
 	navItems,
 	query,
+	tasks,
 }: {
-	board: ProjectBoardRecord | undefined;
 	commandHistory: CommandHistoryRecord[] | undefined;
 	navItems: SidebarNavItem[];
 	query: string;
+	tasks: ProjectBoardTaskRecord[] | undefined;
 }): CommandSearchGroup[] {
 	const normalizedQuery = normalizeSearchText(query);
 	return [
@@ -40,7 +36,7 @@ export function buildCommandSearchGroups({
 			id: "issues",
 			label: "Issues",
 			results: filterResults(
-				flattenTasks(board).map(buildIssueResult),
+				(tasks ?? []).map(buildIssueResult),
 				normalizedQuery,
 			).slice(0, MAX_ISSUE_RESULTS),
 		},
@@ -93,19 +89,6 @@ function buildHistoryResult(record: CommandHistoryRecord): CommandSearchResult {
 		detail: `Copy command · exit ${record.exitCode}`,
 		command: record.command,
 	};
-}
-
-function flattenTasks(
-	board: ProjectBoardRecord | undefined,
-): ProjectBoardTaskRecord[] {
-	return (
-		board?.statusColumns.flatMap((column) =>
-			column.tasks.map((task) => ({
-				...task,
-				status: task.status || column.status,
-			})),
-		) ?? []
-	);
 }
 
 function filterResults(

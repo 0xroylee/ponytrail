@@ -9,10 +9,10 @@ import type {
 import {
 	assertObjectRecord,
 	encodePathSegment,
+	parseListResponse,
 	readNullableString,
 	readNumber,
 	readString,
-	requestJson,
 } from "./response-utils";
 
 const TASKS_PATH = "/api/tasks";
@@ -110,6 +110,9 @@ export function parseProjectBoardTaskRecord(
 }
 
 export interface TaskApiMethods {
+	listBoardTasks(
+		options?: HealthRequestOptions,
+	): Promise<ProjectBoardTaskRecord[]>;
 	createTaskFromChat(
 		request: TaskCreateRequest,
 		options?: HealthRequestOptions,
@@ -133,6 +136,14 @@ export function createTaskApiMethods(
 	requestWithBase: RequestWithBase,
 ): TaskApiMethods {
 	return {
+		async listBoardTasks(options) {
+			const payload = await requestWithBase(TASKS_PATH, "GET", options);
+			return parseListResponse(
+				payload,
+				TASKS_PATH,
+				parseProjectBoardTaskRecord,
+			);
+		},
 		async createTaskFromChat(request, options) {
 			const payload = await requestWithBase(
 				TASK_CHAT_CREATE_PATH,

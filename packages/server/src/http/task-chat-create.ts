@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { CliExecutor } from "../app.types";
+import { REQUIRED_BOARD_STATUSES } from "../board";
 import type { ServerDatabase } from "../db";
 import { boardProjectsTable, boardTasksTable } from "../db";
 import type { BoardTaskRow } from "../db/board-tasks.types";
@@ -155,7 +156,7 @@ async function createBoardTask(
 			title: task.title,
 			content: task.description,
 			priority: 1,
-			status: "open",
+			status: REQUIRED_BOARD_STATUSES[0],
 			dueDate: null,
 			creatorId: project.ownerId,
 			linkedPr: null,

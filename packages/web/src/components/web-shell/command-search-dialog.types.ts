@@ -1,8 +1,4 @@
-import type {
-	CommandHistoryRecord,
-	ProjectBoardRecord,
-	ProjectBoardTaskRecord,
-} from "@/lib/api";
+import type { CommandHistoryRecord, ProjectBoardTaskRecord } from "@/lib/api";
 
 import type { SidebarNavItem } from "./web-shell.types";
 
@@ -44,7 +40,6 @@ export interface CommandSearchGroup {
 
 export interface CommandSearchDialogProps {
 	activeKey: SidebarNavItem["key"];
-	board: ProjectBoardRecord | undefined;
 	boardError: Error | null;
 	commandHistory: CommandHistoryRecord[] | undefined;
 	commandHistoryError: Error | null;
@@ -56,4 +51,5 @@ export interface CommandSearchDialogProps {
 	onNavigate: (key: SidebarNavItem["key"]) => void;
 	onNewIssue: () => void;
 	onOpenIssue: (taskId: string) => void;
+	tasks: ProjectBoardTaskRecord[] | undefined;
 }

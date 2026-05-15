@@ -20,7 +20,6 @@ import type {
 
 export function CommandSearchDialog({
 	activeKey,
-	board,
 	boardError,
 	commandHistory,
 	commandHistoryError,
@@ -32,6 +31,7 @@ export function CommandSearchDialog({
 	onNavigate,
 	onNewIssue,
 	onOpenIssue,
+	tasks,
 }: CommandSearchDialogProps): ReactElement {
 	const dialogRef = useRef<HTMLDialogElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -39,8 +39,8 @@ export function CommandSearchDialog({
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
 	const groups = useMemo(
-		() => buildCommandSearchGroups({ board, commandHistory, navItems, query }),
-		[board, commandHistory, navItems, query],
+		() => buildCommandSearchGroups({ commandHistory, navItems, query, tasks }),
+		[commandHistory, navItems, query, tasks],
 	);
 	const results = groups.flatMap((group) => group.results);
 	const hasLoadingState = isBoardLoading || isCommandHistoryLoading;

@@ -199,6 +199,9 @@ export interface ApiClient {
 	listCommandHistory(
 		options?: HealthRequestOptions,
 	): Promise<CommandHistoryRecord[]>;
+	listBoardTasks(
+		options?: HealthRequestOptions,
+	): Promise<ProjectBoardTaskRecord[]>;
 	listWorkspaceProjects(
 		workspaceId: string,
 		options?: HealthRequestOptions,

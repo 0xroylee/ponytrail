@@ -11,12 +11,10 @@ import type {
 	AgentRecord,
 	CommandHistoryRecord,
 	JobRecord,
-	ProjectBoardRecord,
 	ProjectBoardTaskRecord,
 	SkillRecord,
 	TaskCreateResponse,
 	TokenUsageRecord,
-	WorkspaceProjectRecord,
 } from "./client.types";
 import type {
 	AgentUpdateMutationInput,
@@ -36,10 +34,7 @@ export const serverStateQueryKeys = {
 	agents: ["server-state", "agents"] as const,
 	skills: ["server-state", "skills"] as const,
 	commandHistory: ["server-state", "command-history"] as const,
-	workspaceProjects: (workspaceId: string | null) =>
-		["server-state", "workspace-projects", workspaceId] as const,
-	projectBoard: (workspaceId: string | null, projectId: string | null) =>
-		["server-state", "project-board", workspaceId, projectId] as const,
+	boardTasks: ["server-state", "board-tasks"] as const,
 };
 
 export const taskCreationMutationKeys = {
@@ -129,6 +124,17 @@ export function useCommandHistoryQuery(
 	});
 }
 
+export function useBoardTasksQuery(
+	options?: ServerStateQueryOptions,
+): UseQueryResult<ProjectBoardTaskRecord[], Error> {
+	return useQuery({
+		queryKey: serverStateQueryKeys.boardTasks,
+		queryFn: () => apiClient.listBoardTasks(),
+		enabled: options?.enabled,
+		refetchInterval: resolveRefetchInterval(options),
+	});
+}
+
 export function useCreateTaskMutation(): UseMutationResult<
 	TaskCreateResponse,
 	Error,
@@ -145,58 +151,30 @@ export function useCreateTaskMutation(): UseMutationResult<
 	});
 }
 
-export function useWorkspaceProjectsQuery(
-	workspaceId: string | null,
-	options?: ServerStateQueryOptions,
-): UseQueryResult<WorkspaceProjectRecord[], Error> {
-	return useQuery({
-		queryKey: serverStateQueryKeys.workspaceProjects(workspaceId),
-		queryFn: () => apiClient.listWorkspaceProjects(workspaceId ?? ""),
-		enabled: Boolean(workspaceId) && options?.enabled !== false,
-		refetchInterval: resolveRefetchInterval(options),
-	});
-}
-
-export function useProjectBoardQuery(
-	workspaceId: string | null,
-	projectId: string | null,
-	options?: ServerStateQueryOptions,
-): UseQueryResult<ProjectBoardRecord, Error> {
-	return useQuery({
-		queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
-		queryFn: () =>
-			apiClient.getProjectBoard(workspaceId ?? "", projectId ?? ""),
-		enabled: Boolean(workspaceId && projectId) && options?.enabled !== false,
-		refetchInterval: resolveRefetchInterval(options),
-	});
-}
-
 function resolveRefetchInterval(
 	options?: ServerStateQueryOptions,
 ): number | false {
 	return options?.refetchIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
 }
 
-export function useCreateBoardTaskMutation(
-	workspaceId: string | null,
-	projectId: string | null,
-): UseMutationResult<ProjectBoardTaskRecord, Error, BoardTaskMutationInput> {
+export function useCreateBoardTaskMutation(): UseMutationResult<
+	ProjectBoardTaskRecord,
+	Error,
+	BoardTaskMutationInput
+> {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationKey: ["board-task", "create"] as const,
 		mutationFn: (input) => apiClient.createBoardTask(input),
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({
-				queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
+				queryKey: serverStateQueryKeys.boardTasks,
 			});
 		},
 	});
 }
 
-export function useUpdateBoardTaskMutation(
-	workspaceId: string | null,
-	projectId: string | null,
-): UseMutationResult<
+export function useUpdateBoardTaskMutation(): UseMutationResult<
 	ProjectBoardTaskRecord,
 	Error,
 	BoardTaskUpdateMutationInput
@@ -207,23 +185,24 @@ export function useUpdateBoardTaskMutation(
 		mutationFn: (input) => apiClient.updateBoardTask(input.taskId, input.task),
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({
-				queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
+				queryKey: serverStateQueryKeys.boardTasks,
 			});
 		},
 	});
 }
 
-export function useDeleteBoardTaskMutation(
-	workspaceId: string | null,
-	projectId: string | null,
-): UseMutationResult<ProjectBoardTaskRecord, Error, string> {
+export function useDeleteBoardTaskMutation(): UseMutationResult<
+	ProjectBoardTaskRecord,
+	Error,
+	string
+> {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationKey: ["board-task", "delete"] as const,
 		mutationFn: (taskId) => apiClient.deleteBoardTask(taskId),
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({
-				queryKey: serverStateQueryKeys.projectBoard(workspaceId, projectId),
+				queryKey: serverStateQueryKeys.boardTasks,
 			});
 		},
 	});

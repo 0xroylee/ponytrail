@@ -1,7 +1,5 @@
-import type { ReactElement } from "react";
+import { redirect } from "next/navigation";
 
-import { WebOperatorShell } from "@/components/web-shell/web-operator-shell";
-
-export default function HomePage(): ReactElement {
-	return <WebOperatorShell />;
+export default function HomePage(): never {
+	redirect("/issues");
 }

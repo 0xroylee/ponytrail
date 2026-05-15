@@ -104,6 +104,25 @@ export function sortColumns(
 	});
 }
 
+export function buildStatusColumns(
+	tasks: ProjectBoardTaskRecord[],
+): ProjectBoardStatusColumn[] {
+	const columns = new Map<string, ProjectBoardTaskRecord[]>();
+	for (const task of tasks) {
+		const items = columns.get(task.status) ?? [];
+		items.push(task);
+		columns.set(task.status, items);
+	}
+	const knownColumns = STATUS_ORDER.map((status) => ({
+		status,
+		tasks: columns.get(status) ?? [],
+	}));
+	const extraColumns = [...columns.entries()]
+		.filter(([status]) => !(STATUS_ORDER as readonly string[]).includes(status))
+		.map(([status, items]) => ({ status, tasks: items }));
+	return [...knownColumns, ...extraColumns];
+}
+
 function normalizeIndex(index: number): number {
 	return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }

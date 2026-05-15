@@ -1,47 +1,30 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import {
 	type ReactElement,
+	type ReactNode,
 	useCallback,
 	useEffect,
 	useMemo,
 	useState,
 } from "react";
 
-import { DEFAULT_WORKSPACE_ID } from "@/components/issues-board/issues-board.constants";
 import type { OpenIssueRequest } from "@/components/issues-board/issues-board.types";
-import { WebJobBoard } from "@/components/web-shell/web-job-board";
 import type {
 	SidebarDisplayMode,
 	SidebarNavItem,
+	SidebarNavKey,
 } from "@/components/web-shell/web-shell.types";
 import { WebSidebar } from "@/components/web-shell/web-sidebar";
-import {
-	useCommandHistoryQuery,
-	useProjectBoardQuery,
-	useWorkspaceProjectsQuery,
-} from "@/lib/api/queries";
+import { useBoardTasksQuery, useCommandHistoryQuery } from "@/lib/api/queries";
 
 import { CommandSearchDialog } from "./command-search-dialog";
-
-const navItems: SidebarNavItem[] = [
-	{ key: "inbox", label: "Inbox" },
-	{ key: "issues", label: "Issues" },
-	{ key: "projects", label: "Projects" },
-	{ key: "autopilot", label: "Autopilot" },
-	{ key: "agents", label: "Agents" },
-	{ key: "squads", label: "Squads" },
-	{ key: "usage", label: "Usage" },
-	{ key: "runtimes", label: "Runtimes" },
-	{ key: "skills", label: "Skills" },
-	{ key: "settings", label: "Settings" },
-];
+import { OperatorIssueActionsProvider } from "./operator-issue-actions-context";
+import type { OperatorIssueActionsContextValue } from "./operator-issue-actions.types";
+import { hrefForNavKey, navItems } from "./web-shell.constants";
 
 const compactSidebarQuery = "(max-width: 900px)";
-
-function visibleSidebarMode(isCompactViewport: boolean): SidebarDisplayMode {
-	return isCompactViewport ? "collapsed" : "expanded";
-}
 
 function normalizeSidebarMode(
 	mode: SidebarDisplayMode,
@@ -59,49 +42,44 @@ function nextSidebarMode(
 ): SidebarDisplayMode {
 	const normalizedMode = normalizeSidebarMode(mode, isCompactViewport);
 
-	if (isCompactViewport) {
-		if (normalizedMode === "hidden") {
-			return "collapsed";
-		}
-		return "hidden";
-	}
 	if (normalizedMode === "expanded") {
 		return "collapsed";
-	}
-	if (normalizedMode === "collapsed") {
-		return "hidden";
 	}
 	return "expanded";
 }
 
-export function WebOperatorShell(): ReactElement {
+function getActiveNavKey(pathname: string): SidebarNavKey {
+	return (
+		navItems.find(
+			(item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+		)?.key ?? "issues"
+	);
+}
+
+export function WebOperatorShell({
+	children,
+}: {
+	children: ReactNode;
+}): ReactElement {
+	const pathname = usePathname();
+	const router = useRouter();
 	const [sidebarMode, setSidebarMode] =
 		useState<SidebarDisplayMode>("expanded");
-	const [activeNavKey, setActiveNavKey] =
-		useState<SidebarNavItem["key"]>("issues");
 	const [isCompactViewport, setIsCompactViewport] = useState<boolean>(false);
 	const [createIssueRequest, setCreateIssueRequest] = useState(0);
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [openIssueRequest, setOpenIssueRequest] =
 		useState<OpenIssueRequest | null>(null);
-	const [workspaceId, setWorkspaceId] = useState(DEFAULT_WORKSPACE_ID);
-	const [projectId, setProjectId] = useState<string | null>(null);
-	const projectsQuery = useWorkspaceProjectsQuery(workspaceId);
-	const selectedProjectId = projectId ?? projectsQuery.data?.[0]?.id ?? null;
-	const searchBoardQuery = useProjectBoardQuery(
-		workspaceId,
-		selectedProjectId,
-		{
-			enabled: isSearchOpen,
-			refetchIntervalMs: false,
-		},
-	);
+	const searchTasksQuery = useBoardTasksQuery({
+		enabled: isSearchOpen,
+		refetchIntervalMs: false,
+	});
 	const commandHistoryQuery = useCommandHistoryQuery({
 		enabled: isSearchOpen,
 		refetchIntervalMs: false,
 	});
+	const activeNavKey = getActiveNavKey(pathname);
 	const canShowSidebar = sidebarMode !== "hidden";
-	const showFloatingToggle = sidebarMode === "hidden";
 
 	useEffect(() => {
 		const mediaQuery = window.matchMedia(compactSidebarQuery);
@@ -117,35 +95,45 @@ export function WebOperatorShell(): ReactElement {
 		};
 	}, []);
 
-	const showSidebar = useCallback(() => {
-		setSidebarMode(visibleSidebarMode(isCompactViewport));
-	}, [isCompactViewport]);
-
 	const toggleSidebarMode = useCallback(() => {
 		setSidebarMode((current) => nextSidebarMode(current, isCompactViewport));
 	}, [isCompactViewport]);
 
 	const createIssue = useCallback(() => {
-		setActiveNavKey("issues");
+		router.push("/issues");
 		setCreateIssueRequest((value) => value + 1);
-	}, []);
+	}, [router]);
 
-	const openIssue = useCallback((taskId: string) => {
-		setActiveNavKey("issues");
-		setOpenIssueRequest((current) => ({
-			taskId,
-			requestId: (current?.requestId ?? 0) + 1,
-		}));
-	}, []);
+	const openIssue = useCallback(
+		(taskId: string) => {
+			router.push("/issues");
+			setOpenIssueRequest((current) => ({
+				taskId,
+				requestId: (current?.requestId ?? 0) + 1,
+			}));
+		},
+		[router],
+	);
 
-	const changeWorkspaceId = useCallback((nextWorkspaceId: string) => {
-		setWorkspaceId(nextWorkspaceId);
-		setProjectId(null);
-	}, []);
+	const navigateToSection = useCallback(
+		(key: SidebarNavItem["key"]) => {
+			router.push(hrefForNavKey(key));
+		},
+		[router],
+	);
 
 	const viewportColumns = useMemo(() => {
 		return canShowSidebar ? "auto minmax(0, 1fr)" : "minmax(0, 1fr)";
 	}, [canShowSidebar]);
+	const issueActionsValue = useMemo<OperatorIssueActionsContextValue>(
+		() => ({
+			createIssueRequest,
+			openIssueRequest,
+			requestNewIssue: createIssue,
+			requestOpenIssue: openIssue,
+		}),
+		[createIssue, createIssueRequest, openIssue, openIssueRequest],
+	);
 
 	return (
 		<main
@@ -159,64 +147,33 @@ export function WebOperatorShell(): ReactElement {
 				overflowX: "clip",
 			}}
 		>
-			{showFloatingToggle ? (
-				<button
-					type="button"
-					aria-label="Show sidebar"
-					onClick={showSidebar}
-					style={{
-						position: "fixed",
-						top: "0.75rem",
-						left: "0.75rem",
-						zIndex: 10,
-						padding: "0.5rem 0.7rem",
-						border: "1px solid #3f3f46",
-						borderRadius: "6px",
-						background: "#18191d",
-						color: "#f4f4f5",
-						cursor: "pointer",
-					}}
-				>
-					Show Nav
-				</button>
-			) : null}
 			{canShowSidebar ? (
 				<WebSidebar
 					mode={sidebarMode}
 					activeKey={activeNavKey}
 					navItems={navItems}
-					onNavSelect={setActiveNavKey}
 					onNewIssue={createIssue}
 					onSearch={() => setIsSearchOpen(true)}
 					onToggleMode={toggleSidebarMode}
 				/>
 			) : null}
-			<WebJobBoard
-				activeKey={activeNavKey}
-				createIssueRequest={createIssueRequest}
-				isProjectsLoading={projectsQuery.isLoading}
-				onProjectIdChange={setProjectId}
-				onWorkspaceIdChange={changeWorkspaceId}
-				openIssueRequest={openIssueRequest}
-				projectId={selectedProjectId}
-				projects={projectsQuery.data}
-				projectsError={projectsQuery.error}
-				workspaceId={workspaceId}
-			/>
+			<OperatorIssueActionsProvider value={issueActionsValue}>
+				{children}
+			</OperatorIssueActionsProvider>
 			<CommandSearchDialog
 				activeKey={activeNavKey}
-				board={searchBoardQuery.data}
-				boardError={searchBoardQuery.error}
+				boardError={searchTasksQuery.error}
 				commandHistory={commandHistoryQuery.data}
 				commandHistoryError={commandHistoryQuery.error}
-				isBoardLoading={searchBoardQuery.isLoading}
+				isBoardLoading={searchTasksQuery.isLoading}
 				isCommandHistoryLoading={commandHistoryQuery.isLoading}
 				isOpen={isSearchOpen}
 				navItems={navItems}
 				onClose={() => setIsSearchOpen(false)}
-				onNavigate={setActiveNavKey}
+				onNavigate={navigateToSection}
 				onNewIssue={createIssue}
 				onOpenIssue={openIssue}
+				tasks={searchTasksQuery.data}
 			/>
 		</main>
 	);
