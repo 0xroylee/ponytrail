@@ -206,6 +206,7 @@ async function createApp() {
 		db: testDatabase.db,
 		cliExecutor: {
 			execute: async (request) => ({ status: "succeeded", request }),
+			executeStream: async (request) => ({ status: "succeeded", request }),
 			getHistory: () => [],
 		},
 	};
