@@ -4,8 +4,13 @@ import type {
 	ApiClientOptions,
 	HealthRequestOptions,
 } from "./client.types";
+import { encodePathSegment } from "./response-utils";
 import { requestJson } from "./response-utils";
-import { parseHealthResponse, parseServerList } from "./server-state-client";
+import {
+	parseAgentRecord,
+	parseHealthResponse,
+	parseServerList,
+} from "./server-state-client";
 import { createTaskApiMethods } from "./task-client";
 
 type RequestMethod = "GET" | "POST" | "PATCH" | "DELETE";
@@ -49,6 +54,15 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
 				requestOptions,
 			);
 			return parseServerList.agents(payload);
+		},
+		async updateAgent(agentId, request, requestOptions) {
+			const payload = await requestWithBase(
+				`/api/agents/${encodePathSegment(agentId)}`,
+				"PATCH",
+				requestOptions,
+				request,
+			);
+			return parseAgentRecord(payload);
 		},
 		async listSkills(requestOptions) {
 			const payload = await requestWithBase(
