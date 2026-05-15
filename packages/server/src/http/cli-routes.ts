@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { CliExecutor } from "../app.types";
+import type { ServerLogger } from "../logger.types";
 import { methodNotAllowed } from "./http-utils";
 import { badRequestResponse, jsonSuccess } from "./response";
 import { isRecord } from "./zod-utils";
@@ -13,6 +14,7 @@ export async function handleCliRoute(
 	request: Request,
 	cliExecutor: CliExecutor,
 	pathname: string,
+	logger?: ServerLogger,
 ): Promise<Response | null> {
 	if (pathname === "/api/cli/history") {
 		if (request.method !== "GET") {
@@ -29,6 +31,15 @@ export async function handleCliRoute(
 		if (parsed.status === "error") {
 			return badRequestResponse(parsed.error);
 		}
+		logger?.info(
+			{
+				method: request.method,
+				path: pathname,
+				action: parsed.request.action,
+				requestKeys: Object.keys(parsed.request).sort(),
+			},
+			"CLI dispatch executed",
+		);
 		const result = await cliExecutor.execute(parsed.request);
 		return jsonSuccess(result, {
 			status: result.status === "rejected" ? 400 : 200,
