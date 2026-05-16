@@ -324,18 +324,18 @@ function resolveInvocation(
 			},
 		};
 	}
-	if (request.action === "setup") {
+	if (request.action === "onboard") {
 		if (request.check !== undefined && typeof request.check !== "boolean") {
 			return {
 				status: "error",
-				error: "Malformed setup request: check must be a boolean",
+				error: "Malformed onboard request: check must be a boolean",
 			};
 		}
 		return {
 			status: "ok",
 			invocation: {
 				command,
-				args: [...baseArgs, ...buildSetupArgs({ check: request.check })],
+				args: [...baseArgs, ...buildOnboardArgs({ check: request.check })],
 			},
 		};
 	}
@@ -412,8 +412,8 @@ function buildStatusArgs(
 	];
 }
 
-function buildSetupArgs(request: { check?: boolean }): string[] {
-	const args = ["setup"];
+function buildOnboardArgs(request: { check?: boolean }): string[] {
+	const args = ["onboard"];
 	appendBooleanFlag(args, "--check", request.check);
 	return args;
 }

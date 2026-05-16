@@ -227,8 +227,11 @@ describe("CliCommandExecutor", () => {
 		const stopAction = await executor.execute({
 			action: "stop",
 		} as unknown as { action: string });
-		const malformedSetup = await executor.execute({
+		const legacySetup = await executor.execute({
 			action: "setup",
+		} as unknown as { action: string });
+		const malformedOnboard = await executor.execute({
+			action: "onboard",
 			check: "false",
 		} as unknown as { action: string });
 		const malformedStatus = await executor.execute({
@@ -259,7 +262,12 @@ describe("CliCommandExecutor", () => {
 		expect(unknownAction.status).toBe("rejected");
 		expect(stopAction.status).toBe("rejected");
 		expect(stopAction.error).toContain("typed stop workflow boundary");
-		expect(malformedSetup.status).toBe("rejected");
+		expect(legacySetup.status).toBe("rejected");
+		expect(legacySetup.error).toBe("Unsupported CLI action: setup");
+		expect(malformedOnboard.status).toBe("rejected");
+		expect(malformedOnboard.error).toBe(
+			"Malformed onboard request: check must be a boolean",
+		);
 		expect(malformedStatus.status).toBe("rejected");
 		expect(malformedSkillsAction.status).toBe("rejected");
 		expect(malformedTaskCreate.status).toBe("rejected");

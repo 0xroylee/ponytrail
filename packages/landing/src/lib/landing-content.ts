@@ -12,8 +12,8 @@ export const navItems = [
 export const runCommand = {
 	kicker: "Get started",
 	title: "Run the command, then connect your first workflow.",
-	body: "Interactive setup walks through configuration and checks your local environment before the first agent run.",
-	command: "npx devos setup",
+	body: "Interactive onboarding walks through configuration and checks your local environment before the first agent run.",
+	command: "npx devos onboard",
 };
 
 export const workflowFlow = [

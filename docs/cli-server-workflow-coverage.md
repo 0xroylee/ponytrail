@@ -27,7 +27,7 @@ Supported user-facing command kinds:
 - `status`
 - `projects`
 - `cron`
-- `setup`
+- `onboard`
 - `skills` (`list`, `add`, `update`, `remove`)
 - `task` (`create`)
 
@@ -50,7 +50,7 @@ Supported `action` values in executor requests:
 Unsupported by the executor (gap relative to CLI command surface):
 
 - `cron`
-- `setup`
+- `onboard`
 - `skills`
 - `task`
 
@@ -168,7 +168,7 @@ Contract source files:
 Additional CLI command coverage:
 
 - Expand executor contract and workflow routes only when ROY-144 scope
-  explicitly requires `cron`, `setup`, `skills`, or `task` controls.
+  explicitly requires `cron`, `onboard`, `skills`, or `task` controls.
 
 ## Missing Execution Paths (For ROY-144)
 

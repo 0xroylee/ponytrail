@@ -76,7 +76,7 @@ export function RunCommandSection(): ReactElement {
 							<span className="h-3 w-3 rounded-full bg-circuit" />
 						</div>
 						<p className="font-mono text-[11px] font-black uppercase tracking-[0.2em] text-white/60">
-							setup
+							onboard
 						</p>
 					</div>
 					<div className="flex flex-col gap-4 px-5 py-6 text-left sm:flex-row sm:items-center sm:justify-between">

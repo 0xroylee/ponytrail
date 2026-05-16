@@ -2,7 +2,7 @@
 
 ## Goal
 
-Get a new operator from zero setup to running a scoped project workflow.
+Get a new operator from zero onboarding to running a scoped project workflow.
 
 ## Preconditions
 
@@ -10,11 +10,11 @@ Get a new operator from zero setup to running a scoped project workflow.
 2. `bun`, `gh`, and `rtk` are installed.
 3. Linear and GitHub credentials are available.
 
-## Setup
+## Onboard
 
-1. Run `devos setup` and answer the guided prompts.
+1. Run `devos onboard` and answer the guided prompts.
 2. Confirm the wizard writes `.env` for secrets and `devos.local.config.ts` for local project settings.
-3. Run `devos setup --check` to verify config, GitHub auth, RTK availability, Codex availability, and secret placement.
+3. Run `devos onboard --check` to verify config, GitHub auth, RTK availability, Codex availability, and secret placement.
 
 ## First Run
 

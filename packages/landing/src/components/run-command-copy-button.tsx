@@ -23,7 +23,7 @@ export function RunCommandCopyButton({
 
 	return (
 		<button
-			aria-label="Copy setup command"
+			aria-label="Copy onboard command"
 			className="border-2 border-white/18 bg-white/8 px-3 py-2 font-mono text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:border-circuit hover:text-circuit focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-circuit"
 			onClick={() => void copyCommand()}
 			type="button"

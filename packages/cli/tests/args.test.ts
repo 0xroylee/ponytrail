@@ -178,18 +178,24 @@ describe("parseArgs", () => {
 		});
 	});
 
-	it("parses setup command", () => {
-		expect(parseArgs(["bun", "devos", "setup"])).toEqual({
-			kind: "setup",
+	it("parses onboard command", () => {
+		expect(parseArgs(["bun", "devos", "onboard"])).toEqual({
+			kind: "onboard",
 			check: false,
 		});
 	});
 
-	it("parses setup check command", () => {
-		expect(parseArgs(["bun", "devos", "setup", "--check"])).toEqual({
-			kind: "setup",
+	it("parses onboard check command", () => {
+		expect(parseArgs(["bun", "devos", "onboard", "--check"])).toEqual({
+			kind: "onboard",
 			check: true,
 		});
+	});
+
+	it("rejects legacy setup command", () => {
+		expect(() => parseArgs(["bun", "devos", "setup"])).toThrow(
+			"Unknown command: setup",
+		);
 	});
 
 	it("parses skills list command", () => {

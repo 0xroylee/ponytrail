@@ -15,15 +15,15 @@ import { handleTaskCommand } from "./task-command";
 
 export { resolveTaskCreateRequest } from "./task-command";
 
-type SetupCommand = Extract<CliCommand, { kind: "setup" }>;
+type OnboardCommand = Extract<CliCommand, { kind: "onboard" }>;
 type DaemonCommand = Extract<CliCommand, { kind: "daemon" }>;
 type RunnableCommand = Exclude<
 	CliCommand,
-	{ kind: "help" } | SetupCommand | DaemonCommand
+	{ kind: "help" } | OnboardCommand | DaemonCommand
 >;
 
-export async function handleSetupCommand(
-	command: SetupCommand,
+export async function handleOnboardCommand(
+	command: OnboardCommand,
 	cwd: string,
 ): Promise<void> {
 	if (command.check) {
@@ -159,7 +159,7 @@ export function printHelp(): void {
 			"  devos skills add --title <TITLE> --description <TEXT> --content <TEXT> [--project <PROJECT_ID>]",
 			"  devos skills update <NAME> [--title <TITLE>] [--description <TEXT>] [--content <TEXT>] [--project <PROJECT_ID>]",
 			"  devos skills remove <NAME> [--project <PROJECT_ID>]",
-			"  devos setup [--check]",
+			"  devos onboard [--check]",
 			"  devos help",
 			"",
 			"Environment:",

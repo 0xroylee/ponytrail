@@ -17,7 +17,7 @@ Use one of these forms:
 2. Dependencies installed with `bun install`.
 3. Config present in `devos.config.ts` (or local overrides in `devos.local.config.ts`).
 4. Required credentials configured (for example Linear and GitHub settings used by your project).
-5. Initial setup completed with `setup`, then validated with `setup --check`.
+5. Initial onboarding completed with `onboard`, then validated with `onboard --check`.
 6. A valid project ID available from the `projects` command output.
 
 ## Configuration Coverage
@@ -34,9 +34,9 @@ The commands below read from the resolved runtime project config (from `devos.co
 
 Command-specific configuration dependencies:
 
-- `setup`:
-  - Writes/validates local setup data used to resolve runtime config and credentials.
-  - `setup --check` validates required config and environment for configured projects (for example Linear API key, execution path, and required skill files).
+- `onboard`:
+  - Writes/validates local onboarding data used to resolve runtime config and credentials.
+  - `onboard --check` validates required config and environment for configured projects (for example Linear API key, execution path, and required skill files).
 - `projects`:
   - Reads configured `projects[]` entries and prints each project ID plus resolved `executionPath` and `workspacePath`.
 - `run`:
@@ -55,29 +55,29 @@ Command-specific configuration dependencies:
 
 ## Command Reference
 
-### `setup`
+### `onboard`
 
 Syntax:
 
 ```bash
-devos setup [--check]
+devos onboard [--check]
 ```
 
 Examples:
 
 ```bash
-bun run packages/cli/src/index.ts setup
-bun run packages/cli/src/index.ts setup --check
+bun run packages/cli/src/index.ts onboard
+bun run packages/cli/src/index.ts onboard --check
 ```
 
 Expected behavior:
 
-- `setup` runs the guided setup wizard.
-- `setup --check` runs setup validation checks only.
+- `onboard` runs the guided onboarding wizard.
+- `onboard --check` runs onboarding validation checks only.
 
 Configuration notes:
 
-- Reads/writes local setup artifacts that feed runtime config resolution.
+- Reads/writes local onboarding artifacts that feed runtime config resolution.
 - Validation checks are project-aware and fail when required project config/env is missing.
 
 ### `projects`

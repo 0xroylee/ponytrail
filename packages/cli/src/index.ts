@@ -2,7 +2,7 @@
 import { parseArgs } from "./args";
 import {
 	handleCommand,
-	handleSetupCommand,
+	handleOnboardCommand,
 	printHelp,
 } from "./commands/handlers";
 import { loadConfig } from "./features/config";
@@ -25,8 +25,8 @@ async function main(): Promise<void> {
 	}
 
 	const cwd = process.cwd();
-	if (command.kind === "setup") {
-		await handleSetupCommand(command, cwd);
+	if (command.kind === "onboard") {
+		await handleOnboardCommand(command, cwd);
 		return;
 	}
 	if (command.kind === "daemon") {

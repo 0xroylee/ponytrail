@@ -9,14 +9,14 @@ For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_T
 ## Quick Start
 
 1. Install dependencies.
-2. Run guided setup.
-3. Validate your setup.
+2. Run guided onboarding.
+3. Validate your onboarding.
 4. Run one scoped workflow.
 
 ```bash
 bun install
-bun run src/index.ts setup
-bun run src/index.ts setup --check
+bun run src/index.ts onboard
+bun run src/index.ts onboard --check
 bun run src/index.ts run --project <PROJECT_ID>
 ```
 
@@ -47,28 +47,28 @@ Usage notes:
 
 - No project config is required to render help.
 
-### setup
+### onboard
 
-Purpose: run guided environment setup, or validate setup prerequisites.
+Purpose: run guided environment onboarding, or validate onboarding prerequisites.
 
 Syntax:
 
 ```bash
-bun run src/index.ts setup [--check]
+bun run src/index.ts onboard [--check]
 ```
 
 Options:
 
-- `--check`: run setup validation checks without opening the interactive wizard.
+- `--check`: run onboarding validation checks without opening the interactive wizard.
 
 Output shape:
 
-- Human-readable setup/check logs written to stdout/stderr.
+- Human-readable onboarding/check logs written to stdout/stderr.
 
 Usage notes:
 
-- `setup` runs the interactive wizard.
-- `setup --check` performs validation only.
+- `onboard` runs the interactive wizard.
+- `onboard --check` performs validation only.
 
 ### projects
 
@@ -277,7 +277,7 @@ After linking/installing the package bin, you can also use `devos ...` directly.
 
 - Primary config: `devos.config.ts`.
 - Local overrides (gitignored): `devos.local.config.ts`.
-- Guided setup stores local secrets in `.devos/config/env.sqlite` (and writes `.env` for compatibility).
+- Guided onboarding stores local secrets in `.devos/config/env.sqlite` (and writes `.env` for compatibility).
 - Docker-isolated Codex execution status and caveats (ROY-95): [docs/RELIABILITY.md#docker-isolated-codex-execution](docs/RELIABILITY.md#docker-isolated-codex-execution)
 
 For full config shape, polling, env vars, and routing behavior, use:

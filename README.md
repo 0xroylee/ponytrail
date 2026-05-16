@@ -10,16 +10,16 @@ For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_T
 
 1. Install dependencies.
 2. Build the local CLI package.
-3. Run guided setup.
-4. Validate your setup.
+3. Run guided onboarding.
+4. Validate your onboarding.
 5. Run one scoped workflow.
 
 ```bash
 bun install
 bun run build
 npx devos help
-npx devos setup
-npx devos setup --check
+npx devos onboard
+npx devos onboard --check
 npx devos run --project <PROJECT_ID>
 ```
 
@@ -35,9 +35,9 @@ bun install
 bun run build
 npx devos help
 
-# setup and validation
-npx devos setup
-npx devos setup --check
+# onboarding and validation
+npx devos onboard
+npx devos onboard --check
 
 # local workspace startup/build shortcuts
 bun run dev

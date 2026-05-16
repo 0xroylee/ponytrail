@@ -5,7 +5,7 @@ export type SupportedCliAction =
 	| "run"
 	| "status"
 	| "projects"
-	| "setup"
+	| "onboard"
 	| "skills"
 	| "task";
 
@@ -32,8 +32,8 @@ export interface ProjectsActionRequest {
 	action: "projects";
 }
 
-export interface SetupActionRequest {
-	action: "setup";
+export interface OnboardActionRequest {
+	action: "onboard";
 	check?: boolean;
 }
 
@@ -90,7 +90,7 @@ export type SupportedCliCommandRequest =
 	| RunActionRequest
 	| StatusActionRequest
 	| ProjectsActionRequest
-	| SetupActionRequest
+	| OnboardActionRequest
 	| SkillsActionRequest
 	| TaskCreateActionRequest;
 

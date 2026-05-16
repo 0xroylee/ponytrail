@@ -63,10 +63,10 @@ export const CLI_COMMAND_SIMULATION_MATRIX: SimulationCase[] = [
 		expectedStatus: "succeeded",
 	},
 	{
-		name: "setup action with check flag",
-		request: { action: "setup", check: true },
-		expectedArgs: ["devos", "setup", "--check"],
-		commandResult: { code: 0, stdout: "setup ok", stderr: "" },
+		name: "onboard action with check flag",
+		request: { action: "onboard", check: true },
+		expectedArgs: ["devos", "onboard", "--check"],
+		commandResult: { code: 0, stdout: "onboard ok", stderr: "" },
 		expectedStatus: "succeeded",
 	},
 	{

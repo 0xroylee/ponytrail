@@ -40,5 +40,5 @@ export type CliCommand =
 	| { kind: "projects" }
 	| { kind: "skills"; command: SkillsCommand }
 	| { kind: "task"; command: TaskCommand }
-	| { kind: "setup"; check: boolean }
+	| { kind: "onboard"; check: boolean }
 	| { kind: "help" };
