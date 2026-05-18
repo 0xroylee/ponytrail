@@ -23,7 +23,7 @@ export async function safeLinearComment(
 	} catch (error) {
 		runLogger.error(
 			{ err: normalizeError(error) },
-			"Failed to add Linear comment",
+			"Failed to add task comment",
 		);
 	}
 }
@@ -38,7 +38,7 @@ export async function safeLinearMoveToCanceled(
 	} catch (error) {
 		runLogger.error(
 			{ err: normalizeError(error) },
-			"Failed to move Linear issue to Canceled",
+			"Failed to move task to Canceled",
 		);
 	}
 }

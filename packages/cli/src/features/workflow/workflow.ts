@@ -141,7 +141,7 @@ export async function runWorkflow(
 				await recordCliPollingEvent(context.config, globalPolling, {
 					eventType: "cycle_failed",
 					level: "error",
-					message: "Linear polling cycle failed",
+					message: "Task polling cycle failed",
 					state: "error",
 					cycle,
 					lastError: message,
@@ -209,7 +209,7 @@ export async function runWorkflow(
 					recordCliPollingEvent(context.config, globalPolling, {
 						eventType: "polling_stopped",
 						level: "info",
-						message: "Linear polling stopped",
+						message: "Task polling stopped",
 						state: "stopped",
 						cycle,
 						finishedAt: new Date().toISOString(),
@@ -285,7 +285,7 @@ async function routeProjectContextsForTargetIssue(
 			issueProjectId: issue.projectId ?? null,
 			projectId: routing.selectedProjectId,
 		},
-		"Routed target issue to project by Linear project id",
+		"Routed target task to project by source project id",
 	);
 	return selected;
 }
@@ -340,7 +340,7 @@ async function runProjectCycle(
 	await recordCliPollingEvent(config, polling, {
 		eventType: "cycle_started",
 		level: "info",
-		message: "Linear polling cycle started",
+		message: "Task polling cycle started",
 		state: "running",
 		cycle,
 		startedAt,
@@ -362,14 +362,14 @@ async function runProjectCycle(
 			staleRetryCount,
 			pollingEnabled: polling.enabled,
 		},
-		"Fetched eligible Linear issues",
+		"Fetched eligible board tasks",
 	);
 	emitPollingProgress(config.id, "cycle_fetched", "succeeded", {
 		detail: `fetched ${issueQueue.length} issue(s)`,
 	});
 
 	if (issueQueue.length === 0) {
-		projectLogger.info({ cycle }, "No eligible Linear issues found.");
+		projectLogger.info({ cycle }, "No eligible board tasks found.");
 		emitPollingProgress(config.id, "cycle_no_work", "succeeded", {
 			detail: `cycle ${cycle} no eligible issues`,
 		});
@@ -398,7 +398,7 @@ async function runProjectCycle(
 	await recordCliPollingEvent(config, polling, {
 		eventType: "cycle_completed",
 		level: "info",
-		message: "Linear polling cycle completed",
+		message: "Task polling cycle completed",
 		state: "success",
 		cycle,
 		counts: {
@@ -773,7 +773,7 @@ async function fetchReviewOnlyIssues(
 		{
 			projectId: config.id,
 			localReviewCandidates: localIssues.length,
-			linearReviewCandidates: linearIssues.length,
+			taskReviewCandidates: linearIssues.length,
 			mergedReviewCandidates: built.mergedCandidateCount,
 			discoveredPrCount: built.discoveredPrCount,
 			skippedWithoutPr: built.skippedWithoutPr,
@@ -913,7 +913,7 @@ async function processIssue(
 			await linear.markStage(issue.id, "backlog");
 			issueLogger.info(
 				{ issueState: issue.state.name, issueStateId: issue.state.id },
-				"Moved blocked Linear issue back to backlog before execution",
+				"Moved blocked task back to backlog before execution",
 			);
 		}
 		const executionConfig =
@@ -1575,7 +1575,7 @@ async function safeLinearComment(
 	} catch (error) {
 		runLogger.error(
 			{ err: normalizeError(error) },
-			"Failed to add Linear comment",
+			"Failed to add task comment",
 		);
 	}
 }
@@ -1697,7 +1697,7 @@ async function safeLinearMoveToCanceled(
 	} catch (error) {
 		runLogger.error(
 			{ err: normalizeError(error) },
-			"Failed to move Linear issue to Canceled",
+			"Failed to move task to Canceled",
 		);
 	}
 }

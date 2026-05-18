@@ -265,7 +265,7 @@ async function routeProjectContextsForTargetIssue(
 			issueProjectId: issue.projectId ?? null,
 			projectId: routing.selectedProjectId,
 		},
-		"Routed target issue to project by Linear project id",
+		"Routed target task to project by source project id",
 	);
 	return selected;
 }
@@ -294,11 +294,11 @@ async function runProjectCycle(
 			staleRetryCount,
 			pollingEnabled: polling.enabled,
 		},
-		"Fetched eligible Linear issues",
+		"Fetched eligible board tasks",
 	);
 
 	if (issueQueue.length === 0) {
-		projectLogger.info({ cycle }, "No eligible Linear issues found.");
+		projectLogger.info({ cycle }, "No eligible board tasks found.");
 	}
 
 	await processIssueQueueBounded(
@@ -515,7 +515,7 @@ async function fetchReviewOnlyIssues(
 		{
 			projectId: config.id,
 			localReviewCandidates: localIssues.length,
-			linearReviewCandidates: linearIssues.length,
+			taskReviewCandidates: linearIssues.length,
 			mergedReviewCandidates: built.mergedCandidateCount,
 			discoveredPrCount: built.discoveredPrCount,
 			skippedWithoutPr: built.skippedWithoutPr,

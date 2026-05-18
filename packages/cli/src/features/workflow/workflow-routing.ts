@@ -24,12 +24,12 @@ export function routeProjectsForIssueProjectId(
 		if (unscopedProjects.length > 1) {
 			return {
 				error:
-					"Target issue has no Linear project id and multiple unscoped projects are configured. Re-run with --project <PROJECT_ID>.",
+					"Target task has no source project id and multiple unscoped projects are configured. Re-run with --project <PROJECT_ID>.",
 			};
 		}
 		return {
 			skipReason:
-				"Target issue has no Linear project id and cannot be safely routed in --all-projects mode.",
+				"Target task has no source project id and cannot be safely routed in --all-projects mode.",
 		};
 	}
 
