@@ -33,7 +33,7 @@ const config: DeepPartial<DevosRootConfig> & ServerCronConfig = {
 	},
 	projects: [
 		{
-			id: "adhd-47ea7f022b5d",
+			id: "7c02a15d-2ab8-4c5a-84d4-c3acf94d0bad",
 			name: "Default Project",
 		},
 	],
