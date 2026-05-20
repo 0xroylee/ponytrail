@@ -1,75 +1,84 @@
-import { readFlagValue, readRequiredFlagValue } from "../../args-utils";
-import type { SkillsCommand } from "../../args.types";
+import type { Command } from "commander";
+import type {
+	CliCommand,
+	ProjectCommanderOptions,
+	SkillAddCommanderOptions,
+	SkillUpdateCommanderOptions,
+} from "../../args.types";
 
-export function parseSkillsCommand(args: string[]): SkillsCommand {
-	const action = args[0];
-	if (!action) {
-		throw new Error(
-			"skills command requires an action: list | add | update | remove",
+export function registerSkillsCommand(
+	program: Command,
+	setCommand: (command: CliCommand) => void,
+): void {
+	const skills = program.command("skills").description("manage project skills");
+	skills
+		.command("list")
+		.option("--project <PROJECT_ID>")
+		.action((options: ProjectCommanderOptions) => {
+			setCommand({
+				kind: "skills",
+				command: { action: "list", projectId: options.project },
+			});
+		});
+	skills
+		.command("add")
+		.requiredOption("--title <TITLE>")
+		.requiredOption("--description <TEXT>")
+		.requiredOption("--content <TEXT>")
+		.option("--project <PROJECT_ID>")
+		.action((options: SkillAddCommanderOptions) => {
+			setCommand({
+				kind: "skills",
+				command: {
+					action: "add",
+					title: options.title,
+					description: options.description,
+					content: options.content,
+					projectId: options.project,
+				},
+			});
+		});
+	skills
+		.command("update <NAME>")
+		.option("--title <TITLE>")
+		.option("--description <TEXT>")
+		.option("--content <TEXT>")
+		.option("--project <PROJECT_ID>")
+		.action(
+			(
+				name: string,
+				options: SkillUpdateCommanderOptions,
+				command: Command,
+			) => {
+				if (
+					options.title === undefined &&
+					options.description === undefined &&
+					options.content === undefined
+				) {
+					command.error(
+						"skills update requires at least one of --title, --description, or --content",
+					);
+				}
+				setCommand({
+					kind: "skills",
+					command: {
+						action: "update",
+						name,
+						title: options.title,
+						description: options.description,
+						content: options.content,
+						projectId: options.project,
+					},
+				});
+			},
 		);
-	}
-
-	if (action === "list") {
-		return {
-			action: "list",
-			projectId: readFlagValue(args.slice(1), "--project"),
-		};
-	}
-
-	if (action === "add") {
-		const actionArgs = args.slice(1);
-		return {
-			action: "add",
-			projectId: readFlagValue(actionArgs, "--project"),
-			title: readRequiredFlagValue(actionArgs, "--title", "skills add"),
-			description: readRequiredFlagValue(
-				actionArgs,
-				"--description",
-				"skills add",
-			),
-			content: readRequiredFlagValue(actionArgs, "--content", "skills add"),
-		};
-	}
-
-	if (action === "update") {
-		const name = args[1];
-		if (!name) {
-			throw new Error("skills update requires <NAME>");
-		}
-		const actionArgs = args.slice(2);
-		const title = readFlagValue(actionArgs, "--title");
-		const description = readFlagValue(actionArgs, "--description");
-		const content = readFlagValue(actionArgs, "--content");
-		if (
-			title === undefined &&
-			description === undefined &&
-			content === undefined
-		) {
-			throw new Error(
-				"skills update requires at least one of --title, --description, or --content",
-			);
-		}
-		return {
-			action: "update",
-			name,
-			projectId: readFlagValue(actionArgs, "--project"),
-			title,
-			description,
-			content,
-		};
-	}
-
-	if (action === "remove") {
-		const name = args[1];
-		if (!name) {
-			throw new Error("skills remove requires <NAME>");
-		}
-		return {
-			action: "remove",
-			name,
-			projectId: readFlagValue(args.slice(2), "--project"),
-		};
-	}
-
-	throw new Error(`Unknown skills action: ${action}`);
+	skills
+		.command("remove <NAME>")
+		.option("--project <PROJECT_ID>")
+		.action((name: string, options: ProjectCommanderOptions) => {
+			setCommand({
+				kind: "skills",
+				command: { action: "remove", name, projectId: options.project },
+			});
+		});
 }

@@ -5,8 +5,10 @@ import {
 	superviseCliCommandDaemonWithPoller,
 } from "./daemon-poller";
 import { resolveDaemonPorts } from "./daemon-ports";
+import { scheduleDaemonReadyMessage } from "./daemon-readiness";
 import type {
 	DaemonChild,
+	DaemonReadinessHandle,
 	DaemonServiceCommand,
 	DaemonSignalTarget,
 	DaemonSpawn,
@@ -96,8 +98,12 @@ export async function runProductionDaemon(
 			stdio: "inherit",
 		}),
 	);
+	const ready = scheduleDaemonReadyMessage({
+		scheduler: options.readinessScheduler,
+		write: options.write,
+	});
 
-	return superviseDaemonChildren(children, signalTarget, commandDaemon);
+	return superviseDaemonChildren(children, signalTarget, commandDaemon, ready);
 }
 
 export function runCliCommandDaemonOnly(
@@ -110,6 +116,10 @@ export function runCliCommandDaemonOnly(
 		env: options.env,
 	});
 	const write = options.write ?? process.stdout.write.bind(process.stdout);
+	const readiness = scheduleDaemonReadyMessage({
+		scheduler: options.readinessScheduler,
+		write,
+	});
 	write(
 		`CLI daemon websocket listening on ${formatCliDaemonWsUrl(commandDaemon.port)}\n`,
 	);
@@ -132,6 +142,7 @@ export function runCliCommandDaemonOnly(
 		commandDaemon,
 		signalTarget,
 		poller,
+		readiness,
 	);
 }
 
@@ -139,6 +150,7 @@ function superviseDaemonChildren(
 	children: DaemonChild[],
 	signalTarget: DaemonSignalTarget,
 	commandDaemon: { stop(): Promise<void> },
+	readiness?: DaemonReadinessHandle,
 ): Promise<number> {
 	return new Promise((resolve) => {
 		let resolved = false;
@@ -149,6 +161,7 @@ function superviseDaemonChildren(
 				return;
 			}
 			resolved = true;
+			readiness?.cancel();
 			for (const signal of SIGNALS) {
 				signalTarget.off(signal, signalHandlers[signal]);
 			}

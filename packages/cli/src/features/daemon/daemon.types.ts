@@ -41,15 +41,33 @@ export interface DaemonSignalTarget {
 	off(signal: NodeJS.Signals, listener: () => void): void;
 }
 
+export interface DaemonReadinessHandle {
+	cancel(): void;
+}
+
+export type DaemonReadinessScheduler = (
+	callback: () => void,
+	delayMs: number,
+) => DaemonReadinessHandle;
+
+export interface DaemonReadinessOptions {
+	delayMs?: number;
+	message?: string;
+	scheduler?: DaemonReadinessScheduler;
+	write?: (message: string) => void;
+}
+
 export interface RunProductionDaemonOptions {
 	cwd?: string;
 	env?: NodeJS.ProcessEnv;
+	readinessScheduler?: DaemonReadinessScheduler;
 	spawnChild?: DaemonSpawn;
 	signalTarget?: DaemonSignalTarget;
 	startCommandDaemon?: (options: {
 		cwd: string;
 		env?: NodeJS.ProcessEnv;
 	}) => CliCommandDaemon;
+	write?: (message: string) => void;
 }
 
 export interface RunCliCommandDaemonOnlyOptions {
@@ -62,6 +80,7 @@ export interface RunCliCommandDaemonOnlyOptions {
 		cwd: string;
 		env?: NodeJS.ProcessEnv;
 	}) => CliCommandDaemon;
+	readinessScheduler?: DaemonReadinessScheduler;
 	spawnPoller?: AttachedPollerSpawn;
 	write?: (message: string) => void;
 }

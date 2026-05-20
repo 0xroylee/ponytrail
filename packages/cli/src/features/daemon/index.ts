@@ -27,8 +27,15 @@ export {
 	createDaemonProgressPrinter,
 	formatWorkflowProgressForDaemon,
 } from "./daemon-progress-printer";
+export {
+	DAEMON_READY_DELAY_MS,
+	DAEMON_READY_MESSAGE,
+	scheduleDaemonReadyMessage,
+} from "./daemon-readiness";
 export type {
 	DaemonChild,
+	DaemonReadinessHandle,
+	DaemonReadinessScheduler,
 	DaemonServiceCommand,
 	DaemonServiceName,
 	DaemonSignalTarget,

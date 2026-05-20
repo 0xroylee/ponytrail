@@ -1,5 +1,61 @@
 import type { RunOptions } from "./features/types";
 
+export type CliParseOutput = {
+	writeOut?: (message: string) => void;
+	writeErr?: (message: string) => void;
+};
+
+export type RunCommanderOptions = {
+	issue?: string;
+	project?: string;
+	allProjects?: boolean;
+	poll?: boolean;
+	pollForever?: boolean;
+	exitWhenIdle?: boolean;
+	concurrency?: number;
+	pollIntervalMs?: number;
+	maxPollCycles?: number;
+	isolatedWorktrees?: boolean;
+};
+
+export type DaemonCommanderOptions = {
+	cliOnly?: boolean;
+	pollForever?: boolean;
+	allProjects?: boolean;
+};
+
+export type OnboardCommanderOptions = {
+	check?: boolean;
+};
+
+export type ProjectCommanderOptions = {
+	project?: string;
+};
+
+export type StatusCommanderOptions = ProjectCommanderOptions & {
+	issue?: string;
+};
+
+export type SkillAddCommanderOptions = ProjectCommanderOptions & {
+	title: string;
+	description: string;
+	content: string;
+};
+
+export type SkillUpdateCommanderOptions = ProjectCommanderOptions & {
+	title?: string;
+	description?: string;
+	content?: string;
+};
+
+export type TaskCreateCommanderOptions = ProjectCommanderOptions & {
+	request?: string;
+	nonInteractive?: boolean;
+	maxClarificationRounds?: number;
+	clarificationsJson?: Array<{ question: string; answer: string }>;
+	json?: boolean;
+};
+
 export type SkillsCommand =
 	| { action: "list"; projectId?: string }
 	| {

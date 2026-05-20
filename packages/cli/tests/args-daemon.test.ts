@@ -1,5 +1,26 @@
 import { describe, expect, it } from "bun:test";
+import { CommanderError } from "commander";
 import { parseArgs } from "../src/args";
+
+function expectCommanderError(argv: string[]): {
+	error: CommanderError;
+	stderr: string;
+} {
+	let stderr = "";
+	try {
+		parseArgs(argv, {
+			writeErr: (message) => {
+				stderr += message;
+			},
+			writeOut: () => {},
+		});
+	} catch (error) {
+		if (error instanceof CommanderError) {
+			return { error, stderr };
+		}
+	}
+	throw new Error(`Expected CommanderError for ${argv.join(" ")}`);
+}
 
 describe("parseArgs daemon", () => {
 	it("parses daemon cli-only command", () => {
@@ -28,14 +49,31 @@ describe("parseArgs daemon", () => {
 	});
 
 	it("rejects daemon polling flags without cli-only", () => {
-		expect(() =>
-			parseArgs(["bun", "devos", "daemon", "--poll-forever"]),
-		).toThrow("daemon polling flags require --cli-only");
+		const result = expectCommanderError([
+			"bun",
+			"devos",
+			"daemon",
+			"--poll-forever",
+		]);
+
+		expect(result.error.message).toContain(
+			"daemon polling flags require --cli-only",
+		);
+		expect(result.stderr).toContain("Usage: devos daemon [options]");
 	});
 
 	it("rejects all-projects without poll-forever", () => {
-		expect(() =>
-			parseArgs(["bun", "devos", "daemon", "--cli-only", "--all-projects"]),
-		).toThrow("daemon --all-projects requires --poll-forever");
+		const result = expectCommanderError([
+			"bun",
+			"devos",
+			"daemon",
+			"--cli-only",
+			"--all-projects",
+		]);
+
+		expect(result.error.message).toBe(
+			"daemon --all-projects requires --poll-forever",
+		);
+		expect(result.stderr).toContain("Usage: devos daemon [options]");
 	});
 });

@@ -1,10 +1,7 @@
 #!/usr/bin/env bun
-import { parseArgs } from "./args";
-import {
-	handleCommand,
-	handleOnboardCommand,
-	printHelp,
-} from "./commands/handlers";
+import { CommanderError } from "commander";
+import { type CliCommand, parseArgs } from "./args";
+import { handleCommand, handleOnboardCommand } from "./commands/handlers";
 import { loadConfig } from "./features/config";
 import {
 	runCliCommandDaemonOnly,
@@ -18,9 +15,17 @@ import {
 
 async function main(): Promise<void> {
 	setupProcessErrorHandlers();
-	const command = parseArgs(process.argv);
+	let command: CliCommand;
+	try {
+		command = parseArgs(process.argv);
+	} catch (error) {
+		if (error instanceof CommanderError) {
+			process.exitCode = error.exitCode;
+			return;
+		}
+		throw error;
+	}
 	if (command.kind === "help") {
-		printHelp();
 		return;
 	}
 

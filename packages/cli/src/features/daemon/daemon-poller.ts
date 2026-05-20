@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import type { Readable } from "node:stream";
 import { createDaemonProgressPrinter } from "./daemon-progress-printer";
+import type { DaemonReadinessHandle } from "./daemon.types";
 
 interface SignalTarget {
 	on(signal: NodeJS.Signals, listener: () => void): void;
@@ -68,6 +69,7 @@ export function superviseCliCommandDaemonWithPoller(
 	commandDaemon: { stop(): Promise<void> },
 	signalTarget: SignalTarget,
 	poller?: AttachedPoller,
+	readiness?: DaemonReadinessHandle,
 ): Promise<number> {
 	return new Promise((resolve) => {
 		let resolved = false;
@@ -77,6 +79,7 @@ export function superviseCliCommandDaemonWithPoller(
 				return;
 			}
 			resolved = true;
+			readiness?.cancel();
 			for (const item of SIGNALS) {
 				signalTarget.off(item, signalHandlers[item]);
 			}

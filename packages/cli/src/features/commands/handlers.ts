@@ -141,32 +141,3 @@ export async function handleCommand(
 	};
 	process.stdout.write(`${JSON.stringify(statusDisplay, null, 2)}\n`);
 }
-
-export function printHelp(): void {
-	process.stdout.write(
-		`${[
-			"devos - devos.ing ADHD (Agentic Development Hub & Daemon) CLI orchestration workflow",
-			"",
-			"Commands:",
-			"  devos daemon",
-			"  devos daemon --cli-only [--poll-forever --all-projects]",
-			"  devos run [--project <PROJECT_ID>] [--issue <LINEAR_KEY_OR_URL>] [--poll|--poll-forever] [--no-exit-when-idle] [--poll-interval-ms <MS>] [--max-poll-cycles <N>] [--isolated-worktrees]",
-			"  devos run --all-projects [--issue <LINEAR_KEY_OR_URL>] [--poll|--poll-forever] [--no-exit-when-idle]",
-			"  devos status --project <PROJECT_ID> --issue <LINEAR_KEY>",
-			"  devos projects",
-			"  devos task create [<REQUEST>] [--request <TEXT|->] [--project <PROJECT_ID>] [--non-interactive] [--max-clarification-rounds <N>] [--clarifications-json <JSON>]",
-			"  devos skills list [--project <PROJECT_ID>]",
-			"  devos skills add --title <TITLE> --description <TEXT> --content <TEXT> [--project <PROJECT_ID>]",
-			"  devos skills update <NAME> [--title <TITLE>] [--description <TEXT>] [--content <TEXT>] [--project <PROJECT_ID>]",
-			"  devos skills remove <NAME> [--project <PROJECT_ID>]",
-			"  devos onboard [--check]",
-			"  devos help",
-			"",
-			"Environment:",
-			"  PIV_SERVER_PORT, PORT, DEVOS_SERVER_BASE_URL for devos daemon",
-			"  DEVOS_SERVER_EVENTS_WS_URL for daemon event ingress",
-			"  DEVOS_CLI_DAEMON_PORT for devos daemon --cli-only",
-			"  LINEAR_API_KEY, LINEAR_STATUS_* state IDs, GITHUB_* repo settings",
-		].join("\n")}\n`,
-	);
-}
