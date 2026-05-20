@@ -1,9 +1,4 @@
-export {
-	CursorAgentAdapter,
-	extractFinalMessage,
-	extractSessionId,
-	mapCursorError,
-} from "./adapter";
+export { CursorAgentAdapter } from "./adapter";
 export {
 	CURSOR_AVAILABLE_MODELS,
 	CURSOR_BACKEND,
@@ -12,3 +7,5 @@ export {
 	CURSOR_LABEL,
 } from "./constants";
 export { cursorConfigurationDoc } from "./configuration-doc";
+export { mapCursorError } from "./errors";
+export { extractFinalMessage, extractSessionId } from "./output";

@@ -4,6 +4,8 @@ import type {
 	AgentResult,
 } from "../agent-adapter.types";
 import { runCommand } from "../shell";
+import { mapCursorError } from "./errors";
+import { extractFinalMessage, extractSessionId } from "./output";
 
 export class CursorAgentAdapter implements AgentAdapter {
 	constructor(private config: AgentAdapterRuntimeConfig) {}
@@ -85,56 +87,4 @@ export class CursorAgentAdapter implements AgentAdapter {
 		const apiKey = this.config.cursor?.apiKey?.trim();
 		return apiKey ? { CURSOR_API_KEY: apiKey } : undefined;
 	}
-}
-
-export function extractFinalMessage(jsonOutput: string): string {
-	try {
-		const parsed = JSON.parse(jsonOutput) as Record<string, unknown>;
-		return typeof parsed.result === "string" ? parsed.result : jsonOutput;
-	} catch {}
-	return jsonOutput;
-}
-
-export function extractSessionId(jsonOutput: string): string | undefined {
-	try {
-		const parsed = JSON.parse(jsonOutput) as Record<string, unknown>;
-		const id = parsed.session_id ?? parsed.sessionId;
-		return typeof id === "string" ? id : undefined;
-	} catch {}
-	return undefined;
-}
-
-export function mapCursorError(
-	command: string,
-	args: string[],
-	result: { code: number; stdout: string; stderr: string },
-): Error {
-	const output = result.stderr || result.stdout;
-	const base = `${command} ${args.join(" ")} failed with exit code ${result.code}`;
-
-	if (result.code === 127 || output.includes("command not found")) {
-		return new Error(
-			`${base}\nCursor Agent binary not found. Install Cursor Agent CLI and run 'cursor-agent login', or set CURSOR_AGENT_BINARY.`,
-		);
-	}
-	if (
-		output.includes("authentication") ||
-		output.includes("API key") ||
-		output.includes("CURSOR_API_KEY") ||
-		output.includes("login")
-	) {
-		return new Error(
-			`${base}\nCursor Agent authentication failed. Run 'cursor-agent login' or set CURSOR_API_KEY.`,
-		);
-	}
-	if (output.includes("rate limit") || output.includes("429")) {
-		return new Error(`${base}\nCursor Agent rate limit hit. Retry later.`);
-	}
-	if (output.includes("model") && output.includes("not found")) {
-		return new Error(
-			`${base}\nThe specified Cursor Agent model was not found. Check CURSOR_AGENT_MODEL.`,
-		);
-	}
-
-	return new Error(`${base}\n${output}`);
 }
