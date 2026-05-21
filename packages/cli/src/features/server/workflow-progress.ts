@@ -5,6 +5,18 @@ import {
 } from "./workflow-progress.types";
 
 export const WORKFLOW_PROGRESS_SENTINEL = "__DEVOS_WORKFLOW_PROGRESS__";
+export type WorkflowProgressListener = (
+	event: WorkflowProgressEvent,
+) => void | Promise<void>;
+
+const progressListeners = new Set<WorkflowProgressListener>();
+
+export function addWorkflowProgressListener(
+	listener: WorkflowProgressListener,
+): () => void {
+	progressListeners.add(listener);
+	return () => progressListeners.delete(listener);
+}
 
 export function buildWorkflowProgressEvent(
 	input: WorkflowProgressEventInput,
@@ -27,10 +39,20 @@ export function emitWorkflowProgress(
 	input: WorkflowProgressEventInput,
 	write: (text: string) => void = (text) => process.stdout.write(text),
 ): void {
+	const event = buildWorkflowProgressEvent(input);
+	notifyWorkflowProgressListeners(event);
 	if (process.env.DEVOS_WORKFLOW_PROGRESS_STREAM !== "1") {
 		return;
 	}
-	write(serializeWorkflowProgressEvent(buildWorkflowProgressEvent(input)));
+	write(serializeWorkflowProgressEvent(event));
+}
+
+function notifyWorkflowProgressListeners(event: WorkflowProgressEvent): void {
+	for (const listener of progressListeners) {
+		try {
+			void Promise.resolve(listener(event)).catch(() => {});
+		} catch {}
+	}
 }
 
 export function parseWorkflowProgressLine(

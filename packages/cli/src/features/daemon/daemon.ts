@@ -59,7 +59,7 @@ export function buildDaemonCommands(
 		{
 			name: "workflow-poller",
 			command: "npx",
-			args: ["devos", "run", "--all-projects", "--poll-forever"],
+			args: ["devos", "run"],
 			env: {
 				...baseEnv,
 				DEVOS_SERVER_BASE_URL: serverBaseUrl,
@@ -133,9 +133,7 @@ export function runCliCommandDaemonOnly(
 				})
 			: undefined;
 	if (poller) {
-		write(
-			"CLI daemon workflow poller attached with --all-projects --poll-forever\n",
-		);
+		write("CLI daemon workflow poller attached with default run polling\n");
 	}
 
 	return superviseCliCommandDaemonWithPoller(

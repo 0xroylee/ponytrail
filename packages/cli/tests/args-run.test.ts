@@ -3,6 +3,23 @@ import { captureWithRuntime, expectCommanderError } from "./args-test-helpers";
 
 describe("createCliProgram run", () => {
 	it("runs issue and project scopes", async () => {
+		expect((await captureWithRuntime(["bun", "devos", "run"])).calls).toEqual([
+			{ name: "loadConfig" },
+			{
+				name: "run",
+				payload: {
+					issueArg: undefined,
+					projectId: undefined,
+					allProjects: true,
+					poll: true,
+					pollForever: true,
+					concurrency: undefined,
+					exitWhenIdle: undefined,
+					pollIntervalMs: undefined,
+					maxPollCycles: undefined,
+				},
+			},
+		]);
 		expect(
 			(await captureWithRuntime(["bun", "devos", "run", "--issue", "ABC-1"]))
 				.calls,
@@ -13,9 +30,9 @@ describe("createCliProgram run", () => {
 				payload: {
 					issueArg: "ABC-1",
 					projectId: undefined,
-					allProjects: false,
-					poll: false,
-					pollForever: undefined,
+					allProjects: true,
+					poll: true,
+					pollForever: true,
 					concurrency: undefined,
 					exitWhenIdle: undefined,
 					pollIntervalMs: undefined,
@@ -33,8 +50,8 @@ describe("createCliProgram run", () => {
 				payload: {
 					projectId: "api",
 					allProjects: false,
-					poll: false,
-					pollForever: undefined,
+					poll: true,
+					pollForever: true,
 					concurrency: undefined,
 					exitWhenIdle: undefined,
 					pollIntervalMs: undefined,
@@ -65,7 +82,7 @@ describe("createCliProgram run", () => {
 				payload: {
 					issueArg: undefined,
 					projectId: undefined,
-					allProjects: false,
+					allProjects: true,
 					poll: true,
 					pollForever: undefined,
 					concurrency: 2,
@@ -95,9 +112,9 @@ describe("createCliProgram run", () => {
 				payload: {
 					issueArg: undefined,
 					projectId: undefined,
-					allProjects: false,
+					allProjects: true,
 					poll: true,
-					pollForever: undefined,
+					pollForever: true,
 					concurrency: undefined,
 					exitWhenIdle: false,
 					pollIntervalMs: undefined,
@@ -121,9 +138,9 @@ describe("createCliProgram run", () => {
 				payload: {
 					issueArg: undefined,
 					projectId: undefined,
-					allProjects: false,
-					poll: false,
-					pollForever: undefined,
+					allProjects: true,
+					poll: true,
+					pollForever: true,
 					concurrency: undefined,
 					exitWhenIdle: undefined,
 					pollIntervalMs: undefined,
@@ -145,7 +162,7 @@ describe("createCliProgram run", () => {
 				payload: {
 					issueArg: undefined,
 					projectId: undefined,
-					allProjects: false,
+					allProjects: true,
 					poll: true,
 					pollForever: true,
 					concurrency: undefined,

@@ -57,7 +57,7 @@ describe("runCliCommandDaemonOnly", () => {
 		expect(pollerHarness.calls).toEqual([
 			{
 				command: "npx",
-				args: ["devos", "run", "--all-projects", "--poll-forever"],
+				args: ["devos", "run"],
 				cwd: "/repo",
 				env: expect.objectContaining({
 					DEVOS_SERVER_BASE_URL: "http://127.0.0.1:4101",
@@ -74,7 +74,7 @@ describe("runCliCommandDaemonOnly", () => {
 		expect(harness.stopped).toBe(true);
 		expect(pollerHarness.poller.signals).toEqual(["SIGINT"]);
 		expect(messages).toContain(
-			"CLI daemon workflow poller attached with --all-projects --poll-forever\n",
+			"CLI daemon workflow poller attached with default run polling\n",
 		);
 	});
 

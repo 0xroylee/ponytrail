@@ -1,6 +1,7 @@
 export { CliCommandExecutor } from "./cli-command-executor";
 export {
 	WORKFLOW_PROGRESS_SENTINEL,
+	addWorkflowProgressListener,
 	buildWorkflowProgressEvent,
 	emitWorkflowProgress,
 	parseWorkflowProgressLine,

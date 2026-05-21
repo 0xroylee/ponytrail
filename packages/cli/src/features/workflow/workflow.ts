@@ -25,6 +25,7 @@ import {
 	saveRunState,
 	transitionStage,
 } from "./state";
+import { createWorkflowExecutionRecorder } from "./workflow-execution-recorder";
 import {
 	buildRunLeaseOwnerId,
 	heartbeatRunLease,
@@ -885,7 +886,9 @@ async function processIssue(
 		}),
 		"Taking issue job",
 	);
-	emitActionProgress(runState, runState.stage, "issue", "started");
+	const executionRecorder = createWorkflowExecutionRecorder(config, runState);
+	let executionRecorderStarted = false;
+	let executionStatus: "succeeded" | "failed" | "blocked" = "succeeded";
 
 	let leaseAcquired = false;
 	const isolatedWorktreesEnabled = shouldUseIsolatedWorktree(
@@ -953,6 +956,9 @@ async function processIssue(
 		);
 	};
 	try {
+		await executionRecorder.start();
+		executionRecorderStarted = true;
+		emitActionProgress(runState, runState.stage, "issue", "started");
 		if (isolatedWorktreesEnabled) {
 			await executeIssueWithLease();
 		} else if (options.reviewOnly) {
@@ -961,6 +967,7 @@ async function processIssue(
 			await withExecutionPathLock(config.executionPath, executeIssueWithLease);
 		}
 		if (!leaseAcquired) {
+			executionStatus = "blocked";
 			return;
 		}
 		issueLogger.info({ stage: runState.stage }, "Issue workflow finished");
@@ -974,6 +981,7 @@ async function processIssue(
 		emitStageProgress(runState, failedStage, "failed", message);
 		runState.lastError = message;
 		if (runState.stage === "done") {
+			executionStatus = "failed";
 			await saveRunState(config.workspacePath, runState);
 			issueLogger.error(
 				{
@@ -984,6 +992,7 @@ async function processIssue(
 			);
 			return;
 		}
+		executionStatus = "blocked";
 		runState.failedStage = failedStage;
 		runState.stage = "blocked";
 		await saveRunState(config.workspacePath, runState);
@@ -1008,6 +1017,16 @@ async function processIssue(
 			runtime,
 		);
 	} finally {
+		if (executionRecorderStarted) {
+			try {
+				await executionRecorder.finish(executionStatus);
+			} catch (error) {
+				issueLogger.error(
+					{ err: normalizeError(error) },
+					"Failed to finish task execution log",
+				);
+			}
+		}
 		if (leaseAcquired) {
 			if (isolatedWorktreesEnabled) {
 				const cleanedUp = await cleanupTerminalIsolatedWorktree(

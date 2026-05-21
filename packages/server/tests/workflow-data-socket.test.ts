@@ -6,6 +6,8 @@ import {
 	pollingEventsTable,
 	pollingStatusTable,
 	taskCommentsTable,
+	taskExecutionLogsTable,
+	taskExecutionStepsTable,
 	taskPullRequestsTable,
 } from "devos-db";
 import { WebSocket } from "ws";
@@ -108,6 +110,72 @@ describe("workflow data websocket", () => {
 		expect(await db.select().from(pollingStatusTable)).toHaveLength(1);
 		expect(await db.select().from(pollingEventsTable)).toHaveLength(1);
 		expect(events.map((event) => event.type)).toContain("polling.event");
+	});
+
+	it("records task execution logs, streams, and progress idempotently", async () => {
+		const { socket, events, db } = await setupSocket();
+		await send(socket, "taskExecutions.start", {
+			executionLogId: "exec-1",
+			taskId: "task-1",
+			startedAt: "2026-05-13T00:01:00.000Z",
+		});
+		await send(socket, "taskExecutions.appendStream", {
+			executionLogId: "exec-1",
+			eventId: "stream-1",
+			stream: "stdout",
+			text: "Implemented the thing\n",
+			emittedAt: "2026-05-13T00:01:01.000Z",
+		});
+		await send(socket, "taskExecutions.appendStream", {
+			executionLogId: "exec-1",
+			eventId: "stream-1",
+			stream: "stdout",
+			text: "Implemented the thing\n",
+			emittedAt: "2026-05-13T00:01:01.000Z",
+		});
+		await send(socket, "taskExecutions.recordProgress", {
+			executionLogId: "exec-1",
+			eventId: "step-1",
+			stepNumber: 1,
+			event: {
+				schema: "devos.workflow.stream.v1",
+				emittedAt: "2026-05-13T00:01:02.000Z",
+				kind: "action",
+				projectId: "project-1",
+				issueKey: "TASK-000001",
+				stage: "implementing",
+				action: "implementation",
+				status: "succeeded",
+			},
+		});
+		await send(socket, "taskExecutions.recordProgress", {
+			executionLogId: "exec-1",
+			eventId: "step-1",
+			stepNumber: 1,
+			event: {
+				schema: "devos.workflow.stream.v1",
+				emittedAt: "2026-05-13T00:01:02.000Z",
+				kind: "action",
+				action: "implementation",
+				status: "succeeded",
+			},
+		});
+		await send(socket, "taskExecutions.finish", {
+			executionLogId: "exec-1",
+			status: "succeeded",
+			finishedAt: "2026-05-13T00:01:03.000Z",
+		});
+
+		const [log] = await db.select().from(taskExecutionLogsTable);
+		expect(log).toMatchObject({
+			id: "exec-1",
+			taskId: "task-1",
+			status: "succeeded",
+		});
+		expect(log?.finishedAt).toContain("2026-05-13");
+		expect(log?.log.match(/Implemented the thing/g)).toHaveLength(1);
+		expect(await db.select().from(taskExecutionStepsTable)).toHaveLength(1);
+		expect(events.map((event) => event.type)).toContain("task.execution.event");
 	});
 
 	it("rejects malformed frames and matches only the workflow path", async () => {

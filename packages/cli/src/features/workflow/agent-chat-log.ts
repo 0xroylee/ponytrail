@@ -40,6 +40,7 @@ export async function runAgentWithChatLog(
 			usage: result.usage,
 			success: true,
 		});
+		emitAgentOutputLog(options, result);
 		emitAgentProgress(options, "succeeded");
 		return result;
 	} catch (error) {
@@ -50,6 +51,7 @@ export async function runAgentWithChatLog(
 			success: false,
 			error: message,
 		});
+		emitAgentErrorLog(options, message);
 		emitAgentProgress(options, "failed", message);
 		throw error;
 	}
@@ -69,6 +71,42 @@ function emitAgentProgress(
 		agentRole: options.agentRole,
 		status,
 		...(error ? { error } : {}),
+	});
+}
+
+function emitAgentOutputLog(
+	options: RunAgentWithChatLogOptions,
+	result: AgentResult,
+): void {
+	const message = [result.finalMessage, result.stdout]
+		.filter((part) => part.trim())
+		.join("\n\n");
+	if (!message) {
+		return;
+	}
+	emitWorkflowProgress({
+		kind: "log",
+		projectId: options.projectId,
+		issueKey: options.issue.key,
+		stage: options.agentRole,
+		stream: "stdout",
+		level: "info",
+		message,
+	});
+}
+
+function emitAgentErrorLog(
+	options: RunAgentWithChatLogOptions,
+	message: string,
+): void {
+	emitWorkflowProgress({
+		kind: "log",
+		projectId: options.projectId,
+		issueKey: options.issue.key,
+		stage: options.agentRole,
+		stream: "stderr",
+		level: "error",
+		message,
 	});
 }
 

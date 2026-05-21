@@ -39,6 +39,7 @@ export interface TaskUpdateRequest {
 export interface TaskCommentRequest {
 	taskId: string;
 	body: string;
+	commentId?: string;
 }
 
 export interface TaskPullRequestRequest {
@@ -115,14 +116,17 @@ export async function addComment(
 	const existing = await context.taskService.getTask(input.taskId);
 	assertTaskResult(existing, "Task read failed");
 	const now = new Date().toISOString();
-	await context.db.insert(taskCommentsTable).values({
-		id: crypto.randomUUID(),
-		taskId: input.taskId,
-		authorId: "devos",
-		authorType: "agent",
-		comment: input.body,
-		createdAt: now,
-	});
+	await context.db
+		.insert(taskCommentsTable)
+		.values({
+			id: input.commentId ?? crypto.randomUUID(),
+			taskId: input.taskId,
+			authorId: "devos",
+			authorType: "agent",
+			comment: input.body,
+			createdAt: now,
+		})
+		.onConflictDoNothing();
 	const [task] = await context.db
 		.update(boardTasksTable)
 		.set({ updatedAt: now })

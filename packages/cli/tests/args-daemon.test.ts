@@ -13,7 +13,11 @@ describe("createCliProgram daemon", () => {
 		expect(result.calls).toEqual([
 			{
 				name: "daemonCliOnly",
-				payload: { cwd: "/tmp/devos-test" },
+				payload: {
+					cwd: "/tmp/devos-test",
+					pollForever: true,
+					allProjects: true,
+				},
 			},
 		]);
 	});
@@ -54,8 +58,8 @@ describe("createCliProgram daemon", () => {
 		expect(result.stderr).toContain("Usage: devos daemon [options]");
 	});
 
-	it("rejects all-projects without poll-forever", async () => {
-		const result = await expectCommanderError([
+	it("accepts redundant all-projects without poll-forever", async () => {
+		const result = await captureWithRuntime([
 			"bun",
 			"devos",
 			"daemon",
@@ -63,9 +67,15 @@ describe("createCliProgram daemon", () => {
 			"--all-projects",
 		]);
 
-		expect(result.error.message).toBe(
-			"daemon --all-projects requires --poll-forever",
-		);
-		expect(result.stderr).toContain("Usage: devos daemon [options]");
+		expect(result.calls).toEqual([
+			{
+				name: "daemonCliOnly",
+				payload: {
+					cwd: "/tmp/devos-test",
+					pollForever: true,
+					allProjects: true,
+				},
+			},
+		]);
 	});
 });

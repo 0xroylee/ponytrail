@@ -18,6 +18,10 @@ export type WorkflowDataAction =
 	| "tasks.update"
 	| "tasks.addComment"
 	| "tasks.linkPullRequest"
+	| "taskExecutions.start"
+	| "taskExecutions.appendStream"
+	| "taskExecutions.recordProgress"
+	| "taskExecutions.finish"
 	| "polling.record";
 
 export interface WorkflowPullRequestRecord {
@@ -65,6 +69,50 @@ export interface WorkflowPollingRecordInput {
 	eventType: string;
 	message: string;
 	metadata?: Record<string, unknown>;
+}
+
+export type WorkflowExecutionStatus =
+	| "running"
+	| "succeeded"
+	| "failed"
+	| "blocked";
+
+export interface WorkflowTaskExecutionStartInput {
+	executionLogId: string;
+	taskId?: string;
+	projectId?: string;
+	issueKey?: string;
+	status?: WorkflowExecutionStatus;
+	startedAt?: string;
+	log?: string;
+}
+
+export interface WorkflowTaskExecutionStreamInput {
+	executionLogId: string;
+	eventId: string;
+	stream: "stdout" | "stderr" | "daemon";
+	text: string;
+	emittedAt?: string;
+}
+
+export interface WorkflowTaskExecutionProgressInput {
+	executionLogId: string;
+	eventId: string;
+	stepNumber: number;
+	event: WorkflowProgressEventRecord;
+}
+
+export interface WorkflowTaskExecutionFinishInput {
+	executionLogId: string;
+	status: Exclude<WorkflowExecutionStatus, "running">;
+	finishedAt?: string;
+}
+
+export interface WorkflowProgressEventRecord {
+	schema: "devos.workflow.stream.v1";
+	emittedAt: string;
+	kind: string;
+	[key: string]: unknown;
 }
 
 export interface WorkflowDataRequestFrame {

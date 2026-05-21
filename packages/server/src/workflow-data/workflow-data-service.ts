@@ -20,7 +20,17 @@ import type {
 	WorkflowDataService,
 	WorkflowPollingRecordInput,
 	WorkflowTaskCreatePayload,
+	WorkflowTaskExecutionFinishInput,
+	WorkflowTaskExecutionProgressInput,
+	WorkflowTaskExecutionStartInput,
+	WorkflowTaskExecutionStreamInput,
 } from "./workflow-data.types";
+import {
+	appendTaskExecutionStream,
+	finishTaskExecution,
+	recordTaskExecutionProgress,
+	startTaskExecution,
+} from "./workflow-execution-actions";
 
 export function createWorkflowDataService(
 	db: ServerDatabase["db"],
@@ -65,6 +75,26 @@ async function handleWorkflowAction(
 			return linkPullRequest(
 				context,
 				readPayload<TaskPullRequestRequest>(payload),
+			);
+		case "taskExecutions.start":
+			return startTaskExecution(
+				context,
+				readPayload<WorkflowTaskExecutionStartInput>(payload),
+			);
+		case "taskExecutions.appendStream":
+			return appendTaskExecutionStream(
+				context,
+				readPayload<WorkflowTaskExecutionStreamInput>(payload),
+			);
+		case "taskExecutions.recordProgress":
+			return recordTaskExecutionProgress(
+				context,
+				readPayload<WorkflowTaskExecutionProgressInput>(payload),
+			);
+		case "taskExecutions.finish":
+			return finishTaskExecution(
+				context,
+				readPayload<WorkflowTaskExecutionFinishInput>(payload),
 			);
 		case "polling.record":
 			await recordPolling(

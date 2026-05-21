@@ -1,7 +1,7 @@
 import type { WorkflowPollingRecordInput } from "devos-server/workflow-data";
 import type { ResolvedProjectConfig } from "../../features/types";
 import { logger, normalizeError } from "../../utils/logger";
-import { createWorkflowDataClient } from "./workflow-data-client";
+import { createReliableWorkflowDataClient } from "./reliable-workflow-data-client";
 import type { PollingSettings } from "./workflow.types";
 
 const failureCounts = new Map<string, number>();
@@ -48,7 +48,9 @@ export async function recordCliPollingEvent(
 			message: input.message,
 			metadata: { cycle: input.cycle, ...(input.metadata ?? {}) },
 		};
-		await createWorkflowDataClient().request("polling.record", payload);
+		await createReliableWorkflowDataClient({
+			context: { workspacePath: config.workspacePath, projectId: config.id },
+		}).request("polling.record", payload);
 	} catch (error) {
 		logger.error(
 			{ projectId: config.id, err: normalizeError(error) },

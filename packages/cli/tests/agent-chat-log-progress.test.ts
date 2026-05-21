@@ -59,6 +59,13 @@ describe("runAgentWithChatLog progress", () => {
 				status: "started",
 			},
 			{
+				kind: "log",
+				stream: "stdout",
+				level: "info",
+				issueKey: "ENG-123",
+				message: "done",
+			},
+			{
 				kind: "action",
 				action: "agent",
 				agentRole: "planning",

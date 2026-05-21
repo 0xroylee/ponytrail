@@ -10,12 +10,14 @@ import type {
 	BoardTaskWorkflowRecord,
 	BoardTaskWorkflowStore,
 } from "./board-task-workflow-store.types";
-import { createWorkflowDataClient } from "./workflow-data-client";
+import { createReliableWorkflowDataClient } from "./reliable-workflow-data-client";
 
 export function createBoardTaskWorkflowStore(
-	_config: ResolvedProjectConfig,
+	config: ResolvedProjectConfig,
 ): BoardTaskWorkflowStore {
-	const client = createWorkflowDataClient();
+	const client = createReliableWorkflowDataClient({
+		context: { workspacePath: config.workspacePath, projectId: config.id },
+	});
 	return {
 		async listTasks() {
 			const tasks =
@@ -38,6 +40,7 @@ export function createBoardTaskWorkflowStore(
 			await client.request<WorkflowBoardTaskRecord>("tasks.addComment", {
 				taskId,
 				body,
+				commentId: crypto.randomUUID(),
 			});
 		},
 		async linkPullRequest(input) {

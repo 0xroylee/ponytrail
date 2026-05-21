@@ -48,15 +48,11 @@ export function startAttachedWorkflowPoller(
 ): AttachedPoller {
 	const env = buildAttachedPollerEnv(options.env ?? process.env);
 	const spawnPoller = options.spawnPoller ?? spawnAttachedPoller;
-	const child = spawnPoller(
-		"npx",
-		["devos", "run", "--all-projects", "--poll-forever"],
-		{
-			cwd: options.cwd,
-			env,
-			stdio: ["ignore", "pipe", "pipe"],
-		},
-	);
+	const child = spawnPoller("npx", ["devos", "run"], {
+		cwd: options.cwd,
+		env,
+		stdio: ["ignore", "pipe", "pipe"],
+	});
 	const write = options.write ?? process.stdout.write.bind(process.stdout);
 	const stdoutPrinter = createDaemonProgressPrinter(write);
 	child.stdout?.on("data", (chunk) => stdoutPrinter.push(String(chunk)));

@@ -77,13 +77,15 @@ function registerRunCommand(program: Command, runtime: CliRuntime): void {
 				);
 			}
 			const isolatedWorktrees = options.isolatedWorktrees ? true : undefined;
+			const pollForever =
+				options.maxPollCycles === undefined ? true : undefined;
 			await withConfig(runtime, (config) =>
 				runtime.handleRunCommand(config, {
 					issueArg: options.issue,
 					projectId: options.project,
-					allProjects: options.allProjects === true,
-					poll: options.poll === true || options.pollForever === true,
-					pollForever: options.pollForever ? true : undefined,
+					allProjects: !options.project,
+					poll: true,
+					pollForever,
 					concurrency: options.concurrency,
 					exitWhenIdle: options.exitWhenIdle === false ? false : undefined,
 					pollIntervalMs: options.pollIntervalMs,
@@ -107,14 +109,11 @@ function registerDaemonCommand(program: Command, runtime: CliRuntime): void {
 					"daemon polling flags require --cli-only; use devos daemon for the full production daemon",
 				);
 			}
-			if (options.allProjects && !options.pollForever) {
-				command.error("daemon --all-projects requires --poll-forever");
-			}
 			if (options.cliOnly) {
 				process.exitCode = await runtime.runCliCommandDaemonOnly({
 					cwd: runtime.cwd,
-					pollForever: options.pollForever ? true : undefined,
-					allProjects: options.allProjects ? true : undefined,
+					pollForever: true,
+					allProjects: true,
 				});
 				return;
 			}

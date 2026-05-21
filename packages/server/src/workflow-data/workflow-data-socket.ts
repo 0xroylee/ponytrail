@@ -25,6 +25,10 @@ const WORKFLOW_ACTIONS = new Set<string>([
 	"tasks.update",
 	"tasks.addComment",
 	"tasks.linkPullRequest",
+	"taskExecutions.start",
+	"taskExecutions.appendStream",
+	"taskExecutions.recordProgress",
+	"taskExecutions.finish",
 	"polling.record",
 ]);
 

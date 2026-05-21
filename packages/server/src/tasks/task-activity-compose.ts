@@ -50,7 +50,7 @@ export function composeTaskActivity(rows: TaskActivitySourceRows) {
 			actorId: "devos",
 			actorType: "agent",
 			title: "recorded execution output",
-			body: log.log,
+			body: stripStreamReplayMarkers(log.log),
 			status: log.status,
 			createdAt: log.startedAt,
 			steps: stepsByLog.get(log.id) ?? [],
@@ -62,4 +62,8 @@ export function composeTaskActivity(rows: TaskActivitySourceRows) {
 			left.createdAt.localeCompare(right.createdAt),
 		),
 	};
+}
+
+function stripStreamReplayMarkers(log: string): string {
+	return log.replace(/^\[devos-event:[^\]]+\]\n?/gm, "");
 }
