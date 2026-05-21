@@ -5,20 +5,10 @@ import type { PromptAdapter } from "../prompts";
 import type { InstanceConfigLoadResult } from "./instance-config.types";
 
 export interface SetupDraft {
-	projectId: string;
-	projectName: string;
-	projectDescription: string;
+	workspaceName: string;
 	workspacePath: string;
 	executionPath: string;
-	repoOwner: string;
-	repoName: string;
-	baseBranch: string;
-	lead: string;
-	category: string;
-	priority: number | null;
 	linearApiKey: string;
-	linearProjectId?: string;
-	linearTeamId?: string;
 	notifications: {
 		email: {
 			enabled: boolean;

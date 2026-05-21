@@ -8,7 +8,12 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { boardProjectsTable, eq, initializeServerDatabase } from "devos-db";
+import {
+	boardProjectsTable,
+	eq,
+	initializeServerDatabase,
+	projectBoardsTable,
+} from "devos-db";
 import type { LoadedConfig } from "../src/features/config";
 import { loadSqliteEnv } from "../src/features/config";
 import { PromptCancelledError } from "../src/features/prompts";
@@ -21,6 +26,8 @@ import {
 	DEFAULT_REASONING_EFFORTS,
 	DEFAULT_STATUS_MAP,
 	LINEAR_API_KEY_SETTINGS_URL,
+	LOCAL_BOARD_ID,
+	LOCAL_WORKSPACE_ID,
 	type SetupCheckDeps,
 	type SetupDraft,
 	collectSetupChecks,
@@ -42,17 +49,9 @@ import {
 import type { CommandResult } from "../src/utils/shell";
 
 const draft: SetupDraft = {
-	projectId: "demo-project",
-	projectName: "Demo Project",
-	projectDescription: "Demo description",
+	workspaceName: "Demo Workspace",
 	workspacePath: "/tmp/demo",
 	executionPath: "/tmp/demo",
-	repoOwner: "octo",
-	repoName: "demo",
-	baseBranch: "main",
-	lead: "Roy",
-	category: "ops",
-	priority: 1,
 	linearApiKey: "lin_secret_123",
 	notifications: {
 		email: {
@@ -85,6 +84,11 @@ const draft: SetupDraft = {
 		sandbox: "workspace-write",
 	},
 };
+const checkProjectId = "demo-project";
+const checkProjectName = "Demo Project";
+const checkRepoOwner = "octo";
+const checkRepoName = "demo";
+const checkBaseBranch = "main";
 
 describe("setup helpers", () => {
 	it("normalizes project ids for non-technical names", () => {
@@ -92,7 +96,7 @@ describe("setup helpers", () => {
 		expect(normalizeProjectId("   ")).toBe("default");
 	});
 
-	it("keeps repo and Linear lookup values out of generated files", () => {
+	it("keeps project metadata out of generated onboarding files", () => {
 		const env = renderEnvFile(draft);
 		const localConfig = renderLocalConfig(draft);
 		expect(env).not.toContain("LINEAR_API_KEY");
@@ -100,12 +104,13 @@ describe("setup helpers", () => {
 		expect(localConfig).not.toContain("octo");
 		expect(localConfig).not.toContain("Demo Project");
 		expect(localConfig).not.toContain("Demo description");
+		expect(localConfig).not.toContain("Demo Workspace");
 		expect(localConfig).not.toContain("/tmp/demo");
 		expect(localConfig).not.toContain('"repo"');
 		expect(localConfig).not.toContain('"baseBranch"');
 		expect(localConfig).not.toContain("lin_secret_123");
 		expect(localConfig).not.toContain("re_secret_123");
-		expect(localConfig).toContain("demo-project");
+		expect(localConfig).toContain('"projects": []');
 		expect(localConfig).toContain('"enabled": true');
 		expect(localConfig).toContain('"from": "devos@example.com"');
 		expect(localConfig).toContain('"to": [');
@@ -198,62 +203,51 @@ describe("setup helpers", () => {
 	it("maps typed onboarding prompts into the setup draft", async () => {
 		const previousLinearApiKey = process.env.LINEAR_API_KEY;
 		process.env.LINEAR_API_KEY = "lin_secret_123";
+		const textPrompts: string[] = [];
+		const prompts = promptAdapter({
+			text: {
+				"Workspace name": "Demo Workspace",
+			},
+		});
+		const inferGitHubDefaults = mock(async () => ({
+			owner: "octo",
+			name: "demo",
+			baseBranch: "main",
+		}));
 		try {
 			const draft = await collectSetupDraft("/tmp/demo", {
-				prompts: promptAdapter({
-					text: {
-						"Project name": "Demo Project",
-						"Project ID": "demo-project",
-						"Project description": "Demo description",
-						"Project lead": "Roy",
-						"Project category": "ops",
-						"Project priority": "1",
-						"Planning model": "gpt-5.5",
-						"Implementation model": "gpt-5.3-codex",
-						"Review/testing model": "gpt-5.3-codex",
+				prompts: {
+					...prompts,
+					text: async (options) => {
+						textPrompts.push(options.message);
+						return prompts.text(options);
 					},
-					confirm: {
-						"Enable GitHub and Linear Codex plugins?": false,
-					},
-					select: {
-						"Codex sandbox": "danger-full-access",
-						"Planning reasoning effort": "medium",
-						"Implementation reasoning effort": "low",
-						"Review/testing reasoning effort": "high",
-					},
-				}),
-				inferGitHubDefaults: async () => ({
-					owner: "octo",
-					name: "demo",
-					baseBranch: "main",
-				}),
+				},
+				inferGitHubDefaults,
 			});
 
-			expect(draft.repoOwner).toBe("octo");
-			expect(draft.repoName).toBe("demo");
-			expect(draft.baseBranch).toBe("main");
-			expect(draft.projectDescription).toBe("Demo description");
-			expect(draft.lead).toBe("Roy");
-			expect(draft.category).toBe("ops");
-			expect(draft.priority).toBe(1);
+			expect(inferGitHubDefaults).not.toHaveBeenCalled();
+			expect(draft.workspaceName).toBe("Demo Workspace");
 			expect(draft.workspacePath).toBe("/tmp/demo");
 			expect(draft.executionPath).toBe("/tmp/demo");
 			expect(draft.linearApiKey).toBe("lin_secret_123");
-			expect(draft.linearProjectId).toBeUndefined();
-			expect(draft.linearTeamId).toBeUndefined();
 			expect(draft.notifications.email).toEqual({
 				enabled: false,
 				to: [],
 			});
 			expect(draft.statusMap).toEqual(DEFAULT_STATUS_MAP);
-			expect(draft.codex.sandbox).toBe("danger-full-access");
+			expect(draft.codex.sandbox).toBe("workspace-write");
 			expect(draft.codex.reasoningEfforts).toMatchObject({
-				plan: "medium",
+				plan: "low",
 				implement: "low",
-				reviewTest: "high",
-				githubComment: "high",
+				reviewTest: "medium",
+				githubComment: "medium",
 			});
-			expect(draft.codex.plugins).toEqual([]);
+			expect(draft.codex.plugins).toEqual([
+				"github@openai-curated",
+				"linear@openai-curated",
+			]);
+			expect(textPrompts).toEqual(["Workspace name"]);
 		} finally {
 			if (previousLinearApiKey === undefined) {
 				process.env.LINEAR_API_KEY = undefined;
@@ -338,7 +332,7 @@ describe("setup helpers", () => {
 		expect(merged).toContain("JWT_SECRET=jwt");
 	});
 
-	it("writes integration values to sqlite and project metadata to server DB", async () => {
+	it("writes integration values to sqlite and workspace board metadata to server DB", async () => {
 		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-test-"));
 		try {
 			await writeSetupFiles(tempDir, draft);
@@ -355,22 +349,17 @@ describe("setup helpers", () => {
 				path.join(tempDir, ".devos", "config", "server-db"),
 			);
 			try {
-				const [project] = await database.db
+				const [board] = await database.db
 					.select()
-					.from(boardProjectsTable)
-					.where(eq(boardProjectsTable.id, draft.projectId));
-				expect(project).toMatchObject({
-					id: draft.projectId,
-					name: draft.projectName,
-					description: draft.projectDescription,
-					repoOwner: draft.repoOwner,
-					repoName: draft.repoName,
-					baseBranch: draft.baseBranch,
-					localFolder: draft.executionPath,
-					lead: draft.lead,
-					category: draft.category,
-					priority: draft.priority,
+					.from(projectBoardsTable)
+					.where(eq(projectBoardsTable.id, LOCAL_BOARD_ID));
+				expect(board).toMatchObject({
+					id: LOCAL_BOARD_ID,
+					name: draft.workspaceName,
+					ownerId: LOCAL_WORKSPACE_ID,
 				});
+				const projects = await database.db.select().from(boardProjectsTable);
+				expect(projects).toHaveLength(0);
 			} finally {
 				await database.close();
 			}
@@ -449,6 +438,31 @@ describe("setup helpers", () => {
 			name: "Server port",
 			status: "pass",
 			message: "127.0.0.1:3100 is available",
+		});
+	});
+
+	it("passes workspace-level setup checks when no projects exist", async () => {
+		const checks = await collectSetupChecks(
+			"/tmp/demo",
+			setupCheckDeps({
+				loadConfig: async () => ({
+					...loadedConfig({ linearApiKey: "lin_secret_123" }),
+					projects: [],
+				}),
+				access: async () => {},
+				readFile: async () => "",
+				runCommand: async () => okCommand(),
+			}),
+		);
+
+		expect(checks.every((check) => check.status === "pass")).toBe(true);
+		expect(checks.map((check) => check.name)).not.toContain(
+			`Execution path (${checkProjectId})`,
+		);
+		expect(checks).toContainEqual({
+			name: "Linear API key",
+			status: "pass",
+			message: "configured for every project",
 		});
 	});
 
@@ -796,13 +810,14 @@ function loadedConfig({
 	return {
 		projects: [
 			{
-				...draft,
-				id: draft.projectId,
-				name: draft.projectName,
+				id: checkProjectId,
+				name: checkProjectName,
+				workspacePath: draft.workspacePath,
+				executionPath: draft.executionPath,
 				repo: {
-					owner: draft.repoOwner,
-					name: draft.repoName,
-					baseBranch: draft.baseBranch,
+					owner: checkRepoOwner,
+					name: checkRepoName,
+					baseBranch: checkBaseBranch,
 				},
 				linear: {
 					apiKey: linearApiKey,
@@ -899,20 +914,7 @@ async function captureStdout(run: () => Promise<void>): Promise<string> {
 function onboardingPromptAdapter(): PromptAdapter {
 	return promptAdapter({
 		text: {
-			"Project name": "Demo Project",
-			"Project ID": "demo-project",
-			"Planning model": "gpt-5.5",
-			"Implementation model": "gpt-5.3-codex",
-			"Review/testing model": "gpt-5.3-codex",
-		},
-		confirm: {
-			"Enable GitHub and Linear Codex plugins?": true,
-		},
-		select: {
-			"Codex sandbox": "workspace-write",
-			"Planning reasoning effort": "low",
-			"Implementation reasoning effort": "low",
-			"Review/testing reasoning effort": "medium",
+			"Workspace name": "Demo Workspace",
 		},
 	});
 }

@@ -174,9 +174,7 @@ async function setupTestServer(): Promise<TestServer> {
 			realtimeEvents,
 		}),
 	);
-	const server = await listenExpressApp(app, 0).catch(() =>
-		listenExpressApp(app, testPort()),
-	);
+	const server = await listenTestServer(app);
 	const socketProxy = attachWorkflowDataSocket({
 		server,
 		path: WORKFLOW_DATA_WS_PATH,
@@ -236,7 +234,16 @@ async function closeServer(server: Server): Promise<void> {
 		server.close((error) => (error ? reject(error) : resolve()));
 	});
 }
-
-function testPort(): number {
-	return 31_000 + Math.floor(Math.random() * 10_000);
+async function listenTestServer(
+	app: Parameters<typeof listenExpressApp>[0],
+): Promise<Server> {
+	for (let attempt = 0; attempt < 5; attempt += 1) {
+		try {
+			return await listenExpressApp(
+				app,
+				31_000 + Math.floor(Math.random() * 20_000),
+			);
+		} catch {}
+	}
+	throw new Error("Unable to bind task lifecycle test server");
 }

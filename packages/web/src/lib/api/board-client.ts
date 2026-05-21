@@ -2,6 +2,7 @@ import type {
 	HealthRequestOptions,
 	ProjectBoardRecord,
 	ProjectBoardStatusColumn,
+	ProjectCreateRequest,
 	WorkspaceProjectRecord,
 	WorkspaceProjectsResponse,
 } from "./client.types";
@@ -23,7 +24,7 @@ function parseWorkspaceProjectRecord(payload: unknown): WorkspaceProjectRecord {
 	return {
 		id: readString(row, "id", endpoint),
 		boardId: readString(row, "boardId", endpoint),
-		workspaceId: readString(row, "workspaceId", endpoint),
+		workspaceId: readWorkspaceId(row, endpoint),
 		externalProjectId: readNullableString(row, "externalProjectId", endpoint),
 		name: readString(row, "name", endpoint),
 		description: readNullableString(row, "description", endpoint),
@@ -37,6 +38,15 @@ function parseWorkspaceProjectRecord(payload: unknown): WorkspaceProjectRecord {
 		createdAt: readString(row, "createdAt", endpoint),
 		updatedAt: readString(row, "updatedAt", endpoint),
 	};
+}
+
+function readWorkspaceId(
+	row: Record<string, unknown>,
+	endpoint: string,
+): string {
+	return typeof row.workspaceId === "string"
+		? readString(row, "workspaceId", endpoint)
+		: readString(row, "ownerId", endpoint);
 }
 
 function parseWorkspaceProjectsResponse(
@@ -95,6 +105,10 @@ export interface BoardApiMethods {
 		workspaceId: string,
 		options?: HealthRequestOptions,
 	): Promise<WorkspaceProjectRecord[]>;
+	createProject(
+		request: ProjectCreateRequest,
+		options?: HealthRequestOptions,
+	): Promise<WorkspaceProjectRecord>;
 	getProjectBoard(
 		workspaceId: string,
 		projectId: string,
@@ -118,6 +132,15 @@ export function createBoardApiMethods(
 				options,
 			);
 			return parseWorkspaceProjectsResponse(payload).projects;
+		},
+		async createProject(request, options) {
+			const payload = await requestWithBase(
+				"/api/projects",
+				"POST",
+				options,
+				request,
+			);
+			return parseWorkspaceProjectRecord(payload);
 		},
 		async getProjectBoard(workspaceId, projectId, options) {
 			const payload = await requestWithBase(

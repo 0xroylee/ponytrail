@@ -37,6 +37,7 @@ export async function loadConfig(cwd: string): Promise<LoadedConfig> {
 
 	const projects = await applyDatabaseProjectMetadata(
 		resolveProjects(cwd, envBase, root),
+		{ configCwd: cwd, base: envBase, root },
 	);
 	const polling = resolvePolling(envPolling, root.polling);
 	const notifications = resolveNotifications(

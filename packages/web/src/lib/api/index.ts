@@ -13,6 +13,7 @@ export type {
 	InboxMessageRecord,
 	InboxMessageScope,
 	JobRecord,
+	ProjectCreateRequest,
 	ProjectBoardRecord,
 	ProjectBoardStatusColumn,
 	ProjectBoardTaskRecord,
@@ -45,6 +46,7 @@ export type {
 	BoardTaskMutationInput,
 	BoardTaskUpdateMutationInput,
 	AgentUpdateMutationInput,
+	ProjectCreateMutationInput,
 	ServerStateQueryOptions,
 	TaskCreateMutationInput,
 } from "./queries.types";

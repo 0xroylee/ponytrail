@@ -3,33 +3,26 @@ import type { DevosRootConfig, DeepPartial } from "./packages/cli/src/features/t
 const cwd = process.cwd();
 
 const config: DeepPartial<DevosRootConfig> = {
-	"projects": [
-		{
-			"id": "default-project",
-			"name": "Default Project",
-			"workspacePath": "/Users/roy/Desktop/SourceCode/agentic/show-me-ur-agents",
-			"executionPath": "/Users/roy/Desktop/SourceCode/agentic/show-me-ur-agents",
-			"linear": {
-				"statusMap": {
-					"backlog": "Backlog",
-					"assigned": "Todo",
-					"planning": "In Progress",
-					"implementing": "In Progress",
-					"pr_created": "In Review",
-					"reviewing": "In Review",
-					"testing": "In Review",
-					"blocked": "Canceled",
-					"done": "Done"
-				},
-				"labelMap": {
-					"pr_created": "PR Created",
-					"reviewing": "Reviewing",
-					"testing": "Testing"
-				},
-				"autoCreateLabels": true
-			}
-		}
-	],
+	"projects": [],
+	"linear": {
+		"statusMap": {
+			"backlog": "Backlog",
+			"assigned": "Todo",
+			"planning": "In Progress",
+			"implementing": "In Progress",
+			"pr_created": "In Review",
+			"reviewing": "In Review",
+			"testing": "In Review",
+			"blocked": "Canceled",
+			"done": "Done"
+		},
+		"labelMap": {
+			"pr_created": "PR Created",
+			"reviewing": "Reviewing",
+			"testing": "Testing"
+		},
+		"autoCreateLabels": true
+	},
 	"notifications": {
 		"email": {
 			"enabled": false,

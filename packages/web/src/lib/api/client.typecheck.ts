@@ -5,6 +5,7 @@ import type {
 	PollingStatusResponse,
 	ProjectBoardRecord,
 	ProjectBoardTaskRecord,
+	ProjectCreateRequest,
 	TaskCreateRequest,
 	TaskCreateResponse,
 	TaskMutationRequest,
@@ -31,6 +32,13 @@ const unassignedTaskCreateResponsePromise: Promise<TaskCreateResponse> =
 	webClient.createTask(unassignedTaskCreateRequest);
 const workspaceProjectsPromise: Promise<WorkspaceProjectRecord[]> =
 	webClient.listWorkspaceProjects("owner-1");
+const projectCreateRequest: ProjectCreateRequest = {
+	boardId: "board-1",
+	ownerId: "owner-1",
+	name: "Project",
+};
+const createProjectPromise: Promise<WorkspaceProjectRecord> =
+	webClient.createProject(projectCreateRequest);
 const projectBoardPromise: Promise<ProjectBoardRecord> =
 	webClient.getProjectBoard("owner-1", "project-1");
 const inboxMessagesPromise = webClient.listInboxMessages({
@@ -64,6 +72,7 @@ void agentRecordsPromise;
 void taskCreateResponsePromise;
 void unassignedTaskCreateResponsePromise;
 void workspaceProjectsPromise;
+void createProjectPromise;
 void projectBoardPromise;
 void inboxMessagesPromise;
 void boardTasksPromise;

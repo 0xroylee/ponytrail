@@ -2,18 +2,12 @@ import type { SetupDraft } from "./setup.types";
 
 export function renderLocalConfig(draft: SetupDraft): string {
 	const config = {
-		projects: [
-			{
-				id: draft.projectId,
-				linear: {
-					projectId: draft.linearProjectId,
-					teamId: draft.linearTeamId,
-					statusMap: draft.statusMap,
-					labelMap: draft.labelMap,
-					autoCreateLabels: true,
-				},
-			},
-		],
+		projects: [],
+		linear: {
+			statusMap: draft.statusMap,
+			labelMap: draft.labelMap,
+			autoCreateLabels: true,
+		},
 		notifications: {
 			email: {
 				enabled: draft.notifications.email.enabled,

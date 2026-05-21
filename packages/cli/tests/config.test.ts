@@ -230,6 +230,47 @@ describe("loadConfig", () => {
 		}
 	});
 
+	it("preserves explicit empty project lists", async () => {
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-config-test-"),
+		);
+		await writeFile(
+			path.join(tempDir, "devos.config.ts"),
+			["export default {", "  projects: []", "};", ""].join("\n"),
+		);
+
+		try {
+			const config = await loadConfig(tempDir);
+			expect(config.projects).toEqual([]);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	it("keeps the default project fallback for legacy configs without projects", async () => {
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-config-test-"),
+		);
+		await writeFile(
+			path.join(tempDir, "devos.config.ts"),
+			[
+				"export default {",
+				"  repo: { owner: 'octo', name: 'legacy-repo' }",
+				"};",
+				"",
+			].join("\n"),
+		);
+
+		try {
+			const config = await loadConfig(tempDir);
+			expect(config.projects[0]?.id).toBe("default");
+			expect(config.projects[0]?.repo.owner).toBe("octo");
+			expect(config.projects[0]?.repo.name).toBe("legacy-repo");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
 	it("loads env values from sqlite when process env is unset", async () => {
 		const tempDir = await mkdtemp(
 			path.join(process.cwd(), ".tmp-config-test-"),
@@ -319,6 +360,65 @@ describe("loadConfig", () => {
 			expect(config.projects[0]?.repo).toEqual({
 				owner: "octo",
 				name: "database-repo",
+				baseBranch: "trunk",
+			});
+		} finally {
+			if (!database.client.closed) {
+				await database.close();
+			}
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	it("loads web-created projects from the server database when config projects are empty", async () => {
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-config-test-"),
+		);
+		await writeFile(
+			path.join(tempDir, "devos.config.ts"),
+			["export default {", "  projects: []", "};", ""].join("\n"),
+		);
+		const database = await initializeServerDatabase(
+			path.join(tempDir, ".devos", "config", "server-db"),
+		);
+		try {
+			await database.db.insert(projectBoardsTable).values({
+				id: "board-1",
+				name: "Demo Workspace",
+				description: null,
+				ownerId: "owner-1",
+				createdAt: "2026-05-20T00:00:00.000Z",
+				updatedAt: "2026-05-20T00:00:00.000Z",
+			});
+			await database.db.insert(boardProjectsTable).values({
+				id: "project-1",
+				boardId: "board-1",
+				externalProjectId: "external-1",
+				name: "Web Project",
+				description: "Created from UI",
+				repoOwner: "octo",
+				repoName: "web-repo",
+				baseBranch: "trunk",
+				localFolder: path.join(tempDir, "web-repo"),
+				lead: "Roy",
+				category: "platform",
+				priority: 2,
+				ownerId: "owner-1",
+				createdAt: "2026-05-20T00:00:00.000Z",
+				updatedAt: "2026-05-20T00:00:00.000Z",
+			});
+			await database.close();
+
+			const config = await loadConfig(tempDir);
+			expect(config.projects).toHaveLength(1);
+			expect(config.projects[0]?.id).toBe("project-1");
+			expect(config.projects[0]?.name).toBe("Web Project");
+			expect(config.projects[0]?.workspacePath).toBe(
+				path.join(tempDir, "web-repo"),
+			);
+			expect(config.projects[0]?.repo).toEqual({
+				owner: "octo",
+				name: "web-repo",
 				baseBranch: "trunk",
 			});
 		} finally {

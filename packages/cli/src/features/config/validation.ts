@@ -5,9 +5,6 @@ import type {
 } from "../../features/types";
 
 export function validateProjects(projects: ResolvedProjectConfig[]): void {
-	if (projects.length === 0) {
-		throw new Error("At least one project configuration is required");
-	}
 	const seen = new Set<string>();
 	for (const project of projects) {
 		if (!project.id) {

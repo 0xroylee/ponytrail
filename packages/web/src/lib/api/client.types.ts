@@ -120,6 +120,21 @@ export interface WorkspaceProjectRecord {
 	updatedAt: string;
 }
 
+export interface ProjectCreateRequest {
+	boardId: string;
+	ownerId: string;
+	name: string;
+	externalProjectId?: string | null;
+	description?: string | null;
+	repoOwner?: string | null;
+	repoName?: string | null;
+	baseBranch?: string | null;
+	localFolder?: string | null;
+	lead?: string | null;
+	category?: string | null;
+	priority?: number | null;
+}
+
 export interface InboxMessageScope {
 	workspaceId: string;
 	userId: string;
@@ -182,6 +197,10 @@ export interface ApiClient {
 		workspaceId: string,
 		options?: HealthRequestOptions,
 	): Promise<WorkspaceProjectRecord[]>;
+	createProject(
+		request: ProjectCreateRequest,
+		options?: HealthRequestOptions,
+	): Promise<WorkspaceProjectRecord>;
 	getProjectBoard(
 		workspaceId: string,
 		projectId: string,

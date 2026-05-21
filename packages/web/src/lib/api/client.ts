@@ -100,6 +100,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
 		},
 		listBoardTasks: taskApiMethods.listBoardTasks,
 		getBoardTask: taskApiMethods.getBoardTask,
+		createProject: boardApiMethods.createProject,
 		listTaskActivity: taskApiMethods.listTaskActivity,
 		listInboxMessages: inboxApiMethods.listInboxMessages,
 		createTask: taskApiMethods.createTaskFromChat,

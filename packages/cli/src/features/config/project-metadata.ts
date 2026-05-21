@@ -1,17 +1,28 @@
 import { stat } from "node:fs/promises";
+import path from "node:path";
 import {
 	boardProjectsTable,
 	inArray,
 	initializeServerDatabase,
 } from "devos-db";
 import type { BoardProjectRow } from "devos-db";
-import type { ResolvedProjectConfig } from "../../features/types";
+import type {
+	DevosRootConfig,
+	ProjectRuntimeConfig,
+	ResolvedProjectConfig,
+} from "../../features/types";
+import { resolveProjects } from "./project-resolution";
 
 export async function applyDatabaseProjectMetadata(
 	projects: ResolvedProjectConfig[],
+	options?: {
+		configCwd: string;
+		base: ProjectRuntimeConfig;
+		root: DevosRootConfig;
+	},
 ): Promise<ResolvedProjectConfig[]> {
 	if (projects.length === 0) {
-		return projects;
+		return options ? loadDatabaseProjects(options) : projects;
 	}
 	const byDatabasePath = groupProjectsByDatabasePath(projects);
 	const rowsByProjectId = new Map<string, BoardProjectRow>();
@@ -43,6 +54,60 @@ export async function applyDatabaseProjectMetadata(
 		const metadata = rowsByProjectId.get(project.id);
 		return metadata ? applyProjectRow(project, metadata) : project;
 	});
+}
+
+async function loadDatabaseProjects(options: {
+	configCwd: string;
+	base: ProjectRuntimeConfig;
+	root: DevosRootConfig;
+}): Promise<ResolvedProjectConfig[]> {
+	const databasePath = resolveDatabasePathForRoot(options);
+	if (!(await pathExists(databasePath))) {
+		return [];
+	}
+	const database = await initializeServerDatabase(databasePath);
+	try {
+		const rows = await database.db.select().from(boardProjectsTable);
+		if (rows.length === 0) {
+			return [];
+		}
+		const rootWithDatabaseProjects = {
+			...options.root,
+			projects: rows.map((row) => ({ id: row.id })),
+		};
+		return applyProjectRows(
+			resolveProjects(
+				options.configCwd,
+				options.base,
+				rootWithDatabaseProjects,
+			),
+			rows,
+		);
+	} finally {
+		await database.close();
+	}
+}
+
+function applyProjectRows(
+	projects: ResolvedProjectConfig[],
+	rows: BoardProjectRow[],
+): ResolvedProjectConfig[] {
+	const rowsByProjectId = new Map(rows.map((row) => [row.id, row]));
+	return projects.map((project) => {
+		const metadata = rowsByProjectId.get(project.id);
+		return metadata ? applyProjectRow(project, metadata) : project;
+	});
+}
+
+function resolveDatabasePathForRoot(options: {
+	configCwd: string;
+	base: ProjectRuntimeConfig;
+	root: DevosRootConfig;
+}): string {
+	const override = options.root.server?.database?.databasePath?.trim();
+	return override
+		? path.resolve(options.configCwd, override)
+		: options.base.server.database.databasePath;
 }
 
 function groupProjectsByDatabasePath(projects: ResolvedProjectConfig[]) {

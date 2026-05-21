@@ -4,7 +4,10 @@ import type { SetupDraft } from "./setup.types";
 export const ENV_FILE = ".env";
 export const LOCAL_CONFIG_FILE = "devos.local.config.ts";
 export const INSTANCE_CONFIG_FILE = ".devos/config/instance.config.json";
+export const DEFAULT_WORKSPACE_NAME = "Default Workspace";
 export const DEFAULT_PROJECT_NAME = "Default Project";
+export const LOCAL_WORKSPACE_ID = "owner-1";
+export const LOCAL_BOARD_ID = "board-1";
 export const DEFAULT_BASE_BRANCH = "main";
 export const RTK_INSTALL_URL = "https://github.com/rtk-ai/rtk";
 export const GITHUB_CLI_INSTALL_URL =
