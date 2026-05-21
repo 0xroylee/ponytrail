@@ -6,7 +6,11 @@ export function mapCursorError(
 	const output = result.stderr || result.stdout;
 	const base = `${command} ${args.join(" ")} failed with exit code ${result.code}`;
 
-	if (result.code === 127 || output.includes("command not found")) {
+	if (
+		result.code === 127 ||
+		output.includes("command not found") ||
+		output.includes("ENOENT")
+	) {
 		return new Error(
 			`${base}\nCursor Agent binary not found. Install Cursor Agent CLI and run 'cursor-agent login', or set CURSOR_AGENT_BINARY.`,
 		);

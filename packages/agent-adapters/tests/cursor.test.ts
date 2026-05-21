@@ -148,4 +148,18 @@ describe("cursor agent adapter", () => {
 			}).message,
 		).toContain("CURSOR_AGENT_MODEL");
 	});
+
+	it("maps spawn failures for missing cursor binaries", async () => {
+		const adapter = new CursorAgentAdapter({
+			...config,
+			cursor: {
+				binary: "__missing_cursor_agent_binary__",
+				streamLogs: false,
+			},
+		});
+
+		await expect(adapter.runPlan("prompt")).rejects.toThrow(
+			"Cursor Agent binary not found",
+		);
+	});
 });

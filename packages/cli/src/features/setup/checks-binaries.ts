@@ -2,6 +2,7 @@ import { findClaudeBinary } from "../../utils/claude-path";
 import type { LoadedConfig } from "../config";
 import {
 	commandFailureMessage,
+	formatMissingCursorAgentMessage,
 	formatMissingDockerMessage,
 	formatMissingRtkMessage,
 	safeRun,
@@ -155,8 +156,7 @@ export async function addBinaryChecks(
 				: {
 						name: "Cursor Agent binary",
 						status: "fail",
-						message:
-							"cursor-agent binary not found. Install Cursor Agent CLI and run: cursor-agent login",
+						message: formatMissingCursorAgentMessage(cursorBinary),
 					},
 		);
 	}

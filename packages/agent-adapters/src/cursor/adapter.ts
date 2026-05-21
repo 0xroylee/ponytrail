@@ -70,6 +70,12 @@ export class CursorAgentAdapter implements AgentAdapter {
 			streamStderr:
 				this.config.cursor?.streamLogs ?? this.config.codex.streamLogs,
 			stdinMode: "ignore",
+		}).catch((error) => {
+			throw mapCursorError(binary, args, {
+				code: 127,
+				stdout: "",
+				stderr: error instanceof Error ? error.message : String(error),
+			});
 		});
 
 		if (result.code !== 0) {
