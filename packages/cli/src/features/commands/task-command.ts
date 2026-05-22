@@ -1,7 +1,7 @@
+import { createAgentAdapter } from "adapters";
 import type { TaskCommand } from "../../args";
 import type { LoadedConfig } from "../../features/config";
 import { getProjectById } from "../../features/config";
-import { createAgentAdapter } from "../../integrations/agent-adapters";
 import { createBoardTaskCreator } from "../task-intake/board-task-creator";
 import { readStdinText, withQuestionReader } from "../task-intake/io";
 import { runTaskIntake } from "../task-intake/run";

@@ -21,7 +21,7 @@ boundaries. Keep CLI behavior project-agnostic across configured workspaces.
    catalog/management/prompt behavior in `packages/cli/src/features/skills/`.
 7. Keep Linear, GitHub, notifications, and runtime agent adapter integration
    boundaries isolated. Provider execution belongs in `packages/agent-adapters/`;
-   CLI adapter modules should remain compatibility or wiring code.
+   import adapter APIs from the `adapters` workspace package.
 8. Do not construct raw shell command strings in workflow logic; use helper
    modules that pass command arguments as structured arrays.
 
