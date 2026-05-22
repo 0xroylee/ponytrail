@@ -1,8 +1,21 @@
-import pino from "pino";
+import pinoHttp from "pino-http";
 import pretty from "pino-pretty";
 import type { ServerLogger, ServerLoggerOptions } from "./logger.types";
 
 const DEFAULT_LOG_LEVEL = "info";
+const LOG_LEVEL_VALUES = [
+	"trace",
+	"debug",
+	"info",
+	"warn",
+	"error",
+	"fatal",
+	"silent",
+] as const;
+
+type ServerLogLevel = (typeof LOG_LEVEL_VALUES)[number];
+
+const LOG_LEVELS = new Set<ServerLogLevel>(LOG_LEVEL_VALUES);
 
 export const logger: ServerLogger = createServerLogger();
 
@@ -18,14 +31,15 @@ export function createServerLogger(
 		sync: options.sync ?? true,
 	});
 
-	return pino(
+	return pinoHttp(
 		{
+			autoLogging: false,
 			base: options.context ?? {},
 			level: resolveLogLevel(env.PIV_LOG_LEVEL),
-			timestamp: pino.stdTimeFunctions.isoTime,
+			timestamp: isoTimestamp,
 		},
 		stream,
-	);
+	).logger;
 }
 
 export function setupServerProcessErrorHandlers(): void {
@@ -81,10 +95,17 @@ function normalizeServerDatabaseInitializationFields(
 	return undefined;
 }
 
-function resolveLogLevel(value: string | undefined): pino.LevelWithSilent {
-	if (value === "silent") return value;
-	if (value && value in pino.levels.values) {
-		return value as pino.LevelWithSilent;
+function resolveLogLevel(value: string | undefined): ServerLogLevel {
+	if (isServerLogLevel(value)) {
+		return value;
 	}
 	return DEFAULT_LOG_LEVEL;
+}
+
+function isServerLogLevel(value: string | undefined): value is ServerLogLevel {
+	return value !== undefined && LOG_LEVELS.has(value as ServerLogLevel);
+}
+
+function isoTimestamp(): string {
+	return `,"time":"${new Date().toISOString()}"`;
 }

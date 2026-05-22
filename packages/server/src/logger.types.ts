@@ -1,8 +1,8 @@
-import type { Logger as PinoLogger } from "pino";
+import type { HttpLogger } from "pino-http";
 
 export type ServerLogContext = Record<string, unknown>;
 
-export type ServerLogger = PinoLogger;
+export type ServerLogger = HttpLogger["logger"];
 
 export interface ServerLoggerOptions {
 	context?: ServerLogContext;
