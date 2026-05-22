@@ -7,7 +7,6 @@ import type {
 	NotificationServerRequest,
 } from "devos/features/server";
 import type { BoardRepository } from "./board";
-import type { ServerLogger } from "./logger.types";
 import type { NotificationService } from "./notifications/notifications-service";
 import type { RealtimeEventPublisher } from "./realtime";
 import type { ReadRepositories } from "./repositories.types";
@@ -31,7 +30,6 @@ export interface AppDeps {
 	notificationService?: NotificationService;
 	realtimeEvents?: RealtimeEventPublisher;
 	repositories?: ReadRepositories;
-	logger?: ServerLogger;
 }
 
 export type RouteHandler = (request: Request) => Response | Promise<Response>;

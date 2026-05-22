@@ -1,19 +1,15 @@
 import { describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
-import type { Server } from "node:http";
-import type { Express } from "express";
+import { type Server, createServer } from "node:http";
+import { Writable } from "node:stream";
+import express, { type Express } from "express";
+import request from "supertest";
 import {
 	createExpressRequestLogger,
 	listenExpressApp,
 	sendWebResponse,
 } from "../src/express-server";
-import type { ServerLogMethod, ServerLogger } from "../src/logger.types";
-
-interface LogEntry {
-	level: "info" | "warn" | "error" | "fatal";
-	context: Record<string, unknown>;
-	message: string;
-}
+import { createServerLogger } from "../src/logger";
 
 describe("listenExpressApp", () => {
 	it("uses the requested fixed port when non-zero", async () => {
@@ -85,71 +81,55 @@ describe("listenExpressApp", () => {
 		expect(writes).toEqual(["first", "second", "[end]"]);
 	});
 
-	it("logs successful chat-create requests before query strings", () => {
-		const entries: LogEntry[] = [];
-		const { response, nextCalls } = runExpressRequestLogger(entries, {
-			method: "POST",
-			path: "/api/tasks/chat-create",
-			originalUrl: "/api/tasks/chat-create?token=secret",
-			statusCode: 201,
-		});
+	it("logs successful chat-create requests before query strings", async () => {
+		const captured = createCapturedLogger();
+		const server = await createLoggedTestServer(captured, 201);
 
-		expect(nextCalls).toBe(1);
-		response.emit("finish");
-		expect(entries).toHaveLength(1);
-		expect(entries[0]).toMatchObject({
-			level: "info",
-			context: {
-				method: "POST",
-				path: "/api/tasks/chat-create",
-				statusCode: 201,
-			},
-			message: "HTTP request completed",
-		});
-		expect(entries[0]?.context.durationMs).toEqual(expect.any(Number));
+		try {
+			await request(server)
+				.post("/api/tasks/chat-create?token=secret")
+				.expect(201);
+		} finally {
+			await closeTestServer(server);
+		}
+		const output = captured.output();
+		expect(output).toContain("INFO");
+		expect(output).toContain("HTTP request completed");
+		expect(output).toContain('"method":"POST"');
+		expect(output).toContain('"path":"/api/tasks/chat-create"');
+		expect(output).toContain('"statusCode":201');
+		expect(output).toContain('"durationMs":');
+		expect(output).not.toContain("token=secret");
 	});
 
-	it("logs pre-route validation failures at info level", () => {
-		const entries: LogEntry[] = [];
-		const { response, nextCalls } = runExpressRequestLogger(entries, {
-			method: "POST",
-			path: "/api/tasks/chat-create",
-			statusCode: 400,
-		});
+	it("logs pre-route validation failures at info level", async () => {
+		const captured = createCapturedLogger();
+		const server = await createLoggedTestServer(captured, 400);
 
-		expect(nextCalls).toBe(1);
-		response.emit("finish");
-		expect(entries).toHaveLength(1);
-		expect(entries[0]).toMatchObject({
-			level: "info",
-			context: {
-				method: "POST",
-				path: "/api/tasks/chat-create",
-				statusCode: 400,
-			},
-			message: "HTTP request completed",
-		});
+		try {
+			await request(server).post("/api/tasks/chat-create").expect(400);
+		} finally {
+			await closeTestServer(server);
+		}
+		const output = captured.output();
+		expect(output).toContain("INFO");
+		expect(output).toContain("HTTP request completed");
+		expect(output).toContain('"statusCode":400');
 	});
 
-	it("logs server error responses at error level", () => {
-		const entries: LogEntry[] = [];
-		const { response } = runExpressRequestLogger(entries, {
-			method: "POST",
-			path: "/api/tasks/chat-create",
-			statusCode: 503,
-		});
+	it("logs server error responses at error level", async () => {
+		const captured = createCapturedLogger();
+		const server = await createLoggedTestServer(captured, 503);
 
-		response.emit("finish");
-		expect(entries).toHaveLength(1);
-		expect(entries[0]).toMatchObject({
-			level: "error",
-			context: {
-				method: "POST",
-				path: "/api/tasks/chat-create",
-				statusCode: 503,
-			},
-			message: "HTTP request completed",
-		});
+		try {
+			await request(server).post("/api/tasks/chat-create").expect(503);
+		} finally {
+			await closeTestServer(server);
+		}
+		const output = captured.output();
+		expect(output).toContain("ERROR");
+		expect(output).toContain("HTTP request failed");
+		expect(output).toContain('"statusCode":503');
 	});
 });
 
@@ -165,52 +145,65 @@ function createFakeExpress(
 	} as unknown as Express;
 }
 
-function runExpressRequestLogger(
-	entries: LogEntry[],
-	input: {
-		method: string;
-		path: string;
-		originalUrl?: string;
-		statusCode: number;
-	},
-): { response: EventEmitter; nextCalls: number } {
-	const logger = createExpressRequestLogger(createLogger(entries));
-	const response = new EventEmitter() as EventEmitter & { statusCode: number };
-	response.statusCode = input.statusCode;
-	let nextCalls = 0;
-	logger(
-		{
-			method: input.method,
-			path: input.path,
-			originalUrl: input.originalUrl ?? input.path,
-		} as never,
-		response as never,
-		() => {
-			nextCalls += 1;
-		},
-	);
-	return { response, nextCalls };
+async function createLoggedTestServer(
+	captured: CapturedLogger,
+	statusCode: number,
+): Promise<Server> {
+	const server = createServer(createLoggedExpressApp(captured, statusCode));
+	await new Promise<void>((resolve, reject) => {
+		server.once("error", reject);
+		server.listen(0, () => {
+			server.off("error", reject);
+			resolve();
+		});
+	});
+	return server;
 }
 
-function createLogger(entries: LogEntry[]): ServerLogger {
-	const record =
-		(level: LogEntry["level"]): ServerLogMethod =>
-		(...args) => {
-			const [contextOrMessage, maybeMessage] = args;
-			const context =
-				typeof contextOrMessage === "string" ? {} : contextOrMessage;
-			const message =
-				typeof contextOrMessage === "string" ? contextOrMessage : maybeMessage;
-			entries.push({
-				level,
-				context: context as Record<string, unknown>,
-				message: message ?? "",
-			});
-		};
+function createLoggedExpressApp(
+	captured: CapturedLogger,
+	statusCode: number,
+): Express {
+	const app = express();
+	app.use(createExpressRequestLogger(captured.logger));
+	app.post("/api/tasks/chat-create", (_request, response) => {
+		response.status(statusCode).json({ ok: statusCode < 400 });
+	});
+	return app;
+}
+
+function closeTestServer(server: Server): Promise<void> {
+	return new Promise((resolve, reject) => {
+		server.close((error) => {
+			if (error) {
+				reject(error);
+				return;
+			}
+			resolve();
+		});
+	});
+}
+
+interface CapturedLogger {
+	logger: ReturnType<typeof createServerLogger>;
+	output(): string;
+}
+
+function createCapturedLogger(): CapturedLogger {
+	let text = "";
+	const destination = new Writable({
+		write(chunk, _encoding, callback) {
+			text += chunk.toString();
+			callback();
+		},
+	});
 	return {
-		info: record("info"),
-		warn: record("warn"),
-		error: record("error"),
-		fatal: record("fatal"),
+		logger: createServerLogger({
+			color: false,
+			destination,
+			env: {},
+			sync: true,
+		}),
+		output: () => text,
 	};
 }

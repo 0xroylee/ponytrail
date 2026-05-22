@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { Writable } from "node:stream";
 import { ServerDatabaseInitializationError } from "devos-db";
 import { createServerLogger, normalizeError } from "../src/logger";
 
@@ -25,22 +26,51 @@ describe("server logger", () => {
 	});
 
 	it("supports warning logs with human context fields", () => {
-		let output = "";
-		const logger = createServerLogger({
-			color: false,
-			env: {},
-			now: () => new Date("2026-05-21T10:00:00.000Z"),
-			stderr: {
-				write(chunk: string) {
-					output += chunk;
-				},
-			},
-		});
+		const { logger, output } = createCapturedLogger();
 
 		logger.warn({ jobId: "daily", skipped: true }, "Skipping cron run");
 
-		expect(output).toBe(
-			"2026-05-21T10:00:00.000Z WARN  Skipping cron run jobId=daily skipped=true\n",
-		);
+		const text = output();
+		expect(text).toContain("WARN");
+		expect(text).toContain("Skipping cron run");
+		expect(text).toContain('"jobId":"daily"');
+		expect(text).toContain('"skipped":true');
+		expect(text).not.toContain("pid");
+		expect(text).not.toContain("hostname");
+	});
+
+	it("honors PIV_LOG_LEVEL", () => {
+		const { logger, output } = createCapturedLogger({
+			env: { PIV_LOG_LEVEL: "warn" },
+		});
+
+		logger.info("hidden info");
+		logger.warn("visible warning");
+
+		const text = output();
+		expect(text).not.toContain("hidden info");
+		expect(text).toContain("visible warning");
 	});
 });
+
+function createCapturedLogger(
+	options: Parameters<typeof createServerLogger>[0] = {},
+) {
+	let text = "";
+	const destination = new Writable({
+		write(chunk, _encoding, callback) {
+			text += chunk.toString();
+			callback();
+		},
+	});
+	return {
+		logger: createServerLogger({
+			color: false,
+			destination,
+			env: {},
+			sync: true,
+			...options,
+		}),
+		output: () => text,
+	};
+}

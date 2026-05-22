@@ -10,7 +10,10 @@ import express, {
 import * as OpenApiValidator from "express-openapi-validator";
 import swaggerUi from "swagger-ui-express";
 import type { RouteHandler } from "./app.types";
+import { createExpressRequestLogger } from "./http/express-request-logger";
 import type { ServerLogger } from "./logger.types";
+
+export { createExpressRequestLogger } from "./http/express-request-logger";
 
 const OPENAPI_SPEC_PATH = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -60,30 +63,6 @@ export function createExpressApp(
 	});
 	app.use(handleExpressError);
 	return app;
-}
-
-export function createExpressRequestLogger(logger: ServerLogger) {
-	return (
-		request: ExpressRequest,
-		response: ExpressResponse,
-		next: () => void,
-	): void => {
-		const startedAt = Date.now();
-		response.once("finish", () => {
-			const context = {
-				method: request.method,
-				path: request.path,
-				statusCode: response.statusCode,
-				durationMs: Math.max(0, Date.now() - startedAt),
-			};
-			if (response.statusCode >= 500) {
-				logger.error(context, "HTTP request completed");
-				return;
-			}
-			logger.info(context, "HTTP request completed");
-		});
-		next();
-	};
 }
 
 export function listenExpressApp(app: Express, port: number): Promise<Server> {

@@ -3,7 +3,6 @@ import { handleCliRoute } from "./http/cli-routes";
 import { handleInboxMessagesRoute } from "./http/inbox-routes";
 import { handlePollingStatusRoute } from "./http/polling-status-routes";
 import { handleProjectsRoute } from "./http/projects-routes";
-import { withRequestLogging } from "./http/request-logger";
 import {
 	badRequestResponse,
 	jsonError,
@@ -154,7 +153,7 @@ export function createHandleRequest(deps: AppDeps): RouteHandler {
 
 		return new Response("Not Found", { status: 404 });
 	};
-	return deps.logger ? withRequestLogging(handler, deps.logger) : handler;
+	return handler;
 }
 
 export const handleRequest: RouteHandler = async (request) => {
