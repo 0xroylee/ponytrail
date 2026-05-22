@@ -1,7 +1,6 @@
 import path from "node:path";
 
 export const DEFAULT_CONFIG_FILE = "devos.config.ts";
-export const LOCAL_CONFIG_FILE = "devos.local.config.ts";
 
 export const SQLITE_ENV_DIR = path.join(".devos", "config");
 export const SQLITE_ENV_DB_FILE = "env.sqlite";

@@ -13,14 +13,14 @@ Use one of these forms:
 
 1. Bun installed.
 2. Dependencies installed with `bun install`.
-3. Config present in `devos.config.ts` (or local overrides in `devos.local.config.ts`).
+3. Config present in `devos.config.ts`.
 4. Required credentials configured (for example Linear and GitHub settings used by your project).
 5. Initial onboarding completed with `onboard`, then validated with `onboard --check`.
 6. A valid project ID available from the `projects` command output.
 
 ## Configuration Coverage
 
-The commands below read from the resolved runtime project config (from `devos.config.ts` plus optional `devos.local.config.ts` overrides). The most relevant fields are:
+The commands below read from the resolved runtime project config in `devos.config.ts`. The most relevant fields are:
 
 - `projects[].id`: project identifier used by `--project`.
 - `projects[].workspacePath`: where run state is stored and read.

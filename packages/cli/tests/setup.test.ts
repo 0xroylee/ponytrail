@@ -40,7 +40,6 @@ import {
 	renderDevosBanner,
 	renderEnvFile,
 	renderInstanceConfig,
-	renderLocalConfig,
 	renderSetupGitHubInstallPrompt,
 	renderSetupRtkInstallPrompt,
 	runSetupWizard,
@@ -96,30 +95,16 @@ describe("setup helpers", () => {
 		expect(normalizeProjectId("   ")).toBe("default");
 	});
 
-	it("keeps project metadata out of generated onboarding files", () => {
+	it("keeps project metadata and secrets out of the generated env file", () => {
 		const env = renderEnvFile(draft);
-		const localConfig = renderLocalConfig(draft);
 		expect(env).not.toContain("LINEAR_API_KEY");
 		expect(env).toContain("RESEND_API_KEY=re_secret_123");
-		expect(localConfig).not.toContain("octo");
-		expect(localConfig).not.toContain("Demo Project");
-		expect(localConfig).not.toContain("Demo description");
-		expect(localConfig).not.toContain("Demo Workspace");
-		expect(localConfig).not.toContain("/tmp/demo");
-		expect(localConfig).not.toContain('"repo"');
-		expect(localConfig).not.toContain('"baseBranch"');
-		expect(localConfig).not.toContain("lin_secret_123");
-		expect(localConfig).not.toContain("re_secret_123");
-		expect(localConfig).toContain('"projects": []');
-		expect(localConfig).toContain('"enabled": true');
-		expect(localConfig).toContain('"from": "devos@example.com"');
-		expect(localConfig).toContain('"to": [');
-		expect(localConfig).toContain('"alerts@example.com"');
-		expect(localConfig).toContain('"ops@example.com"');
-		expect(localConfig).toContain('"root": `${cwd}/skills`');
-		expect(localConfig).toContain('"plan": "piv-plan/SKILL.md"');
-		expect(localConfig).toContain('"reasoningEfforts": {');
-		expect(localConfig).toContain('"implement": "low"');
+		expect(env).not.toContain("octo");
+		expect(env).not.toContain("Demo Project");
+		expect(env).not.toContain("Demo description");
+		expect(env).not.toContain("Demo Workspace");
+		expect(env).not.toContain("/tmp/demo");
+		expect(env).not.toContain("lin_secret_123");
 	});
 
 	it("uses low as default implementation reasoning effort", () => {
@@ -380,6 +365,9 @@ describe("setup helpers", () => {
 				'RESEND_TO="alerts@example.com,ops@example.com"',
 			);
 			expect(envContent).toContain(`JWT_SECRET=${sqliteEnv?.JWT_SECRET}`);
+			await expect(
+				access(path.join(tempDir, "devos.local.config.ts")),
+			).rejects.toThrow();
 
 			const instanceConfigPath = path.join(
 				tempDir,

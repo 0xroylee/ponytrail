@@ -118,7 +118,7 @@ docker compose down
 ## Configuration Notes
 
 - Primary config: `devos.config.ts`.
-- Local overrides (gitignored): `devos.local.config.ts`.
+- Root config: `devos.config.ts`.
 - Guided setup stores local secrets in `.devos/config/env.sqlite` (and writes `.env` for compatibility).
 - Docker-isolated Codex execution status and caveats (ROY-95): [docs/RELIABILITY.md#docker-isolated-codex-execution](docs/RELIABILITY.md#docker-isolated-codex-execution)
 

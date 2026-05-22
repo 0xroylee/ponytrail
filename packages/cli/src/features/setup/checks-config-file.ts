@@ -1,7 +1,7 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import type { LoadedConfig } from "../config";
-import { LOCAL_CONFIG_FILE } from "./constants";
+import { DEFAULT_CONFIG_FILE } from "./constants";
 import type { InstanceConfigLoadResult } from "./instance-config.types";
 import type { SetupCheck, SetupCheckDeps } from "./setup.types";
 
@@ -22,40 +22,36 @@ export async function collectConfigFileCheck({
 	config?: LoadedConfig;
 	instanceResult: InstanceConfigLoadResult;
 }> {
-	const localConfigPath = path.join(cwd, LOCAL_CONFIG_FILE);
-	const [localConfigExists, configResult, instanceResult] = await Promise.all([
-		pathExists(localConfigPath, accessPath),
+	const configPath = path.join(cwd, DEFAULT_CONFIG_FILE);
+	const [configExists, configResult, instanceResult] = await Promise.all([
+		pathExists(configPath, accessPath),
 		loadConfigForCheck(cwd, configLoader),
 		instanceLoader(cwd),
 	]);
 
 	return {
-		check: buildConfigFileCheck(
-			localConfigExists,
-			configResult,
-			instanceResult,
-		),
+		check: buildConfigFileCheck(configExists, configResult, instanceResult),
 		config: configResult.ok ? configResult.config : undefined,
 		instanceResult,
 	};
 }
 
 function buildConfigFileCheck(
-	localConfigExists: boolean,
+	configExists: boolean,
 	configResult:
 		| { ok: true; config: LoadedConfig }
 		| { ok: false; message: string },
 	instanceResult: InstanceConfigLoadResult,
 ): SetupCheck {
-	if (!localConfigExists) {
-		return fail(`${LOCAL_CONFIG_FILE} missing or inaccessible`);
+	if (!configExists) {
+		return fail(`${DEFAULT_CONFIG_FILE} missing or inaccessible`);
 	}
 	if (!configResult.ok) return fail(configResult.message);
 	if (!instanceResult.ok) return fail(instanceResult.message);
 	return {
 		name: "Config file",
 		status: "pass",
-		message: `${LOCAL_CONFIG_FILE} and instance config loaded successfully`,
+		message: `${DEFAULT_CONFIG_FILE} and instance config loaded successfully`,
 	};
 }
 

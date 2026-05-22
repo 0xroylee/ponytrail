@@ -9,7 +9,7 @@ import {
 	renderSetupRtkInstallPrompt,
 } from "./checks";
 import { safeRun } from "./checks-helpers";
-import { ENV_FILE, INSTANCE_CONFIG_FILE, LOCAL_CONFIG_FILE } from "./constants";
+import { ENV_FILE, INSTANCE_CONFIG_FILE } from "./constants";
 import { collectSetupDraft } from "./setup-draft";
 import { writeSetupFiles } from "./setup-files";
 import type { SetupWizardDeps } from "./setup.types";
@@ -33,7 +33,7 @@ export async function runSetupWizard(
 	});
 	await writeFiles(cwd, draft);
 	process.stdout.write(
-		`${renderCliHeading("Onboarding files written:")}\n${ENV_FILE}, ${LOCAL_CONFIG_FILE}, ${INSTANCE_CONFIG_FILE}\nSecrets saved to .devos/config/env.sqlite\n\n`,
+		`${renderCliHeading("Onboarding files written:")}\n${ENV_FILE}, ${INSTANCE_CONFIG_FILE}\nSecrets saved to .devos/config/env.sqlite\n\n`,
 	);
 	process.stdout.write(`${renderDevosBanner()}\n`);
 	process.stdout.write(`\n${renderCliHeading("Running doctor checks...")}\n`);

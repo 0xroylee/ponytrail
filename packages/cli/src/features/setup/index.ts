@@ -3,7 +3,6 @@ export * from "./checks";
 export * from "./constants";
 export * from "./env-file";
 export * from "./instance-config";
-export * from "./local-config";
 export * from "./normalize";
 export * from "./setup-draft";
 export * from "./setup-files";

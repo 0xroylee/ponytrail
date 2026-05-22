@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { saveSqliteEnv } from "../config";
-import { ENV_FILE, INSTANCE_CONFIG_FILE, LOCAL_CONFIG_FILE } from "./constants";
+import { ENV_FILE, INSTANCE_CONFIG_FILE } from "./constants";
 import {
 	buildDatabaseEnvUpdates,
 	buildEnvUpdates,
@@ -13,7 +13,6 @@ import {
 	renderInstanceConfigDocument,
 } from "./instance-config";
 import type { OnboardInstanceConfig } from "./instance-config.types";
-import { renderLocalConfig } from "./local-config";
 import { saveSetupWorkspaceMetadata } from "./project-metadata";
 import type { SetupDraft } from "./setup.types";
 import { readExistingFile } from "./wizard-helpers";
@@ -23,7 +22,6 @@ export async function writeSetupFiles(
 	draft: SetupDraft,
 ): Promise<void> {
 	const envPath = path.join(cwd, ENV_FILE);
-	const configPath = path.join(cwd, LOCAL_CONFIG_FILE);
 	const instanceConfigPath = path.join(cwd, INSTANCE_CONFIG_FILE);
 	const existingEnv = await readExistingFile(envPath);
 	const jwtSecret = randomBytes(32).toString("base64url");
@@ -35,7 +33,6 @@ export async function writeSetupFiles(
 	await writeFile(envPath, mergeEnvFile(existingEnv, envUpdates));
 	await saveSqliteEnv(cwd, databaseEnvUpdates);
 	await saveSetupWorkspaceMetadata(cwd, draft);
-	await writeFile(configPath, renderLocalConfig(draft));
 	const instanceConfig = createInstanceConfig(cwd, new Date().toISOString());
 	await mkdir(path.dirname(instanceConfigPath), { recursive: true });
 	await createLocalInstanceDirectories(instanceConfig);

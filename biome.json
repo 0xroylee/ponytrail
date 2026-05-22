@@ -9,8 +9,7 @@
 			"packages/*/.next/**",
 			"packages/web/.next",
 			".devos",
-			"bun.lock",
-			"devos.local.config.ts"
+			"bun.lock"
 		]
 	},
 	"formatter": {
