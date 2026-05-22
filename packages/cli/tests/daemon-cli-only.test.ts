@@ -56,8 +56,14 @@ describe("runCliCommandDaemonOnly", () => {
 
 		expect(pollerHarness.calls).toEqual([
 			{
-				command: "npx",
-				args: ["devos", "run"],
+				command: "bun",
+				args: [
+					"run",
+					"packages/cli/src/index.ts",
+					"run",
+					"--all-projects",
+					"--poll-forever",
+				],
 				cwd: "/repo",
 				env: expect.objectContaining({
 					DEVOS_SERVER_BASE_URL: "http://127.0.0.1:4101",

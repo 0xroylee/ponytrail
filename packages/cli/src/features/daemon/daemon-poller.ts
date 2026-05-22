@@ -43,12 +43,26 @@ export type AttachedPollerSpawn = (
 	options: AttachedPollerSpawnOptions,
 ) => AttachedPoller;
 
+export function buildWorkflowPollerInvocation() {
+	return {
+		command: "bun",
+		args: [
+			"run",
+			"packages/cli/src/index.ts",
+			"run",
+			"--all-projects",
+			"--poll-forever",
+		],
+	};
+}
+
 export function startAttachedWorkflowPoller(
 	options: AttachedPollerOptions,
 ): AttachedPoller {
 	const env = buildAttachedPollerEnv(options.env ?? process.env);
 	const spawnPoller = options.spawnPoller ?? spawnAttachedPoller;
-	const child = spawnPoller("npx", ["devos", "run"], {
+	const invocation = buildWorkflowPollerInvocation();
+	const child = spawnPoller(invocation.command, invocation.args, {
 		cwd: options.cwd,
 		env,
 		stdio: ["ignore", "pipe", "pipe"],

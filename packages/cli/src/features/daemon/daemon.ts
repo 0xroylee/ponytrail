@@ -5,6 +5,7 @@ import {
 	renderProductionDaemonStartup,
 } from "./daemon-output";
 import {
+	buildWorkflowPollerInvocation,
 	startAttachedWorkflowPoller,
 	superviseCliCommandDaemonWithPoller,
 } from "./daemon-poller";
@@ -43,6 +44,7 @@ export function buildDaemonCommands(
 		env.NEXT_PUBLIC_DEVOS_SERVER_WS_URL ??
 		`ws://127.0.0.1:${serverPort}/api/cli/stream`;
 	const baseEnv = { ...env, NODE_ENV: "production" };
+	const pollerInvocation = buildWorkflowPollerInvocation();
 
 	return [
 		{
@@ -68,8 +70,8 @@ export function buildDaemonCommands(
 		},
 		{
 			name: "workflow-poller",
-			command: "npx",
-			args: ["devos", "run"],
+			command: pollerInvocation.command,
+			args: pollerInvocation.args,
 			env: {
 				...baseEnv,
 				DEVOS_SERVER_BASE_URL: serverBaseUrl,
