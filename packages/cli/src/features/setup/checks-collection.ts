@@ -39,7 +39,6 @@ export async function collectSetupChecks(
 	);
 	if (!config) return checks;
 
-	addProjectConfigChecks(checks, config);
 	await addProjectPathChecks(checks, config, accessPath);
 	await addSkillChecks(checks, config, accessPath);
 	await addAutoSelectChecks(checks, config, accessPath);
@@ -57,28 +56,6 @@ async function loadEnvForChecks(
 	} catch {
 		return {};
 	}
-}
-
-function addProjectConfigChecks(
-	checks: SetupCheck[],
-	config: LoadedConfig,
-): void {
-	const missingApiKeyProjects = config.projects
-		.filter((project) => !project.linear.apiKey)
-		.map((project) => project.id);
-	checks.push(
-		missingApiKeyProjects.length === 0
-			? {
-					name: "Linear API key",
-					status: "pass",
-					message: "configured for every project",
-				}
-			: {
-					name: "Linear API key",
-					status: "fail",
-					message: `missing for projects: ${missingApiKeyProjects.join(", ")}`,
-				},
-	);
 }
 
 async function addProjectPathChecks(
