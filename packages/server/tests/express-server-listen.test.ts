@@ -1,9 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
-import { type Server, createServer } from "node:http";
 import { Writable } from "node:stream";
 import express, { type Express } from "express";
-import request from "supertest";
 import {
 	createExpressRequestLogger,
 	listenExpressApp,
@@ -82,17 +80,11 @@ describe("listenExpressApp", () => {
 	});
 
 	it("logs successful chat-create requests before query strings", async () => {
-		const captured = createCapturedLogger();
-		const server = await createLoggedTestServer(captured, 201);
-
-		try {
-			await request(server)
-				.post("/api/tasks/chat-create?token=secret")
-				.expect(201);
-		} finally {
-			await closeTestServer(server);
-		}
-		const output = captured.output();
+		const output = await createLoggedTestServer({
+			method: "POST",
+			originalUrl: "/api/tasks/chat-create?token=secret",
+			statusCode: 201,
+		});
 		expect(output).toContain("INFO");
 		expect(output).toContain("HTTP request completed");
 		expect(output).toContain('"method":"POST"');
@@ -103,30 +95,22 @@ describe("listenExpressApp", () => {
 	});
 
 	it("logs pre-route validation failures at info level", async () => {
-		const captured = createCapturedLogger();
-		const server = await createLoggedTestServer(captured, 400);
-
-		try {
-			await request(server).post("/api/tasks/chat-create").expect(400);
-		} finally {
-			await closeTestServer(server);
-		}
-		const output = captured.output();
+		const output = await createLoggedTestServer({
+			method: "POST",
+			originalUrl: "/api/tasks/chat-create",
+			statusCode: 400,
+		});
 		expect(output).toContain("INFO");
 		expect(output).toContain("HTTP request completed");
 		expect(output).toContain('"statusCode":400');
 	});
 
 	it("logs server error responses at error level", async () => {
-		const captured = createCapturedLogger();
-		const server = await createLoggedTestServer(captured, 503);
-
-		try {
-			await request(server).post("/api/tasks/chat-create").expect(503);
-		} finally {
-			await closeTestServer(server);
-		}
-		const output = captured.output();
+		const output = await createLoggedTestServer({
+			method: "POST",
+			originalUrl: "/api/tasks/chat-create",
+			statusCode: 503,
+		});
 		expect(output).toContain("ERROR");
 		expect(output).toContain("HTTP request failed");
 		expect(output).toContain('"statusCode":503');
@@ -145,43 +129,31 @@ function createFakeExpress(
 	} as unknown as Express;
 }
 
-async function createLoggedTestServer(
-	captured: CapturedLogger,
-	statusCode: number,
-): Promise<Server> {
-	const server = createServer(createLoggedExpressApp(captured, statusCode));
-	await new Promise<void>((resolve, reject) => {
-		server.once("error", reject);
-		server.listen(0, () => {
-			server.off("error", reject);
-			resolve();
-		});
+async function createLoggedTestServer(options: {
+	method: string;
+	originalUrl: string;
+	statusCode: number;
+}): Promise<string> {
+	const captured = createCapturedLogger();
+	const middleware = createExpressRequestLogger(captured.logger);
+	const requestLike = {
+		method: options.method,
+		originalUrl: options.originalUrl,
+		url: options.originalUrl,
+		headers: {},
+		get: () => undefined,
+	} as Parameters<ReturnType<typeof createExpressRequestLogger>>[0];
+	const responseLike = new EventEmitter() as Parameters<
+		ReturnType<typeof createExpressRequestLogger>
+	>[1];
+	responseLike.statusCode = options.statusCode;
+	// pino-http attaches lifecycle listeners; emitting "finish" triggers final log.
+	await new Promise<void>((resolve) => {
+		middleware(requestLike, responseLike, resolve);
 	});
-	return server;
-}
-
-function createLoggedExpressApp(
-	captured: CapturedLogger,
-	statusCode: number,
-): Express {
-	const app = express();
-	app.use(createExpressRequestLogger(captured.logger));
-	app.post("/api/tasks/chat-create", (_request, response) => {
-		response.status(statusCode).json({ ok: statusCode < 400 });
-	});
-	return app;
-}
-
-function closeTestServer(server: Server): Promise<void> {
-	return new Promise((resolve, reject) => {
-		server.close((error) => {
-			if (error) {
-				reject(error);
-				return;
-			}
-			resolve();
-		});
-	});
+	responseLike.emit("finish");
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	return captured.output();
 }
 
 interface CapturedLogger {
