@@ -1,5 +1,6 @@
 import { loadConfig } from "devos/features/config";
 import { runCronJobOnce, runCronScheduler } from "./index";
+import type { CronJobConfig } from "./index";
 
 interface CronRunnerArgs {
 	once: boolean;
@@ -22,7 +23,7 @@ function parseArgs(argv: string[]): CronRunnerArgs {
 export async function runCronCli(): Promise<void> {
 	const parsed = parseArgs(process.argv);
 	const config = await loadConfig(process.cwd());
-	const jobs = [];
+	const jobs: CronJobConfig[] = [];
 	if (parsed.once) {
 		await runCronJobOnce(config, { jobId: parsed.jobId, jobs });
 		return;

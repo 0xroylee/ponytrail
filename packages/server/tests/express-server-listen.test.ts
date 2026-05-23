@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
+import type { Server } from "node:http";
 import { Writable } from "node:stream";
 import express, { type Express } from "express";
 import {
@@ -142,7 +143,7 @@ async function createLoggedTestServer(options: {
 		url: options.originalUrl,
 		headers: {},
 		get: () => undefined,
-	} as Parameters<ReturnType<typeof createExpressRequestLogger>>[0];
+	} as unknown as Parameters<ReturnType<typeof createExpressRequestLogger>>[0];
 	const responseLike = new EventEmitter() as Parameters<
 		ReturnType<typeof createExpressRequestLogger>
 	>[1];

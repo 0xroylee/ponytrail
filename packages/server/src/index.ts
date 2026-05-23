@@ -18,6 +18,11 @@ import { createResendClient } from "./notifications/resend-client";
 import { createRealtimeEventBus } from "./realtime";
 import { createReadRepositories } from "./repositories";
 import {
+	createServerRuntime,
+	installServerShutdownHandlers,
+} from "./server-runtime";
+import type { ServerRuntime } from "./server-runtime.types";
+import {
 	resolveServerDatabasePath,
 	resolveServerWorkspacePath,
 } from "./startup-paths";
@@ -31,6 +36,13 @@ const DEFAULT_SERVER_PORT = 3001;
 export async function startServer(
 	port = resolveServerPort(process.env),
 ): Promise<ServerInstance> {
+	const runtime = await startServerRuntime(port);
+	return runtime.server;
+}
+
+export async function startServerRuntime(
+	port = resolveServerPort(process.env),
+): Promise<ServerRuntime> {
 	const cwd = process.cwd();
 	const workspacePath = resolveServerWorkspacePath(process.env);
 	const config = await loadServerStartupConfig(workspacePath);
@@ -76,9 +88,12 @@ export async function startServer(
 		commandBroker,
 		realtimeEvents,
 	});
-	server.once("close", () => {
-		void realtimeEventsSocket.close();
-		void workflowDataSocket.close();
+	const runtime = createServerRuntime({
+		server,
+		serverDatabase,
+		realtimeEventsSocket,
+		workflowDataSocket,
+		logger,
 	});
 	const address = server.address();
 	const listeningPort = typeof address === "object" ? address?.port : port;
@@ -86,15 +101,19 @@ export async function startServer(
 		{ port: listeningPort ?? port, databasePath, cwd, workspacePath },
 		"Server started",
 	);
-	return server;
+	return runtime;
 }
 
 if (import.meta.main) {
 	setupServerProcessErrorHandlers();
-	startServer().catch((error) => {
-		logger.fatal({ err: normalizeError(error) }, "Server startup failed");
-		process.exit(1);
-	});
+	startServerRuntime()
+		.then((runtime) => {
+			installServerShutdownHandlers(runtime, { logger });
+		})
+		.catch((error) => {
+			logger.fatal({ err: normalizeError(error) }, "Server startup failed");
+			process.exit(1);
+		});
 }
 
 function resolveServerPort(env: NodeJS.ProcessEnv): number {
