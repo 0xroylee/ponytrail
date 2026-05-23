@@ -34,10 +34,15 @@ export async function loadResolvedEnv(cwd: string): Promise<ResolvedEnv> {
 export function buildEnvBase(
 	cwd: string,
 	env: ResolvedEnv,
+	instanceServerDatabasePath?: string,
 ): ProjectRuntimeConfig {
 	const workspacePath = env.PIV_WORKSPACE_PATH ?? cwd;
 	const sandbox = normalizeSandboxValue(env.CODEX_SANDBOX);
 	const codexHome = normalizeOptionalValue(env.CODEX_HOME);
+	const serverDatabasePath =
+		normalizeOptionalValue(env.PIV_SERVER_DATABASE_PATH) ??
+		instanceServerDatabasePath ??
+		path.join(cwd, ".devos", "config", SERVER_DB_DIR);
 	return {
 		workspacePath,
 		executionPath: env.PIV_EXECUTION_PATH ?? workspacePath,
@@ -77,9 +82,7 @@ export function buildEnvBase(
 		},
 		server: {
 			database: {
-				databasePath:
-					normalizeOptionalValue(env.PIV_SERVER_DATABASE_PATH) ??
-					path.join(cwd, ".devos", "config", SERVER_DB_DIR),
+				databasePath: serverDatabasePath,
 			},
 		},
 		codex: {

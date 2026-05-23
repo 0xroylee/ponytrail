@@ -10,6 +10,8 @@ import {
 	buildEnvPolling,
 	loadResolvedEnv,
 } from "./env";
+import { normalizeOptionalValue } from "./env-normalizers";
+import { loadInstanceServerDatabasePath } from "./instance-database-path";
 import { resolveNotifications } from "./notification-resolution";
 import { applyDatabaseProjectMetadata } from "./project-metadata";
 import { resolveProjects } from "./project-resolution";
@@ -42,7 +44,12 @@ async function loadConfigWithOptions(
 	options: LoadConfigOptions,
 ): Promise<LoadedConfig> {
 	const env = await loadResolvedEnv(cwd);
-	const envBase = buildEnvBase(cwd, env);
+	const instanceServerDatabasePath = normalizeOptionalValue(
+		env.PIV_SERVER_DATABASE_PATH,
+	)
+		? undefined
+		: await loadInstanceServerDatabasePath();
+	const envBase = buildEnvBase(cwd, env, instanceServerDatabasePath);
 	const envPolling = buildEnvPolling(env);
 	const envNotifications = buildEnvNotifications(env);
 	const root = createRuntimeRootConfig();
@@ -103,6 +110,7 @@ export {
 	devosHomeInstanceRoot,
 	instanceConfigPath,
 } from "./home-paths";
+export { loadInstanceServerDatabasePath };
 export { loadResolvedEnv };
 export type { LoadedConfig } from "./config.types";
 export type { ResolvedEnv } from "./env";
