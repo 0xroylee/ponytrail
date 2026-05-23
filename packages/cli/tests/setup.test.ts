@@ -455,11 +455,7 @@ describe("setup helpers", () => {
 		expect(checks.map((check) => check.name)).not.toContain(
 			`Execution path (${checkProjectId})`,
 		);
-		expect(checks).toContainEqual({
-			name: "Linear API key",
-			status: "pass",
-			message: "configured for every project",
-		});
+		expect(checks.map((check) => check.name)).not.toContain("Linear API key");
 	});
 
 	it("reports targeted instance doctor failures when instance config is missing or malformed", async () => {
@@ -644,7 +640,7 @@ describe("setup helpers", () => {
 		});
 	});
 
-	it("reports missing Linear API key", async () => {
+	it("ignores missing Linear API keys in setup checks", async () => {
 		const checks = await collectSetupChecks(
 			"/tmp/demo",
 			setupCheckDeps({
@@ -655,11 +651,8 @@ describe("setup helpers", () => {
 			}),
 		);
 
-		expect(checks).toContainEqual({
-			name: "Linear API key",
-			status: "fail",
-			message: "missing for projects: demo-project",
-		});
+		expect(checks.map((check) => check.name)).not.toContain("Linear API key");
+		expect(checks.every((check) => check.status === "pass")).toBe(true);
 	});
 
 	it("reports missing execution path", async () => {
