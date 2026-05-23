@@ -1,0 +1,56 @@
+{
+	"schemaVersion": 1,
+	"id": "rtk-token-optimizer",
+	"enabledByDefault": false,
+	"title": "RTK binary",
+	"description": "Token-optimized command proxy for agent shell commands. Use it when workflow output is noisy and the operator wants shorter command logs without losing actionable failures.",
+	"functional": [
+		"Runs shell commands through the rtk binary.",
+		"Filters repetitive terminal output before it enters the agent context.",
+		"Reports token savings through rtk gain."
+	],
+	"source": {
+		"type": "github",
+		"githubRepo": "https://github.com/rtk-ai/rtk",
+		"script": ""
+	},
+	"install": {
+		"kind": "manual",
+		"commands": [],
+		"notes": [
+			"Install rtk from the repository release or install instructions.",
+			"Place the rtk binary on PATH before running devos onboard --check."
+		]
+	},
+	"enable": {
+		"kind": "path-binary",
+		"config": {},
+		"notes": [
+			"devos onboard --check validates rtk --version.",
+			"Agent instructions can opt in by prefixing shell commands with rtk."
+		]
+	},
+	"checks": [
+		{
+			"title": "Verify RTK is available",
+			"command": "rtk",
+			"args": ["--version"],
+			"expected": "exit code 0"
+		},
+		{
+			"title": "Inspect token savings",
+			"command": "rtk",
+			"args": ["gain"],
+			"expected": "prints token savings analytics"
+		}
+	],
+	"tokenOptimization": {
+		"strategy": "Reduce command-output tokens by proxying shell commands through rtk.",
+		"savingsSignal": "Use rtk gain or rtk gain --history to compare filtered output savings.",
+		"whenToUse": [
+			"Workflow runs with verbose tests, builds, git output, or package-manager logs.",
+			"Long-running agent sessions where terminal output dominates context."
+		]
+	},
+	"maintainers": ["devos-cli"]
+}

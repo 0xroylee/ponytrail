@@ -9,6 +9,7 @@ import type {
 } from "./args.types";
 import type { LoadedConfig } from "./features/config";
 import { registerTaskCommand } from "./features/task-intake/args";
+import { registerPluginsCommand } from "./plugins/args";
 import { registerSkillsCommand } from "./skills/args";
 
 export type {
@@ -48,6 +49,7 @@ export function createCliProgram(
 		});
 	registerTaskCommand(program, runtime);
 	registerSkillsCommand(program, runtime);
+	registerPluginsCommand(program, runtime);
 
 	return program;
 }

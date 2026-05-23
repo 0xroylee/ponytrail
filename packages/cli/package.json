@@ -4,7 +4,7 @@
 	"license": "MIT",
 	"private": false,
 	"type": "module",
-	"files": ["dist", "README.md", "LICENSE"],
+	"files": ["dist", "README.md", "LICENSE", "templates"],
 	"bin": {
 		"devos": "dist/index.js"
 	},

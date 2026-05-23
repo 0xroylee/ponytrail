@@ -46,6 +46,7 @@ const envKeys = [
 	"CODEX_MODEL_IMPLEMENT",
 	"CODEX_MODEL_REVIEW_TEST",
 	"CODEX_MODEL_GITHUB_COMMENT",
+	"CODEX_PLUGINS",
 	"CODEX_DOCKER_ENABLED",
 	"CODEX_DOCKER_IMAGE",
 	"CODEX_DOCKER_BINARY",
@@ -101,6 +102,7 @@ describe("loadConfig", () => {
 								key === "CODEX_FAST_MODE_IMPLEMENT" ||
 								key === "CODEX_FAST_MODE_REVIEW_TEST" ||
 								key === "CODEX_FAST_MODE_GITHUB_COMMENT" ||
+								key === "CODEX_PLUGINS" ||
 								key === "CODEX_DOCKER_ENABLED" ||
 								key === "CODEX_DOCKER_IMAGE" ||
 								key === "CODEX_DOCKER_BINARY" ||
@@ -247,6 +249,7 @@ describe("loadConfig", () => {
 			GITHUB_BASE_BRANCH: "trunk",
 			LINEAR_API_KEY: "lin_sqlite_key",
 			PIV_POLL_INTERVAL_MS: "45000",
+			CODEX_PLUGINS: "github@openai-curated,linear@openai-curated",
 			RESEND_API_KEY: "re_sqlite",
 			RESEND_FROM: "devos.ing <ops@example.com>",
 			RESEND_TO: "a@example.com,b@example.com",
@@ -256,6 +259,7 @@ describe("loadConfig", () => {
 		process.env.GITHUB_BASE_BRANCH = undefined;
 		process.env.LINEAR_API_KEY = undefined;
 		process.env.PIV_POLL_INTERVAL_MS = undefined;
+		process.env.CODEX_PLUGINS = undefined;
 		process.env.RESEND_API_KEY = undefined;
 		process.env.RESEND_FROM = undefined;
 		process.env.RESEND_TO = undefined;
@@ -268,6 +272,10 @@ describe("loadConfig", () => {
 				baseBranch: "trunk",
 			});
 			expect(config.projects[0]?.linear.apiKey).toBe("lin_sqlite_key");
+			expect(config.projects[0]?.codex.plugins).toEqual([
+				"github@openai-curated",
+				"linear@openai-curated",
+			]);
 			expect(config.polling.intervalMs).toBe(45000);
 			expect(config.notifications.email.enabled).toBe(true);
 			expect(config.notifications.email.resendApiKey).toBe("re_sqlite");

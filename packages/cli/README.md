@@ -265,6 +265,110 @@ Output shape:
 
 After linking/installing the package bin, you can also use `devos ...` directly.
 
+### plugins list
+
+Purpose: list bundled CLI plugins.
+
+Syntax:
+
+```bash
+devos plugins list [--enabled]
+```
+
+Options:
+
+- `--enabled`: show only plugins explicitly enabled in local devos config.
+
+Output shape:
+
+- One tab-separated line per plugin:
+  `<id>\t<title>\t<enabled|disabled>`
+
+### plugins show
+
+Purpose: print a bundled plugin template as formatted JSON.
+
+Syntax:
+
+```bash
+devos plugins show <PLUGIN_ID>
+```
+
+### plugins install
+
+Purpose: show safe install instructions for a bundled plugin.
+
+Syntax:
+
+```bash
+devos plugins install <PLUGIN_ID>
+```
+
+Usage notes:
+
+- V1 does not execute install commands or remote scripts.
+- Templates keep install commands structured for a future trusted installer.
+
+### plugins enable
+
+Purpose: persist a bundled plugin as enabled in local devos config.
+
+Syntax:
+
+```bash
+devos plugins enable <PLUGIN_ID>
+```
+
+Usage notes:
+
+- Enabled plugin IDs are stored in local sqlite env as `DEVOS_ENABLED_PLUGINS`.
+- Codex plugin IDs declared by a template are stored in `CODEX_PLUGINS` and
+  passed to Codex as `plugins."<id>".enabled=true`.
+
+### plugins check
+
+Purpose: run local validation checks declared by a bundled plugin template.
+
+Syntax:
+
+```bash
+devos plugins check <PLUGIN_ID>
+```
+
+Output shape:
+
+- One tab-separated result line per check:
+  `<PASS|FAIL>\t<title>\t<expected-or-output>`
+
+## CLI Plugin Templates
+
+CLI plugin templates live under `templates/plugins/`. They are JSON documents
+used by `devos plugins list/show/install/enable/check`.
+
+Use [templates/plugins/plugin.template.json](templates/plugins/plugin.template.json)
+for new entries. Each template should include:
+
+- `title`: display name shown to operators.
+- `description`: short explanation of when to use the plugin.
+- `functional`: readable capability list.
+- `source`: GitHub repository or script location.
+- `install`: install steps as structured `{ "command": "...", "args": [...] }`
+  entries.
+- `enable`: config, environment, or PATH changes needed to activate it.
+- `checks`: validation commands the CLI can run later.
+- `tokenOptimization`: how the plugin saves tokens and how to measure it.
+
+RTK is documented as the first token-optimization plugin in
+[templates/plugins/rtk-token-optimizer.json](templates/plugins/rtk-token-optimizer.json).
+It models a binary plugin: inspect install notes with
+`devos plugins install rtk-token-optimizer`, place it on `PATH`, enable it with
+`devos plugins enable rtk-token-optimizer`, validate it with
+`devos plugins check rtk-token-optimizer`, and opt in by prefixing agent shell
+commands with `rtk`.
+
+Keep plugin templates small and declarative. Prefer structured command arrays
+over shell strings so future workflow code can execute them without parsing.
+
 ## Configuration Notes
 
 - Guided onboarding stores local secrets in `~/.devos/config/env.sqlite` (and writes `.env` for compatibility) and writes `~/.devos/config/instance.config.json` for the local trusted instance.

@@ -3,6 +3,7 @@ import { CommanderError } from "commander";
 import { type CliRuntime, createCliProgram } from "./args";
 import {
 	handleOnboardCommand,
+	handlePluginsCommand,
 	handleProjectsCommand,
 	handleRunCommand,
 	handleSkillsCommand,
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
 		handleProjectsCommand,
 		handleStatusCommand,
 		handleSkillsCommand,
+		handlePluginsCommand,
 		handleTaskCommand,
 	};
 	const program = createCliProgram(runtime);

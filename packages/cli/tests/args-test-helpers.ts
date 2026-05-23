@@ -38,6 +38,9 @@ export function createTestRuntime(calls: RuntimeCall[]): CliRuntime {
 		handleSkillsCommand: async (_config, command) => {
 			calls.push({ name: "skills", payload: command });
 		},
+		handlePluginsCommand: async (_config, command, cwd) => {
+			calls.push({ name: "plugins", payload: { ...command, cwd } });
+		},
 		handleTaskCommand: async (_config, command) => {
 			calls.push({ name: "task", payload: command });
 		},

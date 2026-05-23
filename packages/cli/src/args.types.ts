@@ -1,4 +1,5 @@
 import type { LoadedConfig } from "./features/config";
+import type { PluginsCommand } from "./features/plugins";
 import type { RunOptions } from "./features/types";
 
 export type CliParseOutput = {
@@ -25,6 +26,10 @@ export type OnboardCommanderOptions = {
 
 export type ProjectCommanderOptions = {
 	project?: string;
+};
+
+export type PluginListCommanderOptions = {
+	enabled?: boolean;
 };
 
 export type StatusCommanderOptions = ProjectCommanderOptions & {
@@ -108,5 +113,12 @@ export type CliRuntime = {
 		config: LoadedConfig,
 		command: SkillsCommand,
 	): Promise<void>;
+	handlePluginsCommand(
+		config: LoadedConfig,
+		command: PluginsCommand,
+		cwd: string,
+	): Promise<void>;
 	handleTaskCommand(config: LoadedConfig, command: TaskCommand): Promise<void>;
 };
+
+export type { PluginsCommand };

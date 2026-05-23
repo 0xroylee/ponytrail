@@ -1,0 +1,51 @@
+{
+	"schemaVersion": 1,
+	"id": "plugin-id",
+	"enabledByDefault": false,
+	"title": "Plugin title",
+	"description": "One short paragraph explaining when an operator should use this plugin.",
+	"functional": [
+		"Describe the first user-facing capability.",
+		"Describe the second user-facing capability."
+	],
+	"source": {
+		"type": "github",
+		"githubRepo": "https://github.com/org/repo",
+		"script": ""
+	},
+	"install": {
+		"kind": "manual",
+		"commands": [
+			{
+				"command": "tool",
+				"args": ["install", "plugin-name"]
+			}
+		],
+		"notes": ["Keep commands as command plus args, not raw shell strings."]
+	},
+	"enable": {
+		"kind": "config",
+		"config": {
+			"codex": {
+				"plugins": ["plugin-id@publisher"]
+			}
+		},
+		"notes": [
+			"Explain the config, environment, or PATH change that enables it."
+		]
+	},
+	"checks": [
+		{
+			"title": "Verify plugin is available",
+			"command": "tool",
+			"args": ["--version"],
+			"expected": "exit code 0"
+		}
+	],
+	"tokenOptimization": {
+		"strategy": "Explain how this plugin reduces prompt, output, or tool-call tokens.",
+		"savingsSignal": "Explain how an operator can see that token usage improved.",
+		"whenToUse": ["List the workflows where this plugin is useful."]
+	},
+	"maintainers": ["team-or-person"]
+}

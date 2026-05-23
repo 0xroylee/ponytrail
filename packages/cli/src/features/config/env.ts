@@ -134,6 +134,7 @@ export function buildEnvBase(
 			},
 			sandbox,
 			codexHome,
+			plugins: parseCommaList(env.CODEX_PLUGINS),
 			docker: {
 				enabled: normalizeBooleanEnvValue(
 					env.CODEX_DOCKER_ENABLED,
