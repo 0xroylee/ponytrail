@@ -40,6 +40,17 @@ describe("CLI logger", () => {
 		);
 	});
 
+	it("reads PIV_LOG_LEVEL when each log line is written", () => {
+		const env: { PIV_LOG_LEVEL?: string } = { PIV_LOG_LEVEL: "silent" };
+		const { logger, output } = createCapturedLogger({ env });
+
+		logger.info("Hidden");
+		env.PIV_LOG_LEVEL = "info";
+		logger.info("Visible");
+
+		expect(output()).toBe("2026-05-21T10:00:00.000Z INFO  Visible\n");
+	});
+
 	it("prints normalized error details below the log line", () => {
 		const { logger, output } = createCapturedLogger();
 

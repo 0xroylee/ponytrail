@@ -19,17 +19,17 @@ const SILENT_LEVEL = 100;
 export const logger = createLogger();
 
 export function createLogger(options: CliLoggerOptions = {}): CliLogger {
-	const env = options.env ?? { PIV_LOG_LEVEL: process.env.PIV_LOG_LEVEL };
+	const env = options.env;
 	const stderr = options.stderr ?? process.stderr;
 	const now = options.now ?? (() => new Date());
 	const color = options.color ?? pc.isColorSupported;
-	const threshold = resolveLogThreshold(env.PIV_LOG_LEVEL);
 	const baseContext = options.context ?? {};
 
 	const write = (
 		level: CliLogLevel,
 		...args: [string] | [CliLogContext, string]
 	) => {
+		const threshold = resolveLogThreshold(resolveLogLevel(env));
 		if (LOG_LEVELS[level] < threshold) return;
 		const { context, message } = resolveLogArgs(args);
 		const mergedContext = { ...baseContext, ...context };
@@ -57,7 +57,7 @@ export function createLogger(options: CliLoggerOptions = {}): CliLogger {
 		child: (context) =>
 			createLogger({
 				context: { ...baseContext, ...context },
-				env,
+				...(env === undefined ? {} : { env }),
 				stderr,
 				now,
 				color,
@@ -91,6 +91,10 @@ export function normalizeError(input: unknown): Record<string, unknown> {
 }
 
 export type { CliLogContext, CliLogger } from "./types/logger.types";
+
+function resolveLogLevel(env: CliLoggerOptions["env"]): string | undefined {
+	return env === undefined ? process.env.PIV_LOG_LEVEL : env.PIV_LOG_LEVEL;
+}
 
 function resolveLogThreshold(value: string | undefined): number {
 	if (value === "silent") return SILENT_LEVEL;

@@ -3243,7 +3243,9 @@ function createWorkflowIssue(
 
 async function captureStderr(run: () => Promise<void>): Promise<string> {
 	const originalWrite = process.stderr.write;
+	const originalLogLevel = process.env.PIV_LOG_LEVEL;
 	let output = "";
+	process.env.PIV_LOG_LEVEL = "info";
 	process.stderr.write = ((chunk: string | Uint8Array) => {
 		output += chunk.toString();
 		return true;
@@ -3253,6 +3255,11 @@ async function captureStderr(run: () => Promise<void>): Promise<string> {
 		return output;
 	} finally {
 		process.stderr.write = originalWrite;
+		if (originalLogLevel === undefined) {
+			Reflect.deleteProperty(process.env, "PIV_LOG_LEVEL");
+		} else {
+			process.env.PIV_LOG_LEVEL = originalLogLevel;
+		}
 	}
 }
 
