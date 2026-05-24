@@ -48,6 +48,7 @@
 		"prepare": "bun run ./scripts/prepare.ts"
 	},
 	"devDependencies": {
+		"@devos/tsconfig": "workspace:*",
 		"@biomejs/biome": "1.9.4",
 		"@changesets/cli": "^2.31.0",
 		"adapters": "workspace:*",

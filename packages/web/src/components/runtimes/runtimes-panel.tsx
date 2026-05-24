@@ -30,7 +30,12 @@ export function RuntimesPanel(): ReactElement {
 	}
 
 	if (runtimes.length === 0) {
-		return <RuntimeStatePanel message="No runtimes are configured." title="Runtimes" />;
+		return (
+			<RuntimeStatePanel
+				message="No runtimes are configured."
+				title="Runtimes"
+			/>
+		);
 	}
 
 	return (
@@ -157,7 +162,9 @@ function RuntimeAgents({
 								<Bot className="shrink-0" size={15} />
 								<span className="break-words">{agent.name}</span>
 							</p>
-							<p className="m-0 break-words text-xs text-zinc-500">{agent.id}</p>
+							<p className="m-0 break-words text-xs text-zinc-500">
+								{agent.id}
+							</p>
 						</div>
 						<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400 sm:justify-end">
 							<span>{agent.model}</span>
@@ -194,5 +201,8 @@ function RuntimeStatePanel({
 }
 
 function totalCapacity(runtimes: RuntimeSummary[]): number {
-	return runtimes.reduce((total, runtime) => total + runtime.totalConcurrency, 0);
+	return runtimes.reduce(
+		(total, runtime) => total + runtime.totalConcurrency,
+		0,
+	);
 }

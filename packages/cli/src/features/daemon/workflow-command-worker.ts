@@ -32,7 +32,8 @@ export function startWorkflowCommandWorker(
 	options: WorkflowCommandWorkerOptions,
 ): WorkflowCommandWorker {
 	const workerId = options.workerId ?? crypto.randomUUID();
-	const computer = options.computer ?? buildWorkflowComputerRegistration(options);
+	const computer =
+		options.computer ?? buildWorkflowComputerRegistration(options);
 	const workerLogger = options.logger ?? defaultLogger;
 	const executor = new CliCommandExecutor(
 		buildWorkflowCommandWorkerExecutorOptions(options),
