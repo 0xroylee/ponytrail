@@ -4,11 +4,11 @@ import { refreshRunStateIssueIdentity } from "../src/features/workflow/workflow-
 import type { WorkflowIssue } from "../src/features/workflow/workflow.types";
 
 describe("workflow run-state identity refresh", () => {
-	it("refreshes server-owned issue identity without resetting workflow progress", () => {
-		const state = createRunState();
+	it("refreshes same-task issue identity without resetting workflow progress", () => {
+		const state = createRunState({ issueId: "current-task-id" });
 		const refreshed = refreshRunStateIssueIdentity(state, {
 			id: "current-task-id",
-			identifier: "TASK-000001",
+			identifier: "task-000001",
 			title: "Current title",
 			description: "Current content",
 			url: "devos://tasks/current-task-id",
@@ -35,7 +35,8 @@ describe("workflow run-state identity refresh", () => {
 
 		expect(refreshed).toEqual({
 			changed: true,
-			previousIssueId: "stale-task-id",
+			reusable: true,
+			previousIssueId: "current-task-id",
 			currentIssueId: "current-task-id",
 		});
 		expect(state.issue).toMatchObject({
@@ -59,6 +60,52 @@ describe("workflow run-state identity refresh", () => {
 		expect(state.startedAt).toBe("2026-05-13T00:00:00.000Z");
 	});
 
+	it("does not mutate stale run state when the server task id changed", () => {
+		const state = createRunState({ issueId: "stale-task-id" });
+		const snapshot = JSON.stringify(state);
+		const refreshed = refreshRunStateIssueIdentity(state, {
+			id: "current-task-id",
+			identifier: "TASK-000001",
+			title: "Current title",
+			description: "Current content",
+			url: "devos://tasks/current-task-id",
+			projectId: "default",
+			priority: { value: 1, name: "P1" },
+			labels: [],
+			state: { id: "todo", name: "Todo" },
+		});
+
+		expect(refreshed).toEqual({
+			changed: false,
+			reusable: false,
+			discardReason: "task_id_changed",
+			previousIssueId: "stale-task-id",
+			currentIssueId: "current-task-id",
+		});
+		expect(JSON.stringify(state)).toBe(snapshot);
+	});
+
+	it("does not reuse blocked task-not-found state once the server returns the task", () => {
+		const state = createRunState({ issueId: "current-task-id" });
+		state.stage = "blocked";
+		state.failedStage = "blocked";
+		state.lastError = "not_found: Task not found";
+		const snapshot = JSON.stringify(state);
+		const refreshed = refreshRunStateIssueIdentity(
+			state,
+			createWorkflowIssueFromState(state),
+		);
+
+		expect(refreshed).toEqual({
+			changed: false,
+			reusable: false,
+			discardReason: "task_not_found_block",
+			previousIssueId: "current-task-id",
+			currentIssueId: "current-task-id",
+		});
+		expect(JSON.stringify(state)).toBe(snapshot);
+	});
+
 	it("reports unchanged identity without mutating the run state", () => {
 		const state = createRunState();
 		const snapshot = JSON.stringify(state);
@@ -69,6 +116,7 @@ describe("workflow run-state identity refresh", () => {
 
 		expect(refreshed).toEqual({
 			changed: false,
+			reusable: true,
 			previousIssueId: "stale-task-id",
 			currentIssueId: "stale-task-id",
 		});
@@ -76,7 +124,7 @@ describe("workflow run-state identity refresh", () => {
 	});
 });
 
-function createRunState(): RunState {
+function createRunState(options: { issueId?: string } = {}): RunState {
 	return {
 		projectId: "default",
 		projectName: "Default",
@@ -87,7 +135,7 @@ function createRunState(): RunState {
 			baseBranch: "main",
 		},
 		issue: {
-			id: "stale-task-id",
+			id: options.issueId ?? "stale-task-id",
 			key: "TASK-000001",
 			title: "Old title",
 			description: "Old content",

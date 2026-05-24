@@ -19,6 +19,7 @@ import {
 	normalizeBlockedPlanningFailureForResume,
 	projectErrorLogPath,
 	saveRunState,
+	stateFilePath,
 	transitionStage,
 } from "../src/features/workflow/state";
 import {
@@ -929,8 +930,8 @@ describe("runWorkflow parallel issue regression", () => {
 		);
 
 		const issues = [
-			createWorkflowIssue("ENG-1", 1, "Urgent"),
-			createWorkflowIssue("ENG-2", 2, "High"),
+			{ ...createWorkflowIssue("ENG-1", 1, "Urgent"), id: "lin_ENG-1" },
+			{ ...createWorkflowIssue("ENG-2", 2, "High"), id: "lin_ENG-2" },
 		];
 		const ensureIssueWorktreeCalls: string[] = [];
 		const prepareDependenciesCalls: string[] = [];
@@ -1039,7 +1040,10 @@ describe("runWorkflow parallel issue regression", () => {
 			createLinearClient: () =>
 				({
 					fetchWork: mock(async () => [
-						createWorkflowIssue("ENG-9", 1, "Urgent"),
+						{
+							...createWorkflowIssue("ENG-9", 1, "Urgent"),
+							id: state.issue.id,
+						},
 					]),
 					isAssignedState: mock(async () => true),
 				}) as unknown,
@@ -1073,6 +1077,171 @@ describe("runWorkflow parallel issue regression", () => {
 
 		expect(ensureIssueWorktree).not.toHaveBeenCalled();
 		expect(createAgentAdapter).not.toHaveBeenCalled();
+	});
+
+	it("resumes local checkpoint state when the server task id matches", async () => {
+		const workspacePath = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-workflow-resume-same-task-"),
+		);
+		const config = createProject("default");
+		config.workspacePath = workspacePath;
+		config.executionPath = workspacePath;
+		const state = createRunState("ENG-59", "human_review", Date.now());
+		state.issue.id = "current-task-id";
+		await saveRunState(workspacePath, state);
+		const createAgentAdapter = mock(() => ({}) as AgentAdapter);
+
+		const output = await captureStderr(() =>
+			runWorkflow(createLoadedConfig(config), {}, {
+				createLinearClient: () =>
+					({
+						fetchWork: mock(async () => [
+							{
+								...createWorkflowIssue("ENG-59", 1, "Urgent"),
+								id: "current-task-id",
+								title: "Updated server title",
+							},
+						]),
+						isAssignedState: mock(async () => true),
+					}) as unknown,
+				createAgentAdapter,
+				ensureBaseBranchFresh: mock(async () => {}),
+			} as unknown as WorkflowRuntime),
+		);
+
+		expect(output).toContain("Taking issue job");
+		expect(output).toContain("issueKey=ENG-59");
+		expect(output).toContain("stage=human_review");
+		expect(output).toContain("resumed=true");
+		expect(output).not.toContain("Discarding stale local run state");
+	});
+
+	it("discards stale blocked run state when the server task id changed", async () => {
+		const workspacePath = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-workflow-resume-new-task-"),
+		);
+		const config = createProject("default");
+		config.workspacePath = workspacePath;
+		config.executionPath = workspacePath;
+		const state = createRunState("ENG-60", "blocked", Date.now() - 60000);
+		state.issue.id = "old-task-id";
+		state.failedStage = "blocked";
+		state.lastError = "not_found: Task not found";
+		state.planSummary = "stale plan";
+		state.pullRequest = {
+			branch: "codex/eng-60",
+			title: "Stale PR",
+			url: "https://github.com/acme/repo/pull/60",
+		};
+		await saveRunState(workspacePath, state);
+		const markStage = mock(async (_issueId: string, _stage: string) => {});
+
+		const output = await captureStderr(() =>
+			runWorkflow(createLoadedConfig(config), {}, {
+				createLinearClient: () =>
+					({
+						fetchWork: mock(async () => [
+							{
+								...createWorkflowIssue("ENG-60", 1, "Urgent"),
+								id: "new-task-id",
+								title: "Fresh server title",
+								description: "Fresh server description",
+							},
+						]),
+						isAssignedState: mock(async () => true),
+						markStage,
+						comment: mock(async () => {}),
+						clearWorkflowStageLabels: mock(async () => {}),
+					}) as unknown,
+				createAgentAdapter: () => createNeedsInfoPlanningAgent(),
+				ensureBaseBranchFresh: mock(async () => {}),
+			} as unknown as WorkflowRuntime),
+		);
+
+		expect(output).toContain("WARN  Discarding stale local run state");
+		expect(output).toContain("issueKey=ENG-60");
+		expect(output).toContain("previousIssueId=old-task-id");
+		expect(output).toContain("issueId=new-task-id");
+		expect(output).toContain("Taking issue job");
+		expect(output).toContain("stage=received");
+		expect(output).not.toContain("resumed=true");
+		expect(markStage).toHaveBeenCalledWith("new-task-id", "planning");
+		expect(markStage).toHaveBeenCalledWith("new-task-id", "backlog");
+
+		const saved = JSON.parse(
+			await readFile(stateFilePath(workspacePath, "default", "ENG-60"), "utf8"),
+		) as RunState;
+		expect(saved.issue).toMatchObject({
+			id: "new-task-id",
+			key: "ENG-60",
+			title: "Fresh server title",
+			description: "Fresh server description",
+		});
+		expect(saved.stage).toBe("blocked");
+		expect(saved.failedStage).toBe("planning");
+		expect(saved.lastError).toBe(
+			"Planning needs clarification before implementation.",
+		);
+		expect(saved.planSummary).not.toBe("stale plan");
+		expect(saved.pullRequest).toBeUndefined();
+	});
+
+	it("discards task-not-found blocked state even when the task id already matches", async () => {
+		const workspacePath = await mkdtemp(
+			path.join(os.tmpdir(), "adhd-workflow-resume-found-task-"),
+		);
+		const config = createProject("default");
+		config.workspacePath = workspacePath;
+		config.executionPath = workspacePath;
+		const state = createRunState("ENG-61", "blocked", Date.now() - 60000);
+		state.issue.id = "current-task-id";
+		state.failedStage = "blocked";
+		state.lastError = "not_found: Task not found";
+		state.planSummary = "stale plan";
+		await saveRunState(workspacePath, state);
+		const markStage = mock(async (_issueId: string, _stage: string) => {});
+
+		const output = await captureStderr(() =>
+			runWorkflow(createLoadedConfig(config), {}, {
+				createLinearClient: () =>
+					({
+						fetchWork: mock(async () => [
+							{
+								...createWorkflowIssue("ENG-61", 1, "Urgent"),
+								id: "current-task-id",
+								title: "Current server title",
+							},
+						]),
+						isAssignedState: mock(async () => true),
+						markStage,
+						comment: mock(async () => {}),
+						clearWorkflowStageLabels: mock(async () => {}),
+					}) as unknown,
+				createAgentAdapter: () => createNeedsInfoPlanningAgent(),
+				ensureBaseBranchFresh: mock(async () => {}),
+			} as unknown as WorkflowRuntime),
+		);
+
+		expect(output).toContain(
+			"WARN  Discarding stale local run state because server task is available again",
+		);
+		expect(output).toContain("issueKey=ENG-61");
+		expect(output).toContain("stage=received");
+		expect(output).not.toContain("resumed=true");
+
+		const saved = JSON.parse(
+			await readFile(stateFilePath(workspacePath, "default", "ENG-61"), "utf8"),
+		) as RunState;
+		expect(saved.issue).toMatchObject({
+			id: "current-task-id",
+			key: "ENG-61",
+			title: "Current server title",
+		});
+		expect(saved.failedStage).toBe("planning");
+		expect(saved.lastError).toBe(
+			"Planning needs clarification before implementation.",
+		);
+		expect(saved.planSummary).not.toBe("stale plan");
 	});
 });
 
@@ -2973,6 +3142,24 @@ function createRunState(
 		bugs: [],
 		startedAt: updatedAt,
 		updatedAt,
+	};
+}
+
+function createNeedsInfoPlanningAgent(): AgentAdapter {
+	return {
+		runPlan: mock(async () => ({
+			finalMessage: [
+				"PLANNING_RESULT: NEEDS_INFO",
+				"QUESTIONS_JSON:",
+				JSON.stringify(["Which task behavior should change?"]),
+			].join("\n"),
+			stdout: "",
+			sessionId: "needs-info-session",
+		})),
+		runTaskIntake: mock(async () => ({ finalMessage: "", stdout: "" })),
+		resume: mock(async () => ({ finalMessage: "", stdout: "" })),
+		runReview: mock(async () => ({ finalMessage: "", stdout: "" })),
+		runGithubComment: mock(async () => ({ finalMessage: "", stdout: "" })),
 	};
 }
 

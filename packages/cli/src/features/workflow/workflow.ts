@@ -751,7 +751,28 @@ async function processIssue(
 ): Promise<void> {
 	const key = normalizeIssueKey(issue.identifier);
 	const issueLogger = logger.child({ projectId: config.id, issueKey: key });
-	const existing = await loadRunState(config.workspacePath, config.id, key);
+	const loadedRunState = await loadRunState(
+		config.workspacePath,
+		config.id,
+		key,
+	);
+	const identityRefresh = loadedRunState
+		? refreshRunStateIssueIdentity(loadedRunState, issue)
+		: undefined;
+	if (identityRefresh && !identityRefresh.reusable) {
+		const message =
+			identityRefresh.discardReason === "task_not_found_block"
+				? "Discarding stale local run state because server task is available again"
+				: "Discarding stale local run state because server task identity changed";
+		issueLogger.warn(
+			{
+				previousIssueId: identityRefresh.previousIssueId,
+				issueId: identityRefresh.currentIssueId,
+			},
+			message,
+		);
+	}
+	const existing = identityRefresh?.reusable === false ? null : loadedRunState;
 	if (shouldSkipReviewOnlyRunState(existing, options)) {
 		issueLogger.info(
 			{ stage: existing?.stage },
@@ -808,14 +829,11 @@ async function processIssue(
 			startedAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		} satisfies RunState);
-	const refreshedIdentity = existing
-		? refreshRunStateIssueIdentity(runState, issue)
-		: undefined;
-	if (refreshedIdentity?.changed) {
+	if (identityRefresh?.reusable && identityRefresh.changed) {
 		issueLogger.info(
 			{
-				previousIssueId: refreshedIdentity.previousIssueId,
-				issueId: refreshedIdentity.currentIssueId,
+				previousIssueId: identityRefresh.previousIssueId,
+				issueId: identityRefresh.currentIssueId,
 			},
 			"Refreshed resumed issue identity from latest task",
 		);
