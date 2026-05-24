@@ -9,12 +9,48 @@
 	--bg-surface-muted: #111216;
 	--bg-hover: #191b20;
 	--bg-active: #1d2027;
+	--bg-card: var(--bg-surface);
+	--bg-control: var(--bg-surface);
+	--bg-control-subtle: var(--bg-surface-muted);
+	--bg-interactive: var(--bg-active);
 	--border-subtle: #23262d;
 	--border-default: #2f333d;
+	--border-strong: var(--focus-ring);
 	--text-primary: #f4f4f5;
 	--text-secondary: #c5c6cc;
 	--text-muted: #8f949e;
 	--text-link: #d4d4d8;
+	--backdrop-strong: color-mix(in srgb, var(--bg-app) 70%, black 30%);
+	--status-neutral-bg: #17181c;
+	--status-neutral-border: color-mix(
+		in srgb,
+		var(--border-default) 82%,
+		#334155 18%
+	);
+	--status-implementing-bg: #19160f;
+	--status-implementing-border: color-mix(
+		in srgb,
+		var(--border-default) 74%,
+		#713f12 26%
+	);
+	--status-reviewing-bg: #101714;
+	--status-reviewing-border: color-mix(
+		in srgb,
+		var(--border-default) 72%,
+		#065f46 28%
+	);
+	--status-testing-bg: #10181a;
+	--status-testing-border: color-mix(
+		in srgb,
+		var(--border-default) 72%,
+		#164e63 28%
+	);
+	--status-done-bg: #101421;
+	--status-done-border: color-mix(
+		in srgb,
+		var(--border-default) 72%,
+		#312e81 28%
+	);
 	--focus-ring: #5f6572;
 	color-scheme: dark;
 }
@@ -26,12 +62,48 @@
 	--bg-surface-muted: #f8f9fb;
 	--bg-hover: #eef0f4;
 	--bg-active: #e9ecf2;
+	--bg-card: var(--bg-surface);
+	--bg-control: var(--bg-surface);
+	--bg-control-subtle: var(--bg-surface-muted);
+	--bg-interactive: var(--bg-active);
 	--border-subtle: #e1e4ea;
 	--border-default: #d2d7e0;
+	--border-strong: var(--focus-ring);
 	--text-primary: #12141a;
 	--text-secondary: #3b4150;
 	--text-muted: #6b7280;
 	--text-link: #252a36;
+	--backdrop-strong: color-mix(in srgb, var(--bg-app) 65%, #0f172a 35%);
+	--status-neutral-bg: #edf3fb;
+	--status-neutral-border: color-mix(
+		in srgb,
+		var(--border-default) 72%,
+		#475569 28%
+	);
+	--status-implementing-bg: #fdf2d7;
+	--status-implementing-border: color-mix(
+		in srgb,
+		var(--border-default) 70%,
+		#b45309 30%
+	);
+	--status-reviewing-bg: #ddf7ec;
+	--status-reviewing-border: color-mix(
+		in srgb,
+		var(--border-default) 70%,
+		#057a55 30%
+	);
+	--status-testing-bg: #def4fb;
+	--status-testing-border: color-mix(
+		in srgb,
+		var(--border-default) 70%,
+		#0369a1 30%
+	);
+	--status-done-bg: #e7edff;
+	--status-done-border: color-mix(
+		in srgb,
+		var(--border-default) 70%,
+		#4338ca 30%
+	);
 	--focus-ring: #8d96a7;
 	color-scheme: light;
 }
@@ -178,6 +250,6 @@ body {
 	}
 
 	.backdrop-theme-strong::backdrop {
-		background: color-mix(in srgb, var(--bg-app) 70%, black 30%);
+		background: var(--backdrop-strong);
 	}
 }
