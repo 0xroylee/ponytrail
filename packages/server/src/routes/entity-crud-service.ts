@@ -6,7 +6,7 @@ import {
 import type {
 	EntityCrudRepository,
 	EntityCrudService,
-} from "./entity-crud-service.types";
+} from "./types/entity-crud-service.types";
 
 export function createEntityCrudService(
 	repository: EntityCrudRepository,

@@ -1,4 +1,4 @@
-import type { SimulationCase } from "./cli-command-executor-simulation.types";
+import type { SimulationCase } from "./types/cli-command-executor-simulation.types";
 
 export const CLI_COMMAND_SIMULATION_MATRIX: SimulationCase[] = [
 	{

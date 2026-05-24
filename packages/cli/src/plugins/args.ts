@@ -4,7 +4,7 @@ import type {
 	PluginCreateCommanderOptions,
 	PluginListCommanderOptions,
 	PluginsCommand,
-} from "../args.types";
+} from "../types/args.types";
 
 export function registerPluginsCommand(
 	program: Command,

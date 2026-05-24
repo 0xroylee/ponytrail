@@ -16,7 +16,7 @@ import { buildCommandSearchGroups } from "./command-search-dialog-utils";
 import type {
 	CommandSearchDialogProps,
 	CommandSearchResult,
-} from "./command-search-dialog.types";
+} from "./types/command-search-dialog.types";
 
 export function CommandSearchDialog({
 	activeKey,

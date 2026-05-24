@@ -5,8 +5,8 @@ import { type ReactElement, useMemo } from "react";
 
 import { useAgentsQuery } from "@/lib/api/queries";
 
-import type { RuntimeSummary } from "./runtimes-panel.types";
 import { deriveRuntimeSummaries } from "./runtimes-panel-utils";
+import type { RuntimeSummary } from "./types/runtimes-panel.types";
 
 export function RuntimesPanel(): ReactElement {
 	const agentsQuery = useAgentsQuery();

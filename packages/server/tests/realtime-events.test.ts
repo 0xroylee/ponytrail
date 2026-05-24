@@ -6,7 +6,7 @@ import {
 	bindRealtimeEventsClient,
 	shouldHandleRealtimeUpgrade,
 } from "../src/ws/realtime-events";
-import type { RealtimeEventsSocket } from "../src/ws/realtime-events.types";
+import type { RealtimeEventsSocket } from "../src/ws/types/realtime-events.types";
 
 describe("realtime events", () => {
 	it("broadcasts serialized event frames to connected websocket clients", () => {

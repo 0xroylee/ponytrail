@@ -6,7 +6,7 @@ import { addBinaryChecks } from "./checks-binaries";
 import { collectConfigFileCheck } from "./checks-config-file";
 import { collectInstanceSetupChecks } from "./checks-instance";
 import { loadInstanceConfig } from "./instance-config";
-import type { SetupCheck, SetupCheckDeps } from "./setup.types";
+import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
 
 export async function collectSetupChecks(
 	cwd: string,

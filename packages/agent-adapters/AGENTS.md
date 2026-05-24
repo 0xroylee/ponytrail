@@ -6,7 +6,7 @@ Linear, GitHub, database, and run-state policy in the CLI or server packages.
 
 ## Rules
 
-1. Keep adapter contracts in dedicated `*.types.ts` modules.
+1. Keep adapter contracts in dedicated `types/*.types.ts` modules.
 2. Keep provider code free of workflow, Linear, GitHub, database, and run-state
    logic.
 3. Build runtime invocations as structured `{ command, args, cwd, env }` style
@@ -20,7 +20,7 @@ Linear, GitHub, database, and run-state policy in the CLI or server packages.
 7. Keep provider folders consistent: `adapter.ts`, `constants.ts`,
    `configuration-doc.ts`, and `index.ts`.
 8. Keep shared backend/model metadata in `src/registry.ts` and
-   `src/agent-registry.types.ts`.
+   `src/types/agent-registry.types.ts`.
 9. Export shared provider surfaces through `package.json` subpaths only when
    callers need a stable boundary.
 10. Keep TypeScript files under 250 lines.

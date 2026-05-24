@@ -1,11 +1,7 @@
 import type { AgentResult } from "adapters";
-import type {
-	AgentChatLogEntry,
-	AgentChatLogRole,
-	RunState,
-} from "../../features/types";
 import { logger, normalizeError } from "../../utils/logger";
 import { emitWorkflowProgress } from "../server";
+import type { AgentChatLogEntry, AgentChatLogRole, RunState } from "../types";
 import { appendAgentChatLog } from "./state";
 
 interface RunAgentWithChatLogOptions {

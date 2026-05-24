@@ -1,4 +1,4 @@
-import type { HealthRequestOptions } from "./client.types";
+import type { HealthRequestOptions } from "./types/client.types";
 
 export class ApiRequestError extends Error {
 	constructor(

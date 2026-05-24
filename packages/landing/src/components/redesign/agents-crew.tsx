@@ -9,7 +9,7 @@ import { Roster } from "@/components/redesign/agents-crew-roster";
 import type {
 	CornerPosition,
 	CrewBot,
-} from "@/components/redesign/redesign.types";
+} from "@/components/redesign/types/redesign.types";
 
 export function AgentsCrew(): ReactElement {
 	const [index, setIndex] = useState(0);

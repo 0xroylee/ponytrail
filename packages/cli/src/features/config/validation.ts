@@ -2,7 +2,7 @@ import type {
 	PollingConfig,
 	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
-} from "../../features/types";
+} from "../types";
 
 export function validateProjects(projects: ResolvedProjectConfig[]): void {
 	const seen = new Set<string>();

@@ -1,5 +1,8 @@
-import type { AgentBackend } from "../agent-adapter.types";
-import type { AgentModelDefinition, AgentStage } from "../agent-registry.types";
+import type { AgentBackend } from "../types/agent-adapter.types";
+import type {
+	AgentModelDefinition,
+	AgentStage,
+} from "../types/agent-registry.types";
 
 export const CODEX_BACKEND = "codex" satisfies AgentBackend;
 export const CODEX_LABEL = "Codex";

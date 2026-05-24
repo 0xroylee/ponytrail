@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { IssueCard } from "./issue-card";
 import { getStatusLabel } from "./issues-board-utils";
 import { STATUS_PRESENTATION } from "./issues-board.constants";
-import type { IssueDragState } from "./issues-board.types";
+import type { IssueDragState } from "./types/issues-board.types";
 
 interface IssueColumnProps {
 	column: ProjectBoardStatusColumn;

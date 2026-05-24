@@ -1,6 +1,6 @@
 import type { AgentRecord } from "@/lib/api";
 
-import type { RuntimeSummary } from "./runtimes-panel.types";
+import type { RuntimeSummary } from "./types/runtimes-panel.types";
 
 const RUNTIME_LABELS: Record<string, string> = {
 	"claude-code": "Claude",

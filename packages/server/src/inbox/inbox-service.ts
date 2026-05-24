@@ -3,7 +3,7 @@ import type {
 	InboxRepository,
 	InboxService,
 	InboxServiceResult,
-} from "./inbox-service.types";
+} from "./types/inbox-service.types";
 
 export function createInboxService(repository: InboxRepository): InboxService {
 	return {

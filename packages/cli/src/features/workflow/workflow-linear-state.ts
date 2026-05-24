@@ -1,5 +1,5 @@
-import type { ResolvedProjectConfig } from "../../features/types";
-import type { WorkflowIssue } from "./workflow.types";
+import type { ResolvedProjectConfig } from "../types";
+import type { WorkflowIssue } from "./types/workflow.types";
 
 export function matchesIssueStateConfigValue(
 	state: WorkflowIssue["state"],

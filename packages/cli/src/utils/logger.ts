@@ -3,7 +3,7 @@ import type {
 	CliLogContext,
 	CliLogger,
 	CliLoggerOptions,
-} from "./logger.types";
+} from "./types/logger.types";
 
 type CliLogLevel = "info" | "warn" | "error" | "fatal";
 
@@ -90,7 +90,7 @@ export function normalizeError(input: unknown): Record<string, unknown> {
 	return { message: String(input) };
 }
 
-export type { CliLogContext, CliLogger } from "./logger.types";
+export type { CliLogContext, CliLogger } from "./types/logger.types";
 
 function resolveLogThreshold(value: string | undefined): number {
 	if (value === "silent") return SILENT_LEVEL;

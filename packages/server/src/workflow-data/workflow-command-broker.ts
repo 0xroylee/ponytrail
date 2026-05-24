@@ -5,19 +5,19 @@ import type {
 	CliCommandStreamEmit,
 } from "devos/features/server";
 import { WebSocket } from "ws";
-import type { WorkflowCommandBroker } from "./workflow-command-broker.types";
-import type { WorkflowDataSocket } from "./workflow-data-socket.types";
+import type { WorkflowCommandBroker } from "./types/workflow-command-broker.types";
+import type {
+	RegisteredWorkflowComputer,
+	WorkflowComputerRegistration,
+} from "./types/workflow-computer.types";
+import type { WorkflowDataSocket } from "./types/workflow-data-socket.types";
 import type {
 	WorkflowCliCommandExecutionResult,
 	WorkflowCliCommandRequest,
 	WorkflowClientCommandFrame,
 	WorkflowCommandStreamFrame,
 	WorkflowWorkerDispatchFrame,
-} from "./workflow-data.types";
-import type {
-	WorkflowComputerRegistration,
-	RegisteredWorkflowComputer,
-} from "./workflow-computer.types";
+} from "./types/workflow-data.types";
 
 const DEFAULT_HISTORY_LIMIT = 100;
 const NO_WORKER_ERROR = "No CLI worker connected to /api/workflow";

@@ -1,7 +1,7 @@
 import type { RunState } from "devos/features/types";
 import { z } from "zod";
 import { isRecord } from "../http/zod-utils";
-import type { NotificationRequest } from "./notifications.types";
+import type { NotificationRequest } from "./types/notifications.types";
 
 const runStateSchema = z
 	.object({

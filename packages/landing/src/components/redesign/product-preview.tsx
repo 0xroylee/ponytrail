@@ -6,7 +6,7 @@ import { type ReactElement, useState } from "react";
 import type {
 	AgentKey,
 	AgentProfile,
-} from "@/components/redesign/redesign.types";
+} from "@/components/redesign/types/redesign.types";
 
 const agents: Record<AgentKey, AgentProfile> = {
 	planner: {

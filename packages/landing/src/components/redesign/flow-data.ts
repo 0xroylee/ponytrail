@@ -11,7 +11,10 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 
-import type { FlowStage, FlowStep } from "@/components/redesign/redesign.types";
+import type {
+	FlowStage,
+	FlowStep,
+} from "@/components/redesign/types/redesign.types";
 
 export const flowStages: FlowStage[] = [
 	{ key: "explore", label: "EXPLORE", icon: Compass },

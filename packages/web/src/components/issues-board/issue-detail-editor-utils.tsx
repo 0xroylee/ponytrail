@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from "react";
 import type { ProjectBoardTaskRecord, TaskMutationRequest } from "@/lib/api";
 
 import { normalizeDueDate } from "./issues-board-utils";
-import type { IssueDetailDraft } from "./issues-board.types";
+import type { IssueDetailDraft } from "./types/issues-board.types";
 
 export function DetailField({
 	children,

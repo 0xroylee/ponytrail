@@ -1,7 +1,7 @@
 import { asc, eq } from "devos-db";
 import type { ServerDatabase } from "devos-db";
 import { agentsTable, skillsTable } from "devos-db";
-import type { EntityCrudRepository } from "./entity-crud-service.types";
+import type { EntityCrudRepository } from "./types/entity-crud-service.types";
 
 export function createEntityCrudRepository(
 	db: ServerDatabase["db"],

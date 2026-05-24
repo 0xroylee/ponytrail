@@ -2,7 +2,7 @@ import { z } from "zod";
 import type {
 	CreateInboxMessagePayload,
 	InboxMessageScopeInput,
-} from "./inbox-message-api.types";
+} from "./types/inbox-message-api.types";
 import type { ParseResult } from "./zod-utils";
 import { mapZodResult } from "./zod-utils";
 

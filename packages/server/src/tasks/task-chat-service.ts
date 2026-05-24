@@ -1,11 +1,11 @@
 import type { BoardTaskRow } from "devos-db";
 import { z } from "zod";
-import type { CliExecutor } from "../app.types";
 import type {
 	TaskChatCreateIntakeResult,
 	TaskChatCreateRequest,
 	TaskChatCreateResponse,
-} from "../http/task-chat-create.types";
+} from "../http/types/task-chat-create.types";
+import type { CliExecutor } from "../types/app.types";
 
 export async function composeTaskChatCreate(
 	input: TaskChatCreateRequest,

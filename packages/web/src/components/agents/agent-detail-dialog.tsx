@@ -10,7 +10,7 @@ import {
 	type AgentDraft,
 	createAgentDraft,
 	parseLineList,
-} from "./agents-panel.types";
+} from "./types/agents-panel.types";
 
 interface AgentDetailDialogProps {
 	agent: AgentRecord;

@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { ServerStartupConfig } from "./startup-paths.types";
+import type { ServerStartupConfig } from "./types/startup-paths.types";
 
 export function resolveDefaultServerWorkspacePath(): string {
 	return path.resolve(import.meta.dir, "..", "..", "..");

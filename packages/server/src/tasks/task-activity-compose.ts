@@ -1,7 +1,7 @@
 import type {
 	TaskActivityRecord,
 	TaskActivitySourceRows,
-} from "./task-activity.types";
+} from "./types/task-activity.types";
 
 export function composeTaskActivity(rows: TaskActivitySourceRows) {
 	const stepsByLog = new Map(

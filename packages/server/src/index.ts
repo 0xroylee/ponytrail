@@ -3,7 +3,6 @@ import { loadServerStartupConfig } from "devos/features/config";
 import { createHandleRequest } from "./app";
 import { createBoardRepository } from "./board";
 import { createExpressApp, listenExpressApp } from "./express-server";
-import type { ServerInstance } from "./express-server.types";
 import { ensureLocalProjectBoard } from "./local-workspace";
 import {
 	logger,
@@ -22,12 +21,13 @@ import {
 	createServerRuntime,
 	installServerShutdownHandlers,
 } from "./server-runtime";
-import type { ServerRuntime } from "./server-runtime.types";
 import {
 	resolveServerDatabasePath,
 	resolveServerDatabasePort,
 	resolveServerWorkspacePath,
 } from "./startup-paths";
+import type { ServerInstance } from "./types/express-server.types";
+import type { ServerRuntime } from "./types/server-runtime.types";
 import { WORKFLOW_DATA_WS_PATH } from "./workflow-data";
 import { createWorkflowCommandBroker } from "./workflow-data/workflow-command-broker";
 import { attachWorkflowDataSocket } from "./workflow-data/workflow-data-socket";

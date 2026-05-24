@@ -2,9 +2,9 @@
 
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { serverStateQueryKeys } from "./queries";
-import type { ServerStateQueryOptions } from "./queries.types";
 import { isApiRequestError } from "./response-utils";
-import type { TaskActivityResponse } from "./task-activity.types";
+import type { ServerStateQueryOptions } from "./types/queries.types";
+import type { TaskActivityResponse } from "./types/task-activity.types";
 import { createWebApiClient } from "./web-client";
 
 const apiClient = createWebApiClient();

@@ -1,5 +1,5 @@
-import type { AgentBackend } from "../agent-adapter.types";
-import type { AgentModelDefinition } from "../agent-registry.types";
+import type { AgentBackend } from "../types/agent-adapter.types";
+import type { AgentModelDefinition } from "../types/agent-registry.types";
 
 export const CURSOR_BACKEND = "cursor-agent" satisfies AgentBackend;
 export const CURSOR_LABEL = "Cursor Agent";

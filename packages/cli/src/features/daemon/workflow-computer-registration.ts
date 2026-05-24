@@ -2,7 +2,7 @@ import { arch, hostname, platform, userInfo } from "node:os";
 import type {
 	WorkflowCommandWorkerOptions,
 	WorkflowComputerRegistration,
-} from "./workflow-command-worker.types";
+} from "./types/workflow-command-worker.types";
 
 export function buildWorkflowComputerRegistration(
 	options: Pick<WorkflowCommandWorkerOptions, "cwd" | "env">,

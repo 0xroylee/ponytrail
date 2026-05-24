@@ -10,16 +10,16 @@ import {
 } from "devos-db";
 import type { RealtimeEventPublisher } from "../realtime";
 import type { createTaskService } from "../tasks";
-import type { BoardTaskApiRecord } from "../tasks/task-service.types";
-import { workflowError } from "./workflow-data-error";
-import { parsePrNumber, withPullRequests } from "./workflow-data-mappers";
+import type { BoardTaskApiRecord } from "../tasks/types/task-service.types";
 import type {
 	WorkflowBoardTaskRecord,
 	WorkflowPollingRecordInput,
 	WorkflowPullRequestRecord,
 	WorkflowTaskCreatePayload,
 	WorkflowTaskUpdatePayload,
-} from "./workflow-data.types";
+} from "./types/workflow-data.types";
+import { workflowError } from "./workflow-data-error";
+import { parsePrNumber, withPullRequests } from "./workflow-data-mappers";
 
 const DEFAULT_TASK_CREATOR_ID = "member-1";
 const DEFAULT_TASK_PRIORITY = 1;

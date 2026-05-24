@@ -9,11 +9,11 @@ import type {
 	NotificationOutcome,
 	NotificationServerRequest,
 	TaskOutcomeNotificationServerRequest,
-} from "./notifications.types";
+} from "./types/notifications.types";
 export type {
 	NotificationEmailPayload,
 	NotificationOutcome,
-} from "./notifications.types";
+} from "./types/notifications.types";
 
 const NOTIFICATION_SERVER_API_URL = "http://127.0.0.1:3000/api/notifications";
 

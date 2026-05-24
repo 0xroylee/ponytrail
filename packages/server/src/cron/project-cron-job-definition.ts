@@ -3,7 +3,7 @@ import type {
 	ProjectCronJobTargetType,
 	ProjectCronJobValidationError,
 	ProjectCronJobValidationResult,
-} from "./project-cron-job-definition.types";
+} from "./types/project-cron-job-definition.types";
 
 const TARGET_TYPES: ReadonlySet<ProjectCronJobTargetType> = new Set([
 	"script",

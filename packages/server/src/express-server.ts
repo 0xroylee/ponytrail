@@ -9,9 +9,9 @@ import express, {
 } from "express";
 import * as OpenApiValidator from "express-openapi-validator";
 import swaggerUi from "swagger-ui-express";
-import type { RouteHandler } from "./app.types";
 import { createExpressRequestLogger } from "./http/express-request-logger";
-import type { ServerLogger } from "./logger.types";
+import type { RouteHandler } from "./types/app.types";
+import type { ServerLogger } from "./types/logger.types";
 
 export { createExpressRequestLogger } from "./http/express-request-logger";
 

@@ -5,7 +5,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { cn } from "@/lib/utils";
 
 import { PRIORITY_OPTIONS } from "./issues-board.constants";
-import type { IssuePriority } from "./issues-board.types";
+import type { IssuePriority } from "./types/issues-board.types";
 
 interface PriorityDropdownProps {
 	ariaLabel?: string;

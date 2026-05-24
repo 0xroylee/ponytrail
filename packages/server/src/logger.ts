@@ -1,6 +1,6 @@
 import pinoHttp from "pino-http";
 import pretty from "pino-pretty";
-import type { ServerLogger, ServerLoggerOptions } from "./logger.types";
+import type { ServerLogger, ServerLoggerOptions } from "./types/logger.types";
 
 const DEFAULT_LOG_LEVEL = "info";
 const LOG_LEVEL_VALUES = [

@@ -14,13 +14,13 @@ import type {
 	SidebarDisplayMode,
 	SidebarNavItem,
 	SidebarNavKey,
-} from "@/components/web-shell/web-shell.types";
+} from "@/components/web-shell/types/web-shell.types";
 import { WebSidebar } from "@/components/web-shell/web-sidebar";
 import { useBoardTasksQuery, useCommandHistoryQuery } from "@/lib/api/queries";
 
 import { CommandSearchDialog } from "./command-search-dialog";
 import { OperatorIssueActionsProvider } from "./operator-issue-actions-context";
-import type { OperatorIssueActionsContextValue } from "./operator-issue-actions.types";
+import type { OperatorIssueActionsContextValue } from "./types/operator-issue-actions.types";
 import { hrefForNavKey, navItems } from "./web-shell.constants";
 
 const compactSidebarQuery = "(max-width: 900px)";

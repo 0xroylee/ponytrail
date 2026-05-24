@@ -1,12 +1,6 @@
 import { access, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseDevosPluginManifest } from "./plugin-manifest";
-import type {
-	DevosPluginPreset,
-	DevosPluginTemplate,
-	ScaffoldDevosPluginOptions,
-	ScaffoldDevosPluginResult,
-} from "./scaffold.types";
 import {
 	buildManifest,
 	renderMcpConfig,
@@ -17,6 +11,12 @@ import {
 	renderWorkerTest,
 	renderWorkerTypes,
 } from "./templates";
+import type {
+	DevosPluginPreset,
+	DevosPluginTemplate,
+	ScaffoldDevosPluginOptions,
+	ScaffoldDevosPluginResult,
+} from "./types/scaffold.types";
 
 const PRESET_TEMPLATES: Record<DevosPluginPreset, DevosPluginTemplate> = {
 	codegraph: "mcp",
@@ -96,7 +96,7 @@ async function writeScaffold(
 		["README.md", renderReadme(input)],
 		["devos.plugin.json", `${JSON.stringify(manifest, null, "\t")}\n`],
 		["src/worker.ts", renderWorker(input)],
-		["src/worker.types.ts", renderWorkerTypes()],
+		["src/types/worker.types.ts", renderWorkerTypes()],
 		["tests/worker.test.ts", renderWorkerTest(input)],
 		[`skills/${input.pluginId}/SKILL.md`, renderSkill(input)],
 	];

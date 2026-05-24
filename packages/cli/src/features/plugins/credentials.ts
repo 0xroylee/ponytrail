@@ -2,7 +2,7 @@ import type { PromptAdapter } from "../prompts";
 import type {
 	InstalledDevosPlugin,
 	OnboardInstanceConfig,
-} from "../setup/instance-config.types";
+} from "../setup/types/instance-config.types";
 
 export async function promptForMissingPluginCredentials(
 	config: OnboardInstanceConfig,

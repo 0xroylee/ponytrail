@@ -1,14 +1,14 @@
 "use client";
 
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
+import { serverStateQueryKeys } from "./query-keys";
 import type {
 	InboxMessageRecord,
 	InboxMessageScope,
 	ProjectBoardRecord,
 	WorkspaceProjectRecord,
-} from "./client.types";
-import type { ServerStateQueryOptions } from "./queries.types";
-import { serverStateQueryKeys } from "./query-keys";
+} from "./types/client.types";
+import type { ServerStateQueryOptions } from "./types/queries.types";
 import { createWebApiClient } from "./web-client";
 
 const apiClient = createWebApiClient();

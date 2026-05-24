@@ -1,11 +1,11 @@
 import { resolveAgentConfiguration } from "adapters";
 import type { AgentRow } from "devos-db";
 import { z } from "zod";
-import type { AgentRecord } from "../repositories.types";
+import type { AgentRecord } from "../types/repositories.types";
 import type {
 	AgentCreatePayload,
 	AgentUpdatePayload,
-} from "./entity-crud.types";
+} from "./types/entity-crud.types";
 
 const nonEmptyString = z.string().trim().min(1);
 const optionalMetadataString = z.string();

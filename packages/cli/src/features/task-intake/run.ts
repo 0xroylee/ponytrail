@@ -8,7 +8,7 @@ import type {
 	TaskIntakeAnswer,
 	TaskIntakeRunResult,
 	TaskIntakeTaskCreator,
-} from "./task-intake.types";
+} from "./types/task-intake.types";
 
 const DEFAULT_MAX_CLARIFICATION_ROUNDS = 5;
 

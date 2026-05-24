@@ -1,5 +1,5 @@
 import type { NotificationServerRequest } from "devos/features/server";
-import type { NotificationSenderOptions } from "./notification-sender.types";
+import type { NotificationSenderOptions } from "./types/notification-sender.types";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 

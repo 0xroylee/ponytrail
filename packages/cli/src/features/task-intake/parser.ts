@@ -1,4 +1,7 @@
-import type { TaskIntakeDecision, TaskIntakeTask } from "./task-intake.types";
+import type {
+	TaskIntakeDecision,
+	TaskIntakeTask,
+} from "./types/task-intake.types";
 
 export function parseTaskIntakeDecision(output: string): TaskIntakeDecision {
 	const result = parseResult(output);

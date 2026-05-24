@@ -1,9 +1,9 @@
+import { runCommand } from "../shell";
 import type {
 	AgentAdapter,
 	AgentAdapterRuntimeConfig,
 	AgentResult,
-} from "../agent-adapter.types";
-import { runCommand } from "../shell";
+} from "../types/agent-adapter.types";
 import { getClaudeBinaryPath } from "./path";
 
 export class ClaudeCodeAdapter implements AgentAdapter {

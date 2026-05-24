@@ -4,7 +4,7 @@ import type {
 	NotificationSendResult,
 	NotificationServiceConfig,
 	ResendClient,
-} from "./notifications.types";
+} from "./types/notifications.types";
 
 export interface NotificationService {
 	send(request: NotificationRequest): Promise<NotificationSendResult>;

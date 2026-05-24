@@ -1,9 +1,9 @@
-import type { IssueRef } from "../../features/types";
+import type { IssueRef } from "../types";
+import { extractFirstJsonObject, unwrapFencedCodeBlock } from "./planner-json";
 import type {
 	PlannerIssueRefinement,
 	PlanningLinearClient,
-} from "./plan.types";
-import { extractFirstJsonObject, unwrapFencedCodeBlock } from "./planner-json";
+} from "./types/plan.types";
 
 export function parsePlannerIssueRefinement(
 	planSummary: string,

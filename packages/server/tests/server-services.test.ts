@@ -3,7 +3,7 @@ import type { AgentRow, BoardTaskRow, SkillRow } from "devos-db";
 import { createProjectService } from "../src/projects";
 import type { ProjectRepository } from "../src/projects";
 import { createEntityCrudService } from "../src/routes/entity-crud-service";
-import type { EntityCrudRepository } from "../src/routes/entity-crud-service.types";
+import type { EntityCrudRepository } from "../src/routes/types/entity-crud-service.types";
 import { createTaskService, parseTaskIntakeOutput } from "../src/tasks";
 import type { BoardTaskApiRecord, TaskRepository } from "../src/tasks";
 

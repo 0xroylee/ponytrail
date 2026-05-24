@@ -1,5 +1,5 @@
+import type { UiStoreState } from "./types/ui-store.types";
 import { useUiStore } from "./ui-store";
-import type { UiStoreState } from "./ui-store.types";
 
 const selectedWorkspaceId: UiStoreState["selectedWorkspaceId"] =
 	useUiStore.getState().selectedWorkspaceId;

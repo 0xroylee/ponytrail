@@ -2,7 +2,7 @@ import { eq } from "devos-db";
 import type { ServerDatabase } from "devos-db";
 import { boardProjectsTable, projectBoardsTable } from "devos-db";
 import type { NewBoardProjectRow } from "devos-db";
-import type { ProjectRepository } from "./project-service.types";
+import type { ProjectRepository } from "./types/project-service.types";
 
 export function createProjectRepository(
 	db: ServerDatabase["db"],

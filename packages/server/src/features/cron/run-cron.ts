@@ -1,6 +1,6 @@
 import { loadConfig } from "devos/features/config";
-import { runCronJobOnce, runCronScheduler } from "./index";
-import type { CronJobConfig } from "./index";
+import { runCronJobOnce, runCronScheduler } from "./";
+import type { CronJobConfig } from "./";
 
 interface CronRunnerArgs {
 	once: boolean;

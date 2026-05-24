@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import type {
 	AgentCreatePayload,
 	SkillCreatePayload,
-} from "../src/routes/entity-crud.types";
+} from "../src/routes/types/entity-crud.types";
 import { createJsonRequest, createServerTestApp } from "./app-test-helpers";
 import {
 	type DrizzleServerTestDatabase,

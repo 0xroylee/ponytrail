@@ -18,8 +18,11 @@ import {
 	sendTaskOutcomeEmail,
 } from "../../integrations/notifications";
 import { createBoardTaskWorkflowClient } from "./board-task-workflow-client";
-import type { WorkflowRuntime } from "./workflow.types";
-export type { WorkflowLinearClient, WorkflowRuntime } from "./workflow.types";
+import type { WorkflowRuntime } from "./types/workflow.types";
+export type {
+	WorkflowLinearClient,
+	WorkflowRuntime,
+} from "./types/workflow.types";
 
 export function createWorkflowRuntime(
 	overrides: Partial<WorkflowRuntime> = {},

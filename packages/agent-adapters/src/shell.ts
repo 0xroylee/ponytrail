@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
-import type { CommandResult, RunCommandOptions } from "./shell.types";
-export type { CommandResult, RunCommandOptions } from "./shell.types";
+import type { CommandResult, RunCommandOptions } from "./types/shell.types";
+export type { CommandResult, RunCommandOptions } from "./types/shell.types";
 
 export async function runCommand(
 	command: string,

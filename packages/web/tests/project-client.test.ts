@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { createApiClient } from "../src/lib/api/client";
-import type { ProjectCreateRequest } from "../src/lib/api/client.types";
+import type { ProjectCreateRequest } from "../src/lib/api/types/client.types";
 
 function okJsonResponse(payload: unknown): Response {
 	return new Response(JSON.stringify(payload), {

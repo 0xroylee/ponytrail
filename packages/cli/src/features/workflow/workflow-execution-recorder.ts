@@ -1,9 +1,9 @@
-import type { ResolvedProjectConfig, RunState } from "../../features/types";
 import { logger, normalizeError } from "../../utils/logger";
 import {
 	type WorkflowProgressEvent,
 	addWorkflowProgressListener,
 } from "../server";
+import type { ResolvedProjectConfig, RunState } from "../types";
 import { createReliableWorkflowDataClient } from "./reliable-workflow-data-client";
 import type { WorkflowDataAction } from "./workflow-data-protocol";
 

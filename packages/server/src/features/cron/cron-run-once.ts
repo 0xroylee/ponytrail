@@ -8,7 +8,7 @@ import { runCronWorkflow } from "./cron-workflow";
 import type {
 	CronJobRunDependencies,
 	RunCronJobOnceOptions,
-} from "./cron.types";
+} from "./types/cron.types";
 
 export async function runCronJobOnce(
 	config: LoadedConfig,

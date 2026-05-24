@@ -14,7 +14,7 @@ import type {
 	PrListEntry,
 	PullRequestMergeStatus,
 	RemoveWorktreeResult,
-} from "./github.types";
+} from "./types/github.types";
 
 const GITHUB_RETRY_ATTEMPTS = 3;
 

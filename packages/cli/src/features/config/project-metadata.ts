@@ -2,7 +2,7 @@ import type {
 	DevosRootConfig,
 	ProjectRuntimeConfig,
 	ResolvedProjectConfig,
-} from "../../features/types";
+} from "../types";
 import { resolveProjects } from "./project-resolution";
 
 const DEFAULT_SERVER_BASE_URL = "http://127.0.0.1:3001";

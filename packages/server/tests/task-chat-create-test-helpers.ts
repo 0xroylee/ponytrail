@@ -1,6 +1,6 @@
 import type { BoardTaskRow, ServerDatabase } from "devos-db";
 import { createHandleRequest } from "../src/app";
-import type { AppDeps } from "../src/app.types";
+import type { AppDeps } from "../src/types/app.types";
 import { seedServerTestProject } from "./app-test-helpers";
 
 export function createTaskChatCreateTestApp(

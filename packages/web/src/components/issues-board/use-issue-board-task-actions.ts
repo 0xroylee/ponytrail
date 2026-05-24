@@ -9,7 +9,7 @@ import {
 } from "@/lib/api/queries";
 import { useUiStore } from "@/lib/ui-store";
 
-import type { IssueQuickUpdate } from "./issues-board.types";
+import type { IssueQuickUpdate } from "./types/issues-board.types";
 
 export function useIssueBoardTaskActions(
 	setError: Dispatch<SetStateAction<string | null>>,

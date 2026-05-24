@@ -11,7 +11,7 @@ import {
 	EMPTY_PROJECT_FORM_STATE,
 	buildProjectCreateRequest,
 } from "./projects-panel-utils";
-import type { ProjectFormState } from "./projects-panel.types";
+import type { ProjectFormState } from "./types/projects-panel.types";
 
 const LOCAL_WORKSPACE_ID = "owner-1";
 const LOCAL_BOARD_ID = "board-1";

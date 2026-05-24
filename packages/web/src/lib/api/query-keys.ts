@@ -1,4 +1,4 @@
-import type { InboxMessageScope } from "./client.types";
+import type { InboxMessageScope } from "./types/client.types";
 
 export const serverStateQueryKeys = {
 	tokenUsage: ["server-state", "token-usage"] as const,

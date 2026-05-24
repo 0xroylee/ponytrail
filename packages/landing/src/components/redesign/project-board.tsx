@@ -11,7 +11,7 @@ import type { ReactElement } from "react";
 import type {
 	BoardColumn,
 	BoardTask,
-} from "@/components/redesign/redesign.types";
+} from "@/components/redesign/types/redesign.types";
 
 const columns: BoardColumn[] = [
 	{ key: "backlog", title: "Backlog", tint: "text-muted-foreground" },

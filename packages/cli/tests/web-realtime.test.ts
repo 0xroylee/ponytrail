@@ -6,17 +6,17 @@ import type {
 } from "../../web/src/lib/api";
 import { serverStateQueryKeys } from "../../web/src/lib/api/query-keys";
 import { parseRealtimeEvent } from "../../web/src/lib/realtime/realtime-client";
-import type {
-	RealtimeEvent,
-	RealtimeIssueEventType,
-	RealtimeProjectEventType,
-} from "../../web/src/lib/realtime/realtime-events.types";
 import { applyRealtimeEventToQueryClient } from "../../web/src/lib/realtime/realtime-query-bridge";
 import {
 	applyRealtimeEvent,
 	inboxScopeKey,
 } from "../../web/src/lib/realtime/realtime-store";
-import type { RealtimeStoreState } from "../../web/src/lib/realtime/realtime-store.types";
+import type {
+	RealtimeEvent,
+	RealtimeIssueEventType,
+	RealtimeProjectEventType,
+} from "../../web/src/lib/realtime/types/realtime-events.types";
+import type { RealtimeStoreState } from "../../web/src/lib/realtime/types/realtime-store.types";
 
 describe("web realtime client", () => {
 	it("parses realtime event frames and rejects malformed payloads", () => {

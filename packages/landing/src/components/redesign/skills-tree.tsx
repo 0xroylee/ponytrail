@@ -3,17 +3,17 @@
 import { Cpu } from "lucide-react";
 import { type ReactElement, useState } from "react";
 
-import type {
-	AgentTag,
-	Skill,
-	SkillBranch,
-} from "@/components/redesign/redesign.types";
 import {
 	agentColor,
 	allSkills,
 	skillBranches,
 } from "@/components/redesign/skills-tree-data";
 import { SkillDetail } from "@/components/redesign/skills-tree-detail";
+import type {
+	AgentTag,
+	Skill,
+	SkillBranch,
+} from "@/components/redesign/types/redesign.types";
 
 export function SkillsTree(): ReactElement {
 	const [activeKey, setActiveKey] = useState(allSkills[0]?.key ?? "");

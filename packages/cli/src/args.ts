@@ -1,17 +1,17 @@
 import { Command } from "commander";
 import { parsePositiveInt } from "./args-utils";
+import type { LoadedConfig } from "./features/config";
+import { registerTaskCommand } from "./features/task-intake/args";
+import type { RunOptions } from "./features/types";
+import { registerPluginsCommand } from "./plugins/args";
+import { registerSkillsCommand } from "./skills/args";
 import type {
 	CliParseOutput,
 	CliRuntime,
 	OnboardCommanderOptions,
 	RunCommanderOptions,
 	StatusCommanderOptions,
-} from "./args.types";
-import type { LoadedConfig } from "./features/config";
-import { registerTaskCommand } from "./features/task-intake/args";
-import type { RunOptions } from "./features/types";
-import { registerPluginsCommand } from "./plugins/args";
-import { registerSkillsCommand } from "./skills/args";
+} from "./types/args.types";
 
 export type {
 	CliRuntime,
@@ -21,7 +21,7 @@ export type {
 	StatusCommand,
 	TaskCommand,
 	WorkflowWorkerCommand,
-} from "./args.types";
+} from "./types/args.types";
 
 export function createCliProgram(
 	runtime: CliRuntime,

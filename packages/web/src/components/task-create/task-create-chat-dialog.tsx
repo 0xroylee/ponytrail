@@ -5,15 +5,15 @@ import { type ReactElement, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import type {
-	TaskCreateChatDialogProps,
-	TaskCreateChatState,
-} from "./task-create-chat-dialog.types";
 import { formatTaskCreateError } from "./task-create-chat-errors";
 import { getTaskCreateStatusText } from "./task-create-chat-status";
 import { TaskCreateLogPanel, createLogLine } from "./task-create-log-panel";
 import { createInitialState } from "./task-create-state";
 import { streamTaskCreate } from "./task-create-stream";
+import type {
+	TaskCreateChatDialogProps,
+	TaskCreateChatState,
+} from "./types/task-create-chat-dialog.types";
 
 export function TaskCreateChatDialog({
 	defaultBoardProjectId,

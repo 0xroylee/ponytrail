@@ -1,5 +1,5 @@
-import type { CodexReasoningEffort } from "../../features/types";
-import type { SetupDraft } from "./setup.types";
+import type { CodexReasoningEffort } from "../types";
+import type { SetupDraft } from "./types/setup.types";
 export { INSTANCE_CONFIG_FILE } from "../config/home-paths";
 
 export const ENV_FILE = ".env";

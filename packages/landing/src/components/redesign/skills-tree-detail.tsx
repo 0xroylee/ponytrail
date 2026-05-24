@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
-import type { Skill } from "@/components/redesign/redesign.types";
 import { agentColor } from "@/components/redesign/skills-tree-data";
+import type { Skill } from "@/components/redesign/types/redesign.types";
 
 export function SkillDetail({ skill }: { skill: Skill }): ReactElement {
 	const Icon = skill.icon;

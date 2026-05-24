@@ -1,6 +1,6 @@
 import { parsePlannerSplitTasks } from "./plan-split-tasks";
-import type { PlannerDecision } from "./plan.types";
 import { extractMarkerJsonArray } from "./planner-json";
+import type { PlannerDecision } from "./types/plan.types";
 
 const DEFAULT_PLANNER_COMPLEXITY_SCORE = 4;
 

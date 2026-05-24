@@ -5,7 +5,7 @@ import type {
 	TaskIntakeCreatedTask,
 	TaskIntakeTask,
 	TaskIntakeTaskCreator,
-} from "./task-intake.types";
+} from "./types/task-intake.types";
 
 export function createBoardTaskCreator(
 	config: ResolvedProjectConfig,

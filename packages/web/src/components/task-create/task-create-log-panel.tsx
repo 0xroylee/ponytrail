@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import type {
 	TaskCreateChatState,
 	TaskCreateLogLine,
-} from "./task-create-chat-dialog.types";
+} from "./types/task-create-chat-dialog.types";
 
 export function TaskCreateLogPanel({
 	logs,

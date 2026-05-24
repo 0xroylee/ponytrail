@@ -8,8 +8,8 @@ import type {
 	DaemonSignalTarget,
 	DaemonSpawn,
 	DaemonStartupInput,
-} from "./daemon.types";
-import type { WorkflowCommandWorker } from "./workflow-command-worker.types";
+} from "./types/daemon.types";
+import type { WorkflowCommandWorker } from "./types/workflow-command-worker.types";
 
 const SIGNALS = ["SIGINT", "SIGTERM"] as const;
 

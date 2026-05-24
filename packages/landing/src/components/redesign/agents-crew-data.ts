@@ -6,7 +6,7 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 
-import type { CrewBot } from "@/components/redesign/redesign.types";
+import type { CrewBot } from "@/components/redesign/types/redesign.types";
 
 export const crewBots: CrewBot[] = [
 	{

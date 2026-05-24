@@ -7,4 +7,4 @@ export {
 	type BoardTaskSummary,
 	type WorkspaceProjectBoard,
 	type WorkspaceProjectSummary,
-} from "./board.types";
+} from "./types/board.types";

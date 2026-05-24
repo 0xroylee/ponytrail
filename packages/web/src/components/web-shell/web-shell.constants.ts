@@ -2,7 +2,7 @@ import type {
 	OperatorSectionContent,
 	SidebarNavItem,
 	SidebarNavKey,
-} from "@/components/web-shell/web-shell.types";
+} from "@/components/web-shell/types/web-shell.types";
 
 export const navItems: SidebarNavItem[] = [
 	{ key: "inbox", label: "Inbox", href: "/inbox" },

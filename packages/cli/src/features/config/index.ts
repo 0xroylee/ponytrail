@@ -2,8 +2,7 @@ import type {
 	DevosRootConfig,
 	PollingConfig,
 	ResolvedProjectConfig,
-} from "../../features/types";
-import type { LoadedConfig } from "./config.types";
+} from "../types";
 import {
 	buildEnvBase,
 	buildEnvNotifications,
@@ -21,6 +20,7 @@ import { applyServerProjectMetadata } from "./project-metadata";
 import { resolveProjects } from "./project-resolution";
 import { resolveRootServerConfig } from "./server-resolution";
 import { loadSqliteEnv, saveSqliteEnv, sqliteEnvDbPath } from "./sqlite-env";
+import type { LoadedConfig } from "./types/config.types";
 import {
 	validateNotifications,
 	validatePolling,
@@ -117,5 +117,5 @@ export {
 } from "./home-paths";
 export { loadInstanceServerDatabaseConfig, loadInstanceServerDatabasePath };
 export { loadResolvedEnv };
-export type { LoadedConfig } from "./config.types";
+export type { LoadedConfig } from "./types/config.types";
 export type { ResolvedEnv } from "./env";

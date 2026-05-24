@@ -1,7 +1,7 @@
 import type {
 	CliCommandStreamEmit,
 	CliCommandStreamEvent,
-} from "./cli-command-executor.types";
+} from "./types/cli-command-executor.types";
 import {
 	WORKFLOW_PROGRESS_SENTINEL,
 	parseWorkflowProgressLine,

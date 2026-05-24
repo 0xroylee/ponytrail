@@ -23,7 +23,7 @@ import type { ComponentType, ReactElement } from "react";
 import type {
 	SidebarDisplayMode,
 	SidebarNavItem,
-} from "@/components/web-shell/web-shell.types";
+} from "@/components/web-shell/types/web-shell.types";
 import { cn } from "@/lib/utils";
 import { SidebarPinnedIssues } from "./web-sidebar-pins";
 

@@ -1,6 +1,6 @@
 import type { LoadedConfig } from "../config";
-import type { InstanceConfigLoadResult } from "./instance-config.types";
-import type { SetupCheck, SetupCheckDeps } from "./setup.types";
+import type { InstanceConfigLoadResult } from "./types/instance-config.types";
+import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
 
 interface ConfigFileCheckOptions {
 	cwd: string;

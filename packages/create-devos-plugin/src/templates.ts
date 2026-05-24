@@ -4,8 +4,11 @@ import type {
 	DevosPluginManifest,
 	DevosPluginMcpServer,
 	DevosPluginSkill,
-} from "./plugin-manifest.types";
-import type { DevosPluginPreset, DevosPluginTemplate } from "./scaffold.types";
+} from "./types/plugin-manifest.types";
+import type {
+	DevosPluginPreset,
+	DevosPluginTemplate,
+} from "./types/scaffold.types";
 
 interface TemplateInput {
 	pluginId: string;
@@ -81,7 +84,7 @@ export function renderReadme(input: TemplateInput): string {
 export function renderWorker(input: TemplateInput): string {
 	const credentialKeys = credentialsFor(input).map((item) => item.key);
 	return [
-		'import type { DevosPluginWorkerContext } from "./worker.types";',
+		'import type { DevosPluginWorkerContext } from "./types/worker.types";',
 		"",
 		"export async function run(context: DevosPluginWorkerContext): Promise<void> {",
 		`	context.logger.info("${input.pluginId} plugin worker started");`,

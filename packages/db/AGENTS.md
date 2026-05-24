@@ -10,7 +10,7 @@ explicit and avoid leaking server or CLI policy into this package.
 2. Keep migrations under `packages/db/src/migrations/` and add new migrations
    as ordered, append-only files.
 3. Keep database initialization and helpers in `packages/db/src/` with contracts
-   in dedicated `*.types.ts` modules.
+   in dedicated `types/*.types.ts` modules.
 4. Keep scripts for migrate, seed, and backup under `packages/db/scripts/`.
 5. Do not import server routes, CLI workflow orchestration, Linear, GitHub, or
    UI code into this package.

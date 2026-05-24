@@ -3,8 +3,8 @@ import type { ReactElement } from "react";
 import { AgentMonitorShell } from "@/components/agent-monitor/agent-monitor-shell";
 import { TaskCreatePanel } from "@/components/task-create/task-create-panel";
 
+import type { SidebarNavKey } from "./types/web-shell.types";
 import { sectionContentByKey } from "./web-shell.constants";
-import type { SidebarNavKey } from "./web-shell.types";
 
 export function OperatorSectionPanel({
 	sectionKey,

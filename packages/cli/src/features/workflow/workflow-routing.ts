@@ -1,5 +1,5 @@
-import type { ResolvedProjectConfig } from "../../features/types";
-import type { IssueProjectRoutingResult } from "./workflow.types";
+import type { ResolvedProjectConfig } from "../types";
+import type { IssueProjectRoutingResult } from "./types/workflow.types";
 
 export function routeProjectsForIssueProjectId(
 	projects: ResolvedProjectConfig[],

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { createHandleRequest } from "../src/app";
-import type { AppDeps } from "../src/app.types";
 import { REQUIRED_BOARD_STATUSES } from "../src/board";
+import type { AppDeps } from "../src/types/app.types";
 
 type TestBoardRepository = NonNullable<AppDeps["boardRepository"]>;
 

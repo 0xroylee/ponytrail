@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import type { PixelBotProps } from "@/components/redesign/redesign.types";
+import type { PixelBotProps } from "@/components/redesign/types/redesign.types";
 
 export function PixelBot({
 	face,

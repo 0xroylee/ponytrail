@@ -13,12 +13,12 @@ import {
 	normalizeDueDate,
 } from "./issues-board-utils";
 import { DEFAULT_CREATOR_ID, STATUS_ORDER } from "./issues-board.constants";
+import { PriorityDropdown } from "./priority-dropdown";
 import type {
 	IssueDialogMode,
 	IssueDraft,
 	IssuePriority,
-} from "./issues-board.types";
-import { PriorityDropdown } from "./priority-dropdown";
+} from "./types/issues-board.types";
 
 interface IssueDialogProps {
 	mode: IssueDialogMode;

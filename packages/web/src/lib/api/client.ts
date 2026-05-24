@@ -1,9 +1,4 @@
 import { createBoardApiMethods } from "./board-client";
-import type {
-	ApiClient,
-	ApiClientOptions,
-	HealthRequestOptions,
-} from "./client.types";
 import { createCommandStreamApiMethods } from "./command-stream-client";
 import { createInboxApiMethods } from "./inbox-client";
 import { parsePollingStatusResponse } from "./polling-status-client";
@@ -15,6 +10,11 @@ import {
 	parseServerList,
 } from "./server-state-client";
 import { createTaskApiMethods } from "./task-client";
+import type {
+	ApiClient,
+	ApiClientOptions,
+	HealthRequestOptions,
+} from "./types/client.types";
 
 type RequestMethod = "GET" | "POST" | "PATCH" | "DELETE";
 

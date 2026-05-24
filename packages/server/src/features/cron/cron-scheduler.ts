@@ -10,7 +10,7 @@ import type {
 	CronJobConfig,
 	CronSchedulerDependencies,
 	RunCronOptions,
-} from "./cron.types";
+} from "./types/cron.types";
 
 export async function runCronScheduler(
 	config: LoadedConfig,

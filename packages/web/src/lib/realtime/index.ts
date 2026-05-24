@@ -13,4 +13,4 @@ export type {
 	RealtimeConnectionStatus,
 	RealtimeEvent,
 	RealtimeSubscription,
-} from "./realtime-events.types";
+} from "./types/realtime-events.types";

@@ -5,7 +5,7 @@ import {
 } from "../../utils/terminal-format";
 import { collectSetupChecks } from "./checks-collection";
 import { GITHUB_CLI_INSTALL_URL, RTK_INSTALL_URL } from "./constants";
-import type { SetupCheck } from "./setup.types";
+import type { SetupCheck } from "./types/setup.types";
 
 export { collectSetupChecks };
 

@@ -25,25 +25,25 @@ export type {
 	TokenUsageRecord,
 	WorkspaceProjectRecord,
 	WorkspaceProjectsResponse,
-} from "./client.types";
+} from "./types/client.types";
 export type {
 	PollingEventRecord,
 	PollingStatusRecord,
 	PollingStatusResponse,
-} from "./polling-status.types";
+} from "./types/polling-status.types";
 export type {
 	TaskActivityKind,
 	TaskActivityRecord,
 	TaskActivityResponse,
 	TaskActivityStepRecord,
-} from "./task-activity.types";
+} from "./types/task-activity.types";
 export type {
 	CliCommandStreamEvent,
 	CliCommandStreamHandler,
 	CliCommandStreamRequest,
 	SupportedWorkflowCommandRequest,
 	WorkflowProgressEvent,
-} from "./command-stream-client.types";
+} from "./types/command-stream-client.types";
 export { buildIssueRunCommand } from "./workflow-run-command";
 export type { IssueRunCommandInput } from "./workflow-run-command";
 export type {
@@ -53,4 +53,4 @@ export type {
 	ProjectCreateMutationInput,
 	ServerStateQueryOptions,
 	TaskCreateMutationInput,
-} from "./queries.types";
+} from "./types/queries.types";

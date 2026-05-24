@@ -9,7 +9,7 @@ export type {
 	DevosPluginManifest,
 	DevosPluginMcpServer,
 	DevosPluginSkill,
-} from "./plugin-manifest.types";
+} from "./types/plugin-manifest.types";
 export { parseScaffoldArgs } from "./args";
 export { normalizePluginId, scaffoldDevosPlugin } from "./scaffold";
 export type {
@@ -17,7 +17,7 @@ export type {
 	DevosPluginTemplate,
 	ScaffoldDevosPluginOptions,
 	ScaffoldDevosPluginResult,
-} from "./scaffold.types";
+} from "./types/scaffold.types";
 
 import { parseScaffoldArgs } from "./args";
 import { scaffoldDevosPlugin } from "./scaffold";

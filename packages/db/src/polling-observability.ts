@@ -1,10 +1,10 @@
 import { desc, eq, inArray } from "drizzle-orm";
+import { pollingEventsTable } from "./schema/polling-events.schema";
+import { pollingStatusTable } from "./schema/polling-status.schema";
 import type {
 	PollingEventInput,
 	PollingStatusInput,
-} from "./polling-observability.types";
-import { pollingEventsTable } from "./schema/polling-events.schema";
-import { pollingStatusTable } from "./schema/polling-status.schema";
+} from "./types/polling-observability.types";
 
 const MAX_EVENTS_PER_POLLER = 500;
 

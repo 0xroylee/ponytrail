@@ -1,5 +1,5 @@
-import type { WorkflowDataResponseFrame } from "./workflow-data.types";
-import type { WorkflowComputerRegistration } from "./workflow-computer.types";
+import type { WorkflowComputerRegistration } from "./types/workflow-computer.types";
+import type { WorkflowDataResponseFrame } from "./types/workflow-data.types";
 
 export function parseComputerRegistration(
 	value: unknown,

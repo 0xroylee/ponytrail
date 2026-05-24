@@ -4,7 +4,7 @@ import {
 	notFoundJsonResponse,
 	serverErrorResponse,
 } from "./http/response";
-import type { ServerRouteDeps } from "./routes.types";
+import type { ServerRouteDeps } from "./types/routes.types";
 
 type RouteHandler = (deps: ServerRouteDeps) => Promise<unknown>;
 

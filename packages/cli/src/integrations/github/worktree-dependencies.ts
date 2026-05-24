@@ -1,6 +1,6 @@
 import { runPrepCommandWithRetry } from "../../utils/prep-command-retry";
 import { runCommand } from "../../utils/shell";
-import type { GithubCommandDeps } from "./github.types";
+import type { GithubCommandDeps } from "./types/github.types";
 
 const INSTALL_ARGS = ["install", "--frozen-lockfile"] as const;
 

@@ -1,10 +1,6 @@
 import path from "node:path";
-import type {
-	ResolvedProjectConfig,
-	RunOptions,
-	RunState,
-} from "../../features/types";
 import { logger } from "../../utils/logger";
+import type { ResolvedProjectConfig, RunOptions, RunState } from "../types";
 import { normalizeIssueKey } from "./state";
 import type { WorkflowRuntime } from "./workflow-runtime";
 

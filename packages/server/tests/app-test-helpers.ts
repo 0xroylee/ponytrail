@@ -1,7 +1,7 @@
 import type { ServerDatabase } from "devos-db";
 import { boardProjectsTable, projectBoardsTable } from "devos-db";
 import { createHandleRequest } from "../src/app";
-import type { AppDeps, RouteHandler } from "../src/app.types";
+import type { AppDeps, RouteHandler } from "../src/types/app.types";
 
 export function createJsonRequest(
 	method: string,

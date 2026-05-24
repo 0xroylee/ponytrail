@@ -8,4 +8,4 @@ export type {
 	RealtimeInboxMessageRecord,
 	RealtimeIssueRecord,
 	RealtimeProjectRecord,
-} from "./realtime-events.types";
+} from "./types/realtime-events.types";

@@ -1,6 +1,6 @@
 import { logger } from "./logger";
 import { runCommand } from "./shell";
-import type { CommandResult, RunCommandOptions } from "./shell.types";
+import type { CommandResult, RunCommandOptions } from "./types/shell.types";
 
 export const PREP_COMMAND_ATTEMPTS = 3;
 export const PREP_COMMAND_TIMEOUT_MS = 5 * 60 * 1000;

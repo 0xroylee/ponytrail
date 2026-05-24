@@ -6,9 +6,9 @@ import {
 	useMutation,
 	useQueryClient,
 } from "@tanstack/react-query";
-import type { WorkspaceProjectRecord } from "./client.types";
-import type { ProjectCreateMutationInput } from "./queries.types";
 import { serverStateQueryKeys } from "./query-keys";
+import type { WorkspaceProjectRecord } from "./types/client.types";
+import type { ProjectCreateMutationInput } from "./types/queries.types";
 import { createWebApiClient } from "./web-client";
 
 const apiClient = createWebApiClient();

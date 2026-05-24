@@ -1,4 +1,4 @@
-import type { RunState } from "../../features/types";
+import type { RunState } from "../types";
 import {
 	applyRunLease,
 	clearRunLease,

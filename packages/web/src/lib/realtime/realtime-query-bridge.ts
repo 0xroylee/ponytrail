@@ -11,7 +11,7 @@ import type {
 	RealtimeEvent,
 	RealtimeIssueEvent,
 	RealtimeProjectEvent,
-} from "./realtime-events.types";
+} from "./types/realtime-events.types";
 
 export function applyRealtimeEventToQueryClient(
 	queryClient: QueryClient,

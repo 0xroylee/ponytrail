@@ -12,8 +12,11 @@ import type { ProjectBoardTaskRecord } from "@/lib/api";
 
 import { getStatusLabel, normalizeDueDate } from "./issues-board-utils";
 import { STATUS_ORDER } from "./issues-board.constants";
-import type { IssuePriority, IssueQuickUpdate } from "./issues-board.types";
 import { PriorityDropdown } from "./priority-dropdown";
+import type {
+	IssuePriority,
+	IssueQuickUpdate,
+} from "./types/issues-board.types";
 
 interface IssueCardContextMenuProps {
 	task: ProjectBoardTaskRecord;

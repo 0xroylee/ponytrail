@@ -1,4 +1,4 @@
-import type { PlannedSplitTask } from "../../features/types";
+import type { PlannedSplitTask } from "../types";
 import { extractFirstJsonArray, unwrapFencedCodeBlock } from "./planner-json";
 
 export function parsePlannerSplitTasks(

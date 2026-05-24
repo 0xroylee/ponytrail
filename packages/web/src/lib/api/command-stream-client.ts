@@ -1,9 +1,9 @@
-import type { HealthRequestOptions } from "./client.types";
+import type { HealthRequestOptions } from "./types/client.types";
 import type {
 	CliCommandStreamEvent,
 	CliCommandStreamHandler,
 	CliCommandStreamRequest,
-} from "./command-stream-client.types";
+} from "./types/command-stream-client.types";
 
 export interface CommandStreamApiMethods {
 	streamCliCommand(

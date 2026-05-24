@@ -1,10 +1,3 @@
-import type {
-	HealthRequestOptions,
-	ProjectBoardTaskRecord,
-	TaskCreateRequest,
-	TaskCreateResponse,
-	TaskMutationRequest,
-} from "./client.types";
 import {
 	assertObjectRecord,
 	encodePathSegment,
@@ -14,7 +7,14 @@ import {
 	readString,
 } from "./response-utils";
 import { parseTaskActivityResponse } from "./task-activity-client";
-import type { TaskActivityResponse } from "./task-activity.types";
+import type {
+	HealthRequestOptions,
+	ProjectBoardTaskRecord,
+	TaskCreateRequest,
+	TaskCreateResponse,
+	TaskMutationRequest,
+} from "./types/client.types";
+import type { TaskActivityResponse } from "./types/task-activity.types";
 
 const TASKS_PATH = "/api/tasks";
 const TASK_CHAT_CREATE_PATH = "/api/tasks/chat-create";

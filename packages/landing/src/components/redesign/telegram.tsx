@@ -9,8 +9,8 @@ import {
 	useState,
 } from "react";
 
-import type { ChatMessage } from "@/components/redesign/redesign.types";
 import { telegramMessages } from "@/components/redesign/telegram-data";
+import type { ChatMessage } from "@/components/redesign/types/redesign.types";
 
 const loopPauseMs = 4200;
 

@@ -1,4 +1,7 @@
-import type { PriorityOption, StatusPresentation } from "./issues-board.types";
+import type {
+	PriorityOption,
+	StatusPresentation,
+} from "./types/issues-board.types";
 
 export const DEFAULT_WORKSPACE_ID = "owner-1";
 export const DEFAULT_CREATOR_ID = "member-1";

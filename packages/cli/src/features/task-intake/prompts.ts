@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { TaskIntakeAnswer } from "./task-intake.types";
+import type { TaskIntakeAnswer } from "./types/task-intake.types";
 
 async function loadSkillText(filePath: string): Promise<string> {
 	try {

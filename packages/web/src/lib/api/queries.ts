@@ -7,6 +7,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
+import { serverStateQueryKeys } from "./query-keys";
 import type {
 	AgentRecord,
 	CommandHistoryRecord,
@@ -15,14 +16,13 @@ import type {
 	SkillRecord,
 	TaskCreateResponse,
 	TokenUsageRecord,
-} from "./client.types";
-import type { PollingStatusResponse } from "./polling-status.types";
+} from "./types/client.types";
+import type { PollingStatusResponse } from "./types/polling-status.types";
 import type {
 	AgentUpdateMutationInput,
 	ServerStateQueryOptions,
 	TaskCreateMutationInput,
-} from "./queries.types";
-import { serverStateQueryKeys } from "./query-keys";
+} from "./types/queries.types";
 import { createWebApiClient } from "./web-client";
 
 export {

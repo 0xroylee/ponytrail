@@ -1,4 +1,4 @@
-import type { AgentResult } from "../agent-adapter.types";
+import type { AgentResult } from "../types/agent-adapter.types";
 
 export function extractSessionId(jsonlOutput: string): string | undefined {
 	const lines = jsonlOutput.split("\n").filter(Boolean);

@@ -6,11 +6,6 @@ import type {
 	CliCommandStreamEvent,
 } from "../server";
 import { resolveWorkflowWorkerUrl } from "./daemon-urls";
-import { buildWorkflowComputerRegistration } from "./workflow-computer-registration";
-import {
-	logWorkerActionReceived,
-	logWorkerStreamEvent,
-} from "./workflow-command-worker-logging";
 import type {
 	RunWorkflowCommandWorkerOptions,
 	WorkflowCommandStreamFrame,
@@ -24,7 +19,12 @@ import type {
 	WorkflowPongFrame,
 	WorkflowWorkerDispatchFrame,
 	WorkflowWorkerReadyFrame,
-} from "./workflow-command-worker.types";
+} from "./types/workflow-command-worker.types";
+import {
+	logWorkerActionReceived,
+	logWorkerStreamEvent,
+} from "./workflow-command-worker-logging";
+import { buildWorkflowComputerRegistration } from "./workflow-computer-registration";
 
 const DEFAULT_RECONNECT_DELAY_MS = 1000;
 

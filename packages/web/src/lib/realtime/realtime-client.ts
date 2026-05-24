@@ -6,7 +6,7 @@ import { parseProjectBoardTaskRecord } from "../api/task-client";
 import type {
 	RealtimeEvent,
 	RealtimeSubscription,
-} from "./realtime-events.types";
+} from "./types/realtime-events.types";
 
 const DEFAULT_REALTIME_URL = "/api/events";
 const RECONNECT_DELAYS_MS = [1000, 2000, 5000] as const;

@@ -2,7 +2,7 @@ import {
 	WORKFLOW_PROGRESS_SCHEMA,
 	type WorkflowProgressEvent,
 	type WorkflowProgressEventInput,
-} from "./workflow-progress.types";
+} from "./types/workflow-progress.types";
 
 export const WORKFLOW_PROGRESS_SENTINEL = "__DEVOS_WORKFLOW_PROGRESS__";
 export type WorkflowProgressListener = (

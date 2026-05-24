@@ -4,11 +4,11 @@ import {
 	boardTaskBranchName,
 	taskPullRequestsTable,
 } from "devos-db";
-import type { BoardTaskApiRecord } from "../tasks/task-service.types";
+import type { BoardTaskApiRecord } from "../tasks/types/task-service.types";
 import type {
 	WorkflowBoardTaskRecord,
 	WorkflowPullRequestRecord,
-} from "./workflow-data.types";
+} from "./types/workflow-data.types";
 
 export async function withPullRequests(
 	db: ServerDatabase["db"],

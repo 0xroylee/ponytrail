@@ -1,14 +1,14 @@
-import type {
-	HealthRequestOptions,
-	InboxMessageRecord,
-	InboxMessageScope,
-} from "./client.types";
 import {
 	assertObjectRecord,
 	parseListResponse,
 	readNullableString,
 	readString,
 } from "./response-utils";
+import type {
+	HealthRequestOptions,
+	InboxMessageRecord,
+	InboxMessageScope,
+} from "./types/client.types";
 
 const INBOX_MESSAGES_PATH = "/api/inbox/messages";
 

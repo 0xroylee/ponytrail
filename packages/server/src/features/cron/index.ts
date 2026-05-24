@@ -20,4 +20,4 @@ export type {
 	RunCronJobOnceOptions,
 	RunCronOptions,
 	SelectCronJobsFn,
-} from "./cron.types";
+} from "./types/cron.types";

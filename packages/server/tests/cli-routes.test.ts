@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { createHandleRequest } from "../src/app";
-import type { AppDeps } from "../src/app.types";
+import type { AppDeps } from "../src/types/app.types";
 
 describe("CLI server routes", () => {
 	it("returns command execution history", async () => {

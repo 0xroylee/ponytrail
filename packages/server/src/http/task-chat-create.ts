@@ -1,12 +1,12 @@
 import type { ServerDatabase } from "devos-db";
 import { z } from "zod";
-import type { CliExecutor } from "../app.types";
 import type { RealtimeEventPublisher } from "../realtime";
 import { createTaskRepository, createTaskService } from "../tasks";
 import {
 	composeTaskChatCreate,
 	runTaskIntake,
 } from "../tasks/task-chat-service";
+import type { CliExecutor } from "../types/app.types";
 import {
 	badRequest,
 	methodNotAllowed,

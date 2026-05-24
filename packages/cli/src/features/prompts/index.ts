@@ -1,2 +1,2 @@
 export * from "./prompt-adapter";
-export type * from "./prompt-adapter.types";
+export type * from "./types/prompt-adapter.types";

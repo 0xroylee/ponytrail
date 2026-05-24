@@ -1,5 +1,5 @@
 import type { CliCommandRequest, CliCommandStreamEvent } from "../server";
-import type { WorkflowCommandWorkerLogger } from "./workflow-command-worker.types";
+import type { WorkflowCommandWorkerLogger } from "./types/workflow-command-worker.types";
 
 export function logWorkerActionReceived(
 	workerLogger: WorkflowCommandWorkerLogger,

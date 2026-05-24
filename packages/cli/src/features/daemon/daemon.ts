@@ -11,7 +11,7 @@ import type {
 	DaemonServiceCommand,
 	DaemonSpawn,
 	RunProductionDaemonOptions,
-} from "./daemon.types";
+} from "./types/daemon.types";
 import { startWorkflowCommandWorker } from "./workflow-command-worker";
 
 export function buildDaemonCommands(

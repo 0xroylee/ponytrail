@@ -13,7 +13,7 @@ import type {
 	PromptBackend,
 	SelectPromptOptions,
 	TextPromptOptions,
-} from "./prompt-adapter.types";
+} from "./types/prompt-adapter.types";
 
 export class PromptCancelledError extends Error {
 	constructor() {

@@ -50,7 +50,7 @@ export type {
 	DaemonSpawn,
 	DaemonSpawnOptions,
 	RunProductionDaemonOptions,
-} from "./daemon.types";
+} from "./types/daemon.types";
 export type {
 	AttachedPoller,
 	AttachedPollerSpawn,
@@ -79,4 +79,4 @@ export type {
 	WorkflowCommandWorkerSocket,
 	WorkflowCommandWorkerWebSocketConstructor,
 	RunWorkflowCommandWorkerOptions,
-} from "./workflow-command-worker.types";
+} from "./types/workflow-command-worker.types";

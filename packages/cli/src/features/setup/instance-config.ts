@@ -8,7 +8,7 @@ import { INSTANCE_CONFIG_FILE } from "./constants";
 import type {
 	InstanceConfigLoadResult,
 	OnboardInstanceConfig,
-} from "./instance-config.types";
+} from "./types/instance-config.types";
 
 const DEFAULT_INSTANCE_ID = "default";
 const DEFAULT_INSTANCE_PORT = 3100;

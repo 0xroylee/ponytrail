@@ -1,4 +1,7 @@
-import type { ErrorResponseBody, JsonResponseOptions } from "./response.types";
+import type {
+	ErrorResponseBody,
+	JsonResponseOptions,
+} from "./types/response.types";
 
 export function jsonSuccess<T>(
 	body: T,

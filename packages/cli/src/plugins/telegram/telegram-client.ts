@@ -19,7 +19,7 @@ import type {
 	TelegramReceivedMessageBatch,
 	TelegramSendMessageInput,
 	TelegramSentMessage,
-} from "./telegram.types";
+} from "./types/telegram.types";
 
 const DEFAULT_API_BASE_URL = "https://api.telegram.org";
 

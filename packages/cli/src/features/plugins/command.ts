@@ -6,7 +6,7 @@ import { type PromptAdapter, clackPromptAdapter } from "../prompts";
 import type {
 	InstanceConfigLoadResult,
 	OnboardInstanceConfig,
-} from "../setup/instance-config.types";
+} from "../setup/types/instance-config.types";
 import { getPluginTemplate, listPluginTemplates } from "./catalog";
 import { promptForMissingPluginCredentials } from "./credentials";
 import {
@@ -15,13 +15,16 @@ import {
 	listRuntimePlugins,
 	looksLikePluginPath,
 } from "./instance-registry";
-import type { PluginTemplate, PluginsCommand } from "./plugin-template.types";
 import {
 	checkRuntimePlugin,
 	installLocalRuntimePlugin,
 	loadOptionalInstanceConfig,
 	saveRuntimeInstanceConfig,
 } from "./runtime-command";
+import type {
+	PluginTemplate,
+	PluginsCommand,
+} from "./types/plugin-template.types";
 
 const ENABLED_PLUGINS_ENV = "DEVOS_ENABLED_PLUGINS";
 const CODEX_PLUGINS_ENV = "CODEX_PLUGINS";

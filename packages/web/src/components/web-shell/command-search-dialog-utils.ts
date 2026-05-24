@@ -5,8 +5,8 @@ import { getStatusLabel } from "@/components/issues-board/issues-board-utils";
 import type {
 	CommandSearchGroup,
 	CommandSearchResult,
-} from "./command-search-dialog.types";
-import type { SidebarNavItem } from "./web-shell.types";
+} from "./types/command-search-dialog.types";
+import type { SidebarNavItem } from "./types/web-shell.types";
 
 const MAX_ISSUE_RESULTS = 8;
 const MAX_HISTORY_RESULTS = 6;

@@ -1,11 +1,3 @@
-import type {
-	HealthRequestOptions,
-	ProjectBoardRecord,
-	ProjectBoardStatusColumn,
-	ProjectCreateRequest,
-	WorkspaceProjectRecord,
-	WorkspaceProjectsResponse,
-} from "./client.types";
 import {
 	assertObjectRecord,
 	encodePathSegment,
@@ -15,6 +7,14 @@ import {
 	readString,
 } from "./response-utils";
 import { parseProjectBoardTaskRecord } from "./task-client";
+import type {
+	HealthRequestOptions,
+	ProjectBoardRecord,
+	ProjectBoardStatusColumn,
+	ProjectCreateRequest,
+	WorkspaceProjectRecord,
+	WorkspaceProjectsResponse,
+} from "./types/client.types";
 
 const WORKSPACE_PROJECTS_BASE_PATH = "/api/workspaces";
 

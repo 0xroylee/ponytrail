@@ -1,12 +1,3 @@
-import type { AgentBackend } from "./agent-adapter.types";
-import type {
-	AgentBackendDefinition,
-	AgentConfigurationDoc,
-	AgentConfigurationInput,
-	AgentConfigurationResolveOptions,
-	AgentModelDefinition,
-	ResolvedAgentConfiguration,
-} from "./agent-registry.types";
 import { ClaudeCodeAdapter, claudeConfigurationDoc } from "./claude";
 import {
 	CLAUDE_AVAILABLE_MODELS,
@@ -31,6 +22,15 @@ import {
 	CURSOR_DESCRIPTION,
 	CURSOR_LABEL,
 } from "./cursor/constants";
+import type { AgentBackend } from "./types/agent-adapter.types";
+import type {
+	AgentBackendDefinition,
+	AgentConfigurationDoc,
+	AgentConfigurationInput,
+	AgentConfigurationResolveOptions,
+	AgentModelDefinition,
+	ResolvedAgentConfiguration,
+} from "./types/agent-registry.types";
 
 const agentBackendDefinitions = {
 	[CODEX_BACKEND]: {

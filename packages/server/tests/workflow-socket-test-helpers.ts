@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { IncomingMessage } from "node:http";
 import { WebSocket } from "ws";
-import type { WorkflowDataSocket } from "../src/workflow-data/workflow-data-socket.types";
+import type { WorkflowDataSocket } from "../src/workflow-data/types/workflow-data-socket.types";
 
 export async function sendWorkflowDataRequest(
 	socket: FakeWorkflowDataSocket,

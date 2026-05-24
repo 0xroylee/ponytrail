@@ -3,13 +3,13 @@ import type {
 	RunOptions,
 	RunState,
 	WorkflowStage,
-} from "../../features/types";
+} from "../types";
 import { normalizeIssueKey } from "./state";
 import type {
 	ReviewOnlyQueueBuildResult,
 	ReviewOnlyQueueInput,
 	WorkflowIssue,
-} from "./workflow.types";
+} from "./types/workflow.types";
 
 export interface WorkflowQueueIssue {
 	identifier: string;

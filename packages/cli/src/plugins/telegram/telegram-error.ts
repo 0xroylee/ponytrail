@@ -1,4 +1,4 @@
-import type { TelegramApiErrorOptions } from "./telegram.types";
+import type { TelegramApiErrorOptions } from "./types/telegram.types";
 
 export class TelegramApiError extends Error {
 	readonly method: string;

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "bun:test";
 
-import type { AgentRecord } from "../src/lib/api";
 import {
 	deriveRuntimeSummaries,
 	formatRuntimeLabel,
 } from "../src/components/runtimes/runtimes-panel-utils";
+import type { AgentRecord } from "../src/lib/api";
 
 function createAgent(overrides: Partial<AgentRecord>): AgentRecord {
 	return {

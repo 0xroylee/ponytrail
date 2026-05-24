@@ -5,18 +5,18 @@ import {
 } from "./entity-crud-agent";
 import { createEntityCrudRepository } from "./entity-crud-repository";
 import { createEntityCrudService } from "./entity-crud-service";
-import type { EntityCrudResult } from "./entity-crud-service.types";
 import {
 	parseJsonBody,
 	validateCreatePayload,
 	validateUpdatePayload,
 } from "./entity-crud-validators";
+import type { EntityCrudResult } from "./types/entity-crud-service.types";
 import type {
 	CrudResponseResult,
 	CrudRouteMatch,
 	SkillCreatePayload,
 	SkillUpdatePayload,
-} from "./entity-crud.types";
+} from "./types/entity-crud.types";
 
 const SKILL_CREATE_FIELDS = [
 	"id",

@@ -1,12 +1,12 @@
-import type { ResolvedProjectConfig } from "../../features/types";
+import type { ResolvedProjectConfig } from "../types";
+import { createReliableWorkflowDataClient } from "./reliable-workflow-data-client";
 import type {
 	BoardTaskCreateInput,
 	BoardTaskPullRequestLink,
 	BoardTaskUpdateInput,
 	BoardTaskWorkflowRecord,
 	BoardTaskWorkflowStore,
-} from "./board-task-workflow-store.types";
-import { createReliableWorkflowDataClient } from "./reliable-workflow-data-client";
+} from "./types/board-task-workflow-store.types";
 import type {
 	WorkflowBoardTaskRecord,
 	WorkflowPullRequestRecord,

@@ -5,12 +5,12 @@ import {
 	useMutation,
 	useQueryClient,
 } from "@tanstack/react-query";
-import type { ProjectBoardTaskRecord } from "./client.types";
+import { serverStateQueryKeys } from "./query-keys";
+import type { ProjectBoardTaskRecord } from "./types/client.types";
 import type {
 	BoardTaskMutationInput,
 	BoardTaskUpdateMutationInput,
-} from "./queries.types";
-import { serverStateQueryKeys } from "./query-keys";
+} from "./types/queries.types";
 import { createWebApiClient } from "./web-client";
 
 const apiClient = createWebApiClient();

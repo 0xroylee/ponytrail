@@ -5,8 +5,11 @@ import type {
 	RealtimeEvent,
 	RealtimeIssueEvent,
 	RealtimeProjectEvent,
-} from "./realtime-events.types";
-import type { RealtimeStore, RealtimeStoreState } from "./realtime-store.types";
+} from "./types/realtime-events.types";
+import type {
+	RealtimeStore,
+	RealtimeStoreState,
+} from "./types/realtime-store.types";
 
 const createDefaultState = (): RealtimeStoreState => ({
 	status: "idle",

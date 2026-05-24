@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { ResolvedProjectConfig } from "../../features/types";
+import type { ResolvedProjectConfig } from "../types";
 import { instanceConfigPath } from "./home-paths";
 
 interface InstancePluginRecord {

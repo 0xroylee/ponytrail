@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
-import type { ServerDatabase } from "./database.types";
 import { boardProjectsTable } from "./schema/board-projects.schema";
 import { boardTasksTable } from "./schema/board-tasks.schema";
-import type { BoardTaskKeyScope } from "./task-keys.types";
+import type { ServerDatabase } from "./types/database.types";
+import type { BoardTaskKeyScope } from "./types/task-keys.types";
 
 const TASK_KEY_PREFIX = "TASK";
 

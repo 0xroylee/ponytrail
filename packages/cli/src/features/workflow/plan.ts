@@ -1,9 +1,4 @@
 import type { AgentAdapter } from "adapters";
-import type {
-	ResolvedNotificationConfig,
-	ResolvedProjectConfig,
-	RunState,
-} from "../../features/types";
 import { selectPlanningSupplementalSkills } from "../../skills/catalog";
 import { buildPlanPrompt } from "../../skills/prompts";
 import {
@@ -11,20 +6,25 @@ import {
 	buildPlanNeedsInfoComment,
 	buildPlanSplitComment,
 } from "../../utils/comments";
+import type {
+	ResolvedNotificationConfig,
+	ResolvedProjectConfig,
+	RunState,
+} from "../types";
 import { parsePlannerDecision } from "./plan-parsing";
 import { applyPlannerIssueRefinement } from "./plan-refinement";
 import { buildPlannerRepairPrompt } from "./plan-repair-prompt";
-import type {
-	HandlePlanningStageDeps,
-	PlannerDecision,
-	PlanningLinearClient,
-} from "./plan.types";
 import {
 	emitActionProgress,
 	emitPlanningSummaryProgress,
 	emitStageProgress,
 } from "./progress";
 import { loadRunState } from "./state";
+import type {
+	HandlePlanningStageDeps,
+	PlannerDecision,
+	PlanningLinearClient,
+} from "./types/plan.types";
 
 const HUMAN_REVIEW_COMPLEXITY_THRESHOLD = 5;
 const DEFAULT_NEEDS_INFO_QUESTIONS = [

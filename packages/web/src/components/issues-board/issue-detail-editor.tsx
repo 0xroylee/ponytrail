@@ -20,12 +20,12 @@ import {
 } from "./issue-detail-editor-utils";
 import { getStatusLabel } from "./issues-board-utils";
 import { STATUS_ORDER } from "./issues-board.constants";
+import { PriorityDropdown } from "./priority-dropdown";
 import type {
 	IssueDetailDraft,
 	IssueDetailSaveState,
 	IssuePriority,
-} from "./issues-board.types";
-import { PriorityDropdown } from "./priority-dropdown";
+} from "./types/issues-board.types";
 
 const AUTOSAVE_DELAY_MS = 3000;
 

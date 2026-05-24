@@ -8,7 +8,7 @@ import {
 	STATUS_ORDER,
 	STATUS_PRESENTATION,
 } from "./issues-board.constants";
-import type { IssueDraft, IssueTab } from "./issues-board.types";
+import type { IssueDraft, IssueTab } from "./types/issues-board.types";
 
 const LEGACY_PR_CREATED_STATUS = "pr_created";
 

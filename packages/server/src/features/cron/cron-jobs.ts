@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { LoadedConfig } from "devos/features/config";
-import type { CronJobConfig } from "./cron.types";
+import type { CronJobConfig } from "./types/cron.types";
 
 export function selectCronJobs(
 	jobs: CronJobConfig[],

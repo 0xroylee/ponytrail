@@ -11,7 +11,7 @@ import {
 import type {
 	AgentHealthViewModel,
 	AgentRuntimeTabsViewModel,
-} from "./agent-monitor.types";
+} from "./types/agent-monitor.types";
 
 interface UseAgentMonitorResult {
 	health: AgentHealthViewModel;

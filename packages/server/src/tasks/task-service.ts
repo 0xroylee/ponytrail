@@ -1,11 +1,11 @@
 import { isForeignKeyError } from "../http/http-utils";
-import type { UpdateTaskPayload } from "../http/project-task-api.types";
+import type { UpdateTaskPayload } from "../http/types/project-task-api.types";
 import { composeTaskActivity } from "./task-activity-compose";
 import type {
 	BoardTaskApiRecord,
 	TaskRepository,
 	TaskService,
-} from "./task-service.types";
+} from "./types/task-service.types";
 
 const UPDATE_ACTIVITY_FIELDS: Array<keyof UpdateTaskPayload> = [
 	"taskKey",

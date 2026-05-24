@@ -9,7 +9,7 @@ import type {
 	ServerRuntime,
 	ServerShutdownSignal,
 	ServerSignalTarget,
-} from "../src/server-runtime.types";
+} from "../src/types/server-runtime.types";
 
 describe("server runtime shutdown", () => {
 	it("closes the HTTP server, websocket proxies, and database exactly once", async () => {

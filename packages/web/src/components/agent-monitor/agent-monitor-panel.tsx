@@ -6,7 +6,7 @@ import type {
 	AgentHealthViewModel,
 	AgentRuntimeTabViewModel,
 	AgentRuntimeTabsViewModel,
-} from "@/lib/agents/agent-monitor.types";
+} from "@/lib/agents/types/agent-monitor.types";
 
 import { AgentMonitorSkeleton } from "./agent-monitor-skeleton";
 

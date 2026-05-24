@@ -1,9 +1,6 @@
-import type {
-	DevosRootConfig,
-	ProjectRuntimeConfig,
-} from "../../features/types";
+import type { DevosRootConfig, ProjectRuntimeConfig } from "../types";
 import { normalizeOptionalPath } from "./path-resolution";
-import type { ServerRuntimeConfig } from "./server.types";
+import type { ServerRuntimeConfig } from "./types/server.types";
 
 export function resolveRootServerConfig(
 	configCwd: string,

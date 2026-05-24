@@ -10,7 +10,7 @@ import type {
 	NotificationRequest,
 	NotificationSendResult,
 	ResendClient,
-} from "../src/notifications/notifications.types";
+} from "../src/notifications/types/notifications.types";
 
 describe("notification service", () => {
 	it("builds and sends task outcome payload", async () => {

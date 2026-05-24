@@ -1,6 +1,6 @@
-import type { RunState } from "../../features/types";
+import type { RunState } from "../types";
 import { normalizeIssueKey } from "./state";
-import type { WorkflowIssue } from "./workflow.types";
+import type { WorkflowIssue } from "./types/workflow.types";
 
 export interface RunStateIssueIdentityRefresh {
 	changed: boolean;

@@ -1,11 +1,3 @@
-import type {
-	AgentRecord,
-	CommandHistoryRecord,
-	HealthResponse,
-	JobRecord,
-	SkillRecord,
-	TokenUsageRecord,
-} from "./client.types";
 import {
 	assertObjectRecord,
 	parseListResponse,
@@ -13,6 +5,14 @@ import {
 	readString,
 	readStringArray,
 } from "./response-utils";
+import type {
+	AgentRecord,
+	CommandHistoryRecord,
+	HealthResponse,
+	JobRecord,
+	SkillRecord,
+	TokenUsageRecord,
+} from "./types/client.types";
 
 export function parseHealthResponse(payload: unknown): HealthResponse {
 	if (

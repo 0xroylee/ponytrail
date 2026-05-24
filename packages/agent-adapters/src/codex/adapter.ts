@@ -1,12 +1,12 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
+import { assertCommandOk, runCommand } from "../shell";
 import type {
 	AgentAdapter,
 	AgentAdapterRuntimeConfig,
 	AgentResult,
 	CodexReasoningEffort,
-} from "../agent-adapter.types";
-import { assertCommandOk, runCommand } from "../shell";
+} from "../types/agent-adapter.types";
 import { normalizeList, toTomlStringArray } from "./config";
 import { buildCodexRuntimeInvocation } from "./docker";
 import { extractSessionId, extractUsage } from "./output";

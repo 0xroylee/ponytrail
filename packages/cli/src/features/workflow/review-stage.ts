@@ -1,9 +1,4 @@
 import type { AgentAdapter } from "adapters";
-import type {
-	ResolvedNotificationConfig,
-	ResolvedProjectConfig,
-	RunState,
-} from "../../features/types";
 import {
 	buildGithubCommentPrompt,
 	buildReviewPrompt,
@@ -12,6 +7,11 @@ import {
 	buildImplementationFeedbackComment,
 	buildReviewComment,
 } from "../../utils/comments";
+import type {
+	ResolvedNotificationConfig,
+	ResolvedProjectConfig,
+	RunState,
+} from "../types";
 import { emitActionProgress, emitStageProgress } from "./progress";
 import { parseReviewOutcome } from "./review";
 import {
@@ -26,7 +26,7 @@ import type {
 	FinalizeReviewMergeDeps,
 	HandleReviewTestingStageDeps,
 	ReviewLinearClient,
-} from "./review-stage.types";
+} from "./types/review-stage.types";
 export {
 	MAX_AUTOMATED_REVIEW_FIX_PASSES,
 	incrementAutomatedReviewFixPasses,

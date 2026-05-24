@@ -1,5 +1,5 @@
 import { createApiClient } from "./client";
-import type { ApiClient } from "./client.types";
+import type { ApiClient } from "./types/client.types";
 
 const WEB_WORKFLOW_WS_URL = "/api/workflow";
 

@@ -2,7 +2,7 @@ import type {
 	TelegramBotIdentity,
 	TelegramReceivedMessage,
 	TelegramSentMessage,
-} from "./telegram.types";
+} from "./types/telegram.types";
 
 export interface TelegramUserPayload {
 	id: number;

@@ -5,14 +5,14 @@ import {
 	taskExecutionStepsTable,
 } from "devos-db";
 import type { RealtimeEventPublisher } from "../realtime";
-import type { WorkflowDataContext } from "./workflow-data-actions";
-import { workflowError } from "./workflow-data-error";
 import type {
 	WorkflowTaskExecutionFinishInput,
 	WorkflowTaskExecutionProgressInput,
 	WorkflowTaskExecutionStartInput,
 	WorkflowTaskExecutionStreamInput,
-} from "./workflow-data.types";
+} from "./types/workflow-data.types";
+import type { WorkflowDataContext } from "./workflow-data-actions";
+import { workflowError } from "./workflow-data-error";
 
 const STREAM_EVENT_PREFIX = "[devos-event:";
 type ExecutionRealtimeEvent = Extract<

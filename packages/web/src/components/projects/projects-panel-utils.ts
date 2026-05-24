@@ -2,7 +2,7 @@ import type { ProjectCreateRequest } from "@/lib/api";
 import type {
 	ProjectCreateDefaults,
 	ProjectFormState,
-} from "./projects-panel.types";
+} from "./types/projects-panel.types";
 
 export const EMPTY_PROJECT_FORM_STATE: ProjectFormState = {
 	name: "",

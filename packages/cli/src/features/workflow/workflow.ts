@@ -1,7 +1,7 @@
-import { type LoadedConfig, getProjectById } from "../../features/config";
 import { buildFixPrompt, buildImplementPrompt } from "../../skills/prompts";
 import { buildImplementationComment } from "../../utils/comments";
 import { logger, normalizeError } from "../../utils/logger";
+import { type LoadedConfig, getProjectById } from "../config";
 import { runAgentWithChatLog } from "./agent-chat-log";
 import {
 	safeLinearComment,
@@ -29,6 +29,13 @@ import {
 	saveRunState,
 	transitionStage,
 } from "./state";
+import type {
+	IssueJobLogFields,
+	IssueProjectRoutingResult,
+	PollingSettings,
+	ReviewOnlyQueueBuildResult,
+	WorkflowIssue,
+} from "./types/workflow.types";
 import { createWorkflowExecutionRecorder } from "./workflow-execution-recorder";
 import {
 	buildRunLeaseOwnerId,
@@ -71,17 +78,13 @@ import {
 	prepareIsolatedExecutionWorkspace,
 	shouldUseIsolatedWorktree,
 } from "./workflow-worktree";
-import type {
-	IssueJobLogFields,
-	IssueProjectRoutingResult,
-	PollingSettings,
-	ReviewOnlyQueueBuildResult,
-	WorkflowIssue,
-} from "./workflow.types";
 
 export { buildRunLeaseOwnerId } from "./workflow-lease";
 export { routeProjectsForIssueProjectId } from "./workflow-routing";
 import type { AgentAdapter } from "adapters";
+import { issueBranchName } from "../../integrations/github";
+import { sortIssuesByPriority } from "../../integrations/linear";
+import { emitWorkflowProgress } from "../server";
 import type {
 	CodexUsageRecord,
 	PullRequestRef,
@@ -90,16 +93,13 @@ import type {
 	RunOptions,
 	RunState,
 	WorkflowStage,
-} from "../../features/types";
-import { issueBranchName } from "../../integrations/github";
-import { sortIssuesByPriority } from "../../integrations/linear";
-import { emitWorkflowProgress } from "../server";
+} from "../types";
 export type {
 	IssueJobLogFields,
 	PollingSettings,
 	ReviewOnlyQueueBuildResult,
 	WorkflowIssue,
-} from "./workflow.types";
+} from "./types/workflow.types";
 
 export { runAgentWithChatLog } from "./agent-chat-log";
 export { resolvePollingSettings, shouldStopPolling, sleep };
@@ -1548,7 +1548,10 @@ export {
 	parsePlannerIssueRefinement,
 } from "./plan-refinement";
 export { parsePlannerSplitTasks } from "./plan-split-tasks";
-export type { PlannerDecision, PlannerIssueRefinement } from "./plan.types";
+export type {
+	PlannerDecision,
+	PlannerIssueRefinement,
+} from "./types/plan.types";
 export {
 	normalizeFailedReviewBugs,
 	readyPullRequestAfterPassingReview,

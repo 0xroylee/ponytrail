@@ -2,7 +2,7 @@ import type {
 	RealtimeEvent,
 	RealtimeEventBus,
 	RealtimeEventPayload,
-} from "./realtime-events.types";
+} from "./types/realtime-events.types";
 
 export function createRealtimeEventBus(
 	now: () => string = () => new Date().toISOString(),

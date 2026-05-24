@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { RunState } from "../src/features/types";
+import type { WorkflowIssue } from "../src/features/workflow/types/workflow.types";
 import { refreshRunStateIssueIdentity } from "../src/features/workflow/workflow-run-state-refresh";
-import type { WorkflowIssue } from "../src/features/workflow/workflow.types";
 
 describe("workflow run-state identity refresh", () => {
 	it("refreshes same-task issue identity without resetting workflow progress", () => {

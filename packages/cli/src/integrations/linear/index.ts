@@ -1,2 +1,2 @@
 export * from "./linear";
-export * from "./linear.types";
+export * from "./types/linear.types";

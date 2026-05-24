@@ -27,8 +27,8 @@ export {
 	type WorkflowTaskUpdatePayload,
 	type WorkflowWorkerDispatchFrame,
 	type WorkflowWorkerReadyFrame,
-} from "./workflow-data.types";
+} from "./types/workflow-data.types";
 export type {
 	RegisteredWorkflowComputer,
 	WorkflowComputerRegistration,
-} from "./workflow-computer.types";
+} from "./types/workflow-computer.types";

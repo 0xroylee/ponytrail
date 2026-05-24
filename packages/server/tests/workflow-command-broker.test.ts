@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
 import { WebSocket } from "ws";
+import type { WorkflowDataSocket } from "../src/workflow-data/types/workflow-data-socket.types";
+import type { WorkflowCommandStreamFrame } from "../src/workflow-data/types/workflow-data.types";
 import { createWorkflowCommandBroker } from "../src/workflow-data/workflow-command-broker";
-import type { WorkflowDataSocket } from "../src/workflow-data/workflow-data-socket.types";
-import type { WorkflowCommandStreamFrame } from "../src/workflow-data/workflow-data.types";
 
 describe("workflow command broker", () => {
 	it("fails command dispatch clearly when no CLI worker is connected", async () => {

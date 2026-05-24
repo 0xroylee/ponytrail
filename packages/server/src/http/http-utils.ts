@@ -1,9 +1,12 @@
-import type { ValidationFailure, ValidationResult } from "./api-error.types";
 import {
 	badRequestResponse,
 	methodNotAllowedResponse,
 	notFoundJsonResponse,
 } from "./response";
+import type {
+	ValidationFailure,
+	ValidationResult,
+} from "./types/api-error.types";
 
 export function methodNotAllowed(): Response {
 	return methodNotAllowedResponse();

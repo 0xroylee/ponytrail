@@ -13,4 +13,4 @@ export type {
 	TelegramReceivedMessageBatch,
 	TelegramSendMessageInput,
 	TelegramSentMessage,
-} from "./telegram.types";
+} from "./types/telegram.types";

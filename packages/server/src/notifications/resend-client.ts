@@ -1,7 +1,7 @@
 import type {
 	NotificationEmailPayload,
 	ResendClient,
-} from "./notifications.types";
+} from "./types/notifications.types";
 
 interface ResendSdkShape {
 	emails: {

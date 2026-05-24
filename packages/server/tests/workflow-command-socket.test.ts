@@ -2,9 +2,9 @@ import { describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
 import type { ServerDatabase } from "devos-db";
 import { WebSocket } from "ws";
-import type { WorkflowCommandBroker } from "../src/workflow-data/workflow-command-broker.types";
+import type { WorkflowCommandBroker } from "../src/workflow-data/types/workflow-command-broker.types";
+import type { WorkflowDataSocket } from "../src/workflow-data/types/workflow-data-socket.types";
 import { bindWorkflowDataClient } from "../src/workflow-data/workflow-data-socket";
-import type { WorkflowDataSocket } from "../src/workflow-data/workflow-data-socket.types";
 
 describe("workflow command websocket routing", () => {
 	it("routes ping, browser command, and worker frames on the workflow socket", async () => {

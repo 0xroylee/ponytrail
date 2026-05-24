@@ -1,4 +1,3 @@
-import type { AppDeps, RouteHandler } from "./app.types";
 import { handleCliRoute } from "./http/cli-routes";
 import { handleInboxMessagesRoute } from "./http/inbox-routes";
 import { handlePollingStatusRoute } from "./http/polling-status-routes";
@@ -17,6 +16,7 @@ import { parseNotificationServerRequest } from "./notifications/notification-ser
 import { parseNotificationRequest } from "./notifications/notifications-request";
 import { READ_ONLY_SERVER_PATHS, handleServerRequest } from "./routes";
 import { handleEntityCrudRequest, matchCrudRoute } from "./routes/entity-crud";
+import type { AppDeps, RouteHandler } from "./types/app.types";
 
 export function createHandleRequest(deps: AppDeps): RouteHandler {
 	const handler: RouteHandler = async (request) => {

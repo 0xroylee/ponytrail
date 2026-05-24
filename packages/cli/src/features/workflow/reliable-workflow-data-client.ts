@@ -1,4 +1,5 @@
 import { logger, normalizeError } from "../../utils/logger";
+import type { WorkflowDataOutboxContext } from "./types/workflow-data-outbox.types";
 import {
 	type WorkflowDataClientOptions,
 	createWorkflowDataClient,
@@ -7,7 +8,6 @@ import {
 	drainWorkflowDataOutbox,
 	enqueueWorkflowDataOutboxEntry,
 } from "./workflow-data-outbox";
-import type { WorkflowDataOutboxContext } from "./workflow-data-outbox.types";
 import type { WorkflowDataAction } from "./workflow-data-protocol";
 
 const BUFFERABLE_ACTIONS = new Set<WorkflowDataAction>([

@@ -18,7 +18,7 @@ import type {
 	TodoIssueFromPlanInput,
 	WorkflowLabelStage,
 	WorkflowLabelUpdate,
-} from "./linear.types";
+} from "./types/linear.types";
 
 type LinearSdkWorkflowState = {
 	id: string;

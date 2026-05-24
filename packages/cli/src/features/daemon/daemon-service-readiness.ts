@@ -1,7 +1,7 @@
 import type {
 	DaemonHttpReadinessOptions,
 	DaemonReadinessShouldStop,
-} from "./daemon.types";
+} from "./types/daemon.types";
 
 export const DAEMON_SERVICE_READY_INTERVAL_MS = 500;
 export const DAEMON_SERVICE_READY_TIMEOUT_MS = 30_000;

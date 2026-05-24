@@ -1,9 +1,9 @@
+import { runCommand } from "../shell";
 import type {
 	AgentAdapter,
 	AgentAdapterRuntimeConfig,
 	AgentResult,
-} from "../agent-adapter.types";
-import { runCommand } from "../shell";
+} from "../types/agent-adapter.types";
 import { mapCursorError } from "./errors";
 import { extractFinalMessage, extractSessionId } from "./output";
 

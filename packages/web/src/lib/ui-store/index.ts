@@ -11,4 +11,4 @@ export type {
 	UiStoreState,
 	UiViewFilters,
 	WorkspaceId,
-} from "./ui-store.types";
+} from "./types/ui-store.types";

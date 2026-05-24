@@ -27,8 +27,8 @@ boundaries. Keep CLI behavior project-agnostic across configured workspaces.
 
 ## Contracts And Tests
 
-1. Keep TypeScript interfaces/type aliases in dedicated `*.types.ts` modules
-   when adding or changing contracts.
+1. Keep TypeScript interfaces/type aliases in dedicated `types/*.types.ts`
+   modules when adding or changing contracts.
 2. Preserve stable planner and review contracts:
    - `PLANNING_RESULT`, `SUCCESS_GOAL`, and `COMPLEXITY_SCORE`
    - `RESULT: PASS|FAIL`

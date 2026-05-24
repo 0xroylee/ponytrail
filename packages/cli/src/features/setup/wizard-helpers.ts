@@ -1,11 +1,15 @@
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { CodexReasoningEffort } from "../../features/types";
 import { runCommand } from "../../utils/shell";
+import type { CodexReasoningEffort } from "../types";
 import { safeRun } from "./checks-helpers";
 import { DEFAULT_BASE_BRANCH } from "./constants";
-import type { GitHubDefaults, SetupCheckDeps, SetupDraft } from "./setup.types";
+import type {
+	GitHubDefaults,
+	SetupCheckDeps,
+	SetupDraft,
+} from "./types/setup.types";
 
 export async function readExistingFile(
 	filePath: string,

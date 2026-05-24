@@ -6,7 +6,7 @@ import {
 	resolveServerDatabasePort,
 	resolveServerWorkspacePath,
 } from "../src/startup-paths";
-import type { ServerStartupConfig } from "../src/startup-paths.types";
+import type { ServerStartupConfig } from "../src/types/startup-paths.types";
 
 describe("server startup paths", () => {
 	it("resolves the default workspace path to the repo root", () => {

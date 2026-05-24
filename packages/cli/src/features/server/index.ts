@@ -18,7 +18,7 @@ export type {
 	RunCommandFn,
 	SupportedCliAction,
 	SupportedCliCommandRequest,
-} from "./cli-command-executor.types";
+} from "./types/cli-command-executor.types";
 export type {
 	WorkflowActionProgressEvent,
 	WorkflowCheckpointProgressEvent,
@@ -29,10 +29,10 @@ export type {
 	WorkflowProgressStatus,
 	WorkflowStageProgressEvent,
 	WorkflowSummaryProgressEvent,
-} from "./workflow-progress.types";
+} from "./types/workflow-progress.types";
 export type {
 	HumanReviewRequiredNotificationServerRequest,
 	NotificationEmailPayload,
 	NotificationServerRequest,
 	TaskOutcomeNotificationServerRequest,
-} from "./notifications.types";
+} from "./types/notifications.types";

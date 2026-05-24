@@ -13,7 +13,7 @@ import { IssueColumn } from "./issue-board-column";
 import { IssuesBoardSkeleton } from "./issues-board-skeleton";
 import { getStatusLabel } from "./issues-board-utils";
 import { STATUS_ORDER } from "./issues-board.constants";
-import type { IssueDragState, IssueTab } from "./issues-board.types";
+import type { IssueDragState, IssueTab } from "./types/issues-board.types";
 
 export function BoardHeader({
 	activeTab,

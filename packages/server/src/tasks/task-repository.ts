@@ -14,7 +14,10 @@ import {
 	tokenUsageTable,
 } from "devos-db";
 import type { BoardTaskRow, NewBoardTaskRow } from "devos-db";
-import type { BoardTaskApiRecord, TaskRepository } from "./task-service.types";
+import type {
+	BoardTaskApiRecord,
+	TaskRepository,
+} from "./types/task-service.types";
 
 const HUMAN_ASSIGNEE_TYPE = "human";
 

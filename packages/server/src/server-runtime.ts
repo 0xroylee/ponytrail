@@ -5,7 +5,7 @@ import type {
 	ServerRuntimeOptions,
 	ServerShutdownHandlersOptions,
 	ServerShutdownSignal,
-} from "./server-runtime.types";
+} from "./types/server-runtime.types";
 
 const SHUTDOWN_SIGNALS: ServerShutdownSignal[] = ["SIGINT", "SIGTERM"];
 

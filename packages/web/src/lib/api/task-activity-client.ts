@@ -8,7 +8,7 @@ import type {
 	TaskActivityRecord,
 	TaskActivityResponse,
 	TaskActivityStepRecord,
-} from "./task-activity.types";
+} from "./types/task-activity.types";
 
 const TASK_ACTIVITY_PATH = "/api/tasks/:taskId/activity";
 

@@ -4,8 +4,8 @@ import type { ResolvedEnv } from "../config";
 import type {
 	InstanceConfigLoadResult,
 	OnboardInstanceConfig,
-} from "./instance-config.types";
-import type { SetupCheck, SetupCheckDeps } from "./setup.types";
+} from "./types/instance-config.types";
+import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
 
 interface InstanceCheckOptions {
 	env: ResolvedEnv;

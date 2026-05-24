@@ -1,4 +1,4 @@
-import type { AgentConfigurationDoc } from "../agent-registry.types";
+import type { AgentConfigurationDoc } from "../types/agent-registry.types";
 import {
 	CODEX_AVAILABLE_MODELS,
 	CODEX_BACKEND,

@@ -13,9 +13,9 @@ export type {
 	SetupDraft,
 	SetupDraftPromptDeps,
 	SetupWizardDeps,
-} from "./setup.types";
+} from "./types/setup.types";
 export type {
 	InstanceConfigLoadResult,
 	OnboardInstanceConfig,
-} from "./instance-config.types";
+} from "./types/instance-config.types";
 export * from "./wizard";

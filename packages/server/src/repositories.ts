@@ -9,7 +9,7 @@ import type {
 	ReadRepositories,
 	SkillRecord,
 	TokenUsageRecord,
-} from "./repositories.types";
+} from "./types/repositories.types";
 
 interface QueryResultRow {
 	[key: string]: string | number | Date | null;

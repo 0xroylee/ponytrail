@@ -1,10 +1,10 @@
+import { getAgentBackendDefinition } from "./registry";
 import type {
 	AgentAdapter,
 	AgentAdapterRuntimeConfig,
 	AgentBackend,
 	AgentResult,
-} from "./agent-adapter.types";
-import { getAgentBackendDefinition } from "./registry";
+} from "./types/agent-adapter.types";
 
 export type {
 	AgentAdapter,
@@ -12,7 +12,7 @@ export type {
 	AgentBackend,
 	AgentResult,
 	CodexReasoningEffort,
-} from "./agent-adapter.types";
+} from "./types/agent-adapter.types";
 export type {
 	AgentBackendDefinition,
 	AgentConfigurationDoc,
@@ -22,7 +22,7 @@ export type {
 	AgentModelDefinition,
 	AgentStage,
 	ResolvedAgentConfiguration,
-} from "./agent-registry.types";
+} from "./types/agent-registry.types";
 export {
 	agentConfigurationDoc,
 	availableAgentModels,

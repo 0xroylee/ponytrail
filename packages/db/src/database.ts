@@ -4,14 +4,14 @@ import path from "node:path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import EmbeddedPostgres from "embedded-postgres";
 import { Pool } from "pg";
+import { hydrateEmbeddedPostgresNativeSymlinks } from "./embedded-postgres-symlinks";
+import { runMigrations } from "./migrations";
+import * as schema from "./schema";
 import type {
 	InitializeServerDatabaseOptions,
 	ServerDatabase,
 	ServerDatabaseInitializationPhase,
-} from "./database.types";
-import { hydrateEmbeddedPostgresNativeSymlinks } from "./embedded-postgres-symlinks";
-import { runMigrations } from "./migrations";
-import * as schema from "./schema";
+} from "./types/database.types";
 
 export const DEFAULT_EMBEDDED_POSTGRES_PORT = 54329;
 export const DEFAULT_EMBEDDED_POSTGRES_DATABASE = "devos";

@@ -1,22 +1,22 @@
 import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import { WebSocket, WebSocketServer } from "ws";
-import {
-	WorkflowDataError,
-	createWorkflowDataService,
-} from "./workflow-data-service";
 import type {
 	WorkflowDataSocket,
 	WorkflowDataSocketOptions,
 	WorkflowDataSocketProxy,
 	WorkflowDataWebSocketServer,
-} from "./workflow-data-socket.types";
+} from "./types/workflow-data-socket.types";
 import type {
 	WorkflowDataRequestFrame,
 	WorkflowDataResponseFrame,
 	WorkflowSocketInboundFrame,
 	WorkflowSocketOutboundFrame,
-} from "./workflow-data.types";
+} from "./types/workflow-data.types";
+import {
+	WorkflowDataError,
+	createWorkflowDataService,
+} from "./workflow-data-service";
 import { parseWorkflowSocketFrame } from "./workflow-socket-protocol";
 
 export function attachWorkflowDataSocket(

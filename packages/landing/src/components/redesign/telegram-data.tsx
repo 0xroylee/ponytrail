@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 
-import type { ChatMessage } from "@/components/redesign/redesign.types";
+import type { ChatMessage } from "@/components/redesign/types/redesign.types";
 
 export const telegramMessages: ChatMessage[] = [
 	{

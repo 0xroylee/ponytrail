@@ -1,4 +1,4 @@
-import type { CliExecutor } from "../app.types";
+import type { CliExecutor } from "../types/app.types";
 import { methodNotAllowed } from "./http-utils";
 import { jsonSuccess } from "./response";
 

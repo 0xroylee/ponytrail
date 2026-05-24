@@ -21,7 +21,7 @@ import {
 import type {
 	AgentTag,
 	SkillBranch,
-} from "@/components/redesign/redesign.types";
+} from "@/components/redesign/types/redesign.types";
 
 export const agentColor: Record<AgentTag, string> = {
 	SCOUT: "var(--neon-cyan)",

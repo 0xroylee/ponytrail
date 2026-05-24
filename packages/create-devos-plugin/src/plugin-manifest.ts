@@ -6,7 +6,7 @@ import type {
 	DevosPluginManifest,
 	DevosPluginMcpServer,
 	DevosPluginSkill,
-} from "./plugin-manifest.types";
+} from "./types/plugin-manifest.types";
 
 const MANIFEST_FILE = "devos.plugin.json";
 

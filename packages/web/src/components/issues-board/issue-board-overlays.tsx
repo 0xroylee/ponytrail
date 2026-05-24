@@ -12,7 +12,7 @@ import type {
 	IssueContextMenuState,
 	IssueDialogState,
 	IssueQuickUpdate,
-} from "./issues-board.types";
+} from "./types/issues-board.types";
 import type { IssueWorkflowRunController } from "./use-issue-workflow-run";
 
 interface IssueBoardOverlaysProps {

@@ -1,4 +1,4 @@
-import type { TaskCreateChatState } from "./task-create-chat-dialog.types";
+import type { TaskCreateChatState } from "./types/task-create-chat-dialog.types";
 
 export function getTaskCreateStatusText(input: {
 	isStreaming: boolean;

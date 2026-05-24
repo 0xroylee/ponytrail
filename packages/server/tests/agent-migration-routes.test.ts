@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { initializeServerDatabase } from "devos-db";
 import { createHandleRequest } from "../src/app";
-import type { AppDeps } from "../src/app.types";
+import type { AppDeps } from "../src/types/app.types";
 
 describe("agent migration routes", () => {
 	it("upgrades old agents tables before /api/agents reads", async () => {

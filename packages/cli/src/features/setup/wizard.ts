@@ -15,7 +15,7 @@ import { ENV_FILE } from "./constants";
 import { loadInstanceConfig, saveInstanceConfig } from "./instance-config";
 import { collectSetupDraft } from "./setup-draft";
 import { writeSetupFiles } from "./setup-files";
-import type { SetupWizardDeps } from "./setup.types";
+import type { SetupWizardDeps } from "./types/setup.types";
 
 export async function runSetupWizard(
 	cwd: string,

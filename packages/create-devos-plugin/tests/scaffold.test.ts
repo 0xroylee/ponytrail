@@ -37,6 +37,12 @@ describe("create-devos-plugin scaffold", () => {
 				),
 			);
 			expect(manifest.name).toBe("Docs Helper");
+			await expect(
+				readFile(
+					path.join(result.pluginPath, "src/types/worker.types.ts"),
+					"utf8",
+				),
+			).resolves.toContain("DevosPluginWorkerContext");
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
 		}

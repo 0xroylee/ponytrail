@@ -7,7 +7,7 @@ import type {
 	CliCommandRequest,
 	CliCommandStreamEmit,
 	SupportedCliCommandRequest,
-} from "./cli-command-executor.types";
+} from "./types/cli-command-executor.types";
 import { createWorkflowProgressStdoutProcessor } from "./workflow-progress-stream";
 export type {
 	CliCommandExecutionHistoryEntry,
@@ -20,7 +20,7 @@ export type {
 	RunCommandFn,
 	SupportedCliAction,
 	SupportedCliCommandRequest,
-} from "./cli-command-executor.types";
+} from "./types/cli-command-executor.types";
 
 const DEFAULT_MAX_HISTORY_ENTRIES = 100;
 

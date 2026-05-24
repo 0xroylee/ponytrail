@@ -4,7 +4,7 @@ import type {
 	CliRuntime,
 	TaskCommand,
 	TaskCreateCommanderOptions,
-} from "../../args.types";
+} from "../../types/args.types";
 
 export function registerTaskCommand(
 	program: Command,

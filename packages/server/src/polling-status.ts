@@ -8,7 +8,7 @@ import type {
 	PollingEventRecord,
 	PollingStatusRecord,
 	PollingStatusResponse,
-} from "./polling-status.types";
+} from "./types/polling-status.types";
 
 const EVENT_LIMIT = 100;
 

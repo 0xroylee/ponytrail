@@ -2,10 +2,7 @@ import {
 	type AgentBackend,
 	normalizeAgentBackend as normalizeKnownAgentBackend,
 } from "adapters";
-import type {
-	CodexReasoningEffort,
-	ResolvedProjectConfig,
-} from "../../features/types";
+import type { CodexReasoningEffort, ResolvedProjectConfig } from "../types";
 
 export function parseOptionalPositiveInt(
 	value: string | undefined,

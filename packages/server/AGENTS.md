@@ -17,8 +17,8 @@ boundaries to CLI, database, and shared adapter behavior.
    access boundaries explicit.
 6. Treat database initialization, middleware, logging, startup paths, and
    health/readiness behavior as infrastructure concerns with deterministic tests.
-7. Keep server contracts in dedicated `*.types.ts` modules separate from runtime
-   implementation.
+7. Keep server contracts in dedicated `types/*.types.ts` modules separate from
+   runtime implementation.
 8. Use stable error categories and status mapping so route failures produce
    predictable response shapes for callers and tests.
 9. Do not duplicate CLI workflow, config, or integration business logic in the

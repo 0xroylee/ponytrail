@@ -7,7 +7,7 @@ import type {
 	InboxMessageRecord,
 	InboxMessageScope,
 	InboxRepository,
-} from "./inbox.types";
+} from "./types/inbox.types";
 
 function normalizeTimestamp(value: string | Date): string {
 	if (value instanceof Date) {

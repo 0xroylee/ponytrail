@@ -1,14 +1,14 @@
-import type {
-	PollingEventRecord,
-	PollingStatusRecord,
-	PollingStatusResponse,
-} from "./polling-status.types";
 import {
 	assertObjectRecord,
 	readNullableString,
 	readNumber,
 	readString,
 } from "./response-utils";
+import type {
+	PollingEventRecord,
+	PollingStatusRecord,
+	PollingStatusResponse,
+} from "./types/polling-status.types";
 
 const ENDPOINT = "/api/polling/status";
 

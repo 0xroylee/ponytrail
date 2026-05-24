@@ -1,4 +1,4 @@
-import type { RunCliCommandStreamRequest } from "./command-stream-client.types";
+import type { RunCliCommandStreamRequest } from "./types/command-stream-client.types";
 
 export interface IssueRunCommandInput {
 	projectId: string;

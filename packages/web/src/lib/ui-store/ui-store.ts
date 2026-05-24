@@ -8,7 +8,7 @@ import type {
 	UiStore,
 	UiStoreState,
 	UiViewFilters,
-} from "./ui-store.types";
+} from "./types/ui-store.types";
 
 const defaultViewFilters: UiViewFilters = {
 	status: "all",

@@ -10,12 +10,12 @@ import { createBoardTaskWorkflowStore } from "./board-task-workflow-store";
 import type {
 	BoardTaskWorkflowRecord,
 	BoardTaskWorkflowStore,
-} from "./board-task-workflow-store.types";
+} from "./types/board-task-workflow-store.types";
 import type {
 	WorkflowFetchWorkOptions,
 	WorkflowIssue,
 	WorkflowLinearClient,
-} from "./workflow.types";
+} from "./types/workflow.types";
 
 const BACKLOG_STATUS = "planning";
 const READY_STATUS = "todo";

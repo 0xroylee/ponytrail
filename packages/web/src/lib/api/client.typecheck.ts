@@ -10,7 +10,7 @@ import type {
 	TaskCreateResponse,
 	TaskMutationRequest,
 	WorkspaceProjectRecord,
-} from "./client.types";
+} from "./types/client.types";
 import { createWebApiClient } from "./web-client";
 import { buildIssueRunCommand } from "./workflow-run-command";
 

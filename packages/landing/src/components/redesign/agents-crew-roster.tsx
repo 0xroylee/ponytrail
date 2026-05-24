@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 
 import { crewBots } from "@/components/redesign/agents-crew-data";
 import { PixelBot } from "@/components/redesign/agents-crew-pixel-bot";
-import type { CrewBot } from "@/components/redesign/redesign.types";
+import type { CrewBot } from "@/components/redesign/types/redesign.types";
 
 export function Roster({
 	index,

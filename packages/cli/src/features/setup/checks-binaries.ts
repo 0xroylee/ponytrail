@@ -7,7 +7,7 @@ import {
 	formatMissingRtkMessage,
 	safeRun,
 } from "./checks-helpers";
-import type { SetupCheck, SetupCheckDeps } from "./setup.types";
+import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
 
 export async function addBinaryChecks(
 	checks: SetupCheck[],

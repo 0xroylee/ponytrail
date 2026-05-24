@@ -8,7 +8,7 @@ import type {
 	WorkflowPingFrame,
 	WorkflowSocketInboundFrame,
 	WorkflowWorkerReadyFrame,
-} from "./workflow-data.types";
+} from "./types/workflow-data.types";
 import { parseComputerRegistration } from "./workflow-computer-registration";
 
 const WORKFLOW_ACTIONS = new Set<string>([

@@ -2,7 +2,7 @@ import type {
 	DevosPluginPreset,
 	DevosPluginTemplate,
 	ScaffoldDevosPluginOptions,
-} from "./scaffold.types";
+} from "./types/scaffold.types";
 
 const TEMPLATES = new Set(["skill", "mcp", "connector"]);
 const PRESETS = new Set(["codegraph", "slack", "telegram"]);

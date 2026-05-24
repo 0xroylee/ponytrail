@@ -1,2 +1,2 @@
 export * from "./notifications";
-export * from "./notifications.types";
+export * from "./types/notifications.types";

@@ -7,9 +7,9 @@ export type {
 	PluginCommandTemplate,
 	PluginsCommand,
 	PluginTemplate,
-} from "./plugin-template.types";
+} from "./types/plugin-template.types";
 export type {
 	EnabledPluginRuntimeConfig,
 	RuntimePluginInstallResult,
 	RuntimePluginManifest,
-} from "./runtime-plugin.types";
+} from "./types/runtime-plugin.types";

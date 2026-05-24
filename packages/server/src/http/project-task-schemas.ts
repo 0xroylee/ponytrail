@@ -4,7 +4,7 @@ import type {
 	CreateTaskPayload,
 	UpdateProjectPayload,
 	UpdateTaskPayload,
-} from "./project-task-api.types";
+} from "./types/project-task-api.types";
 import type { ParseResult } from "./zod-utils";
 import { mapZodResult } from "./zod-utils";
 

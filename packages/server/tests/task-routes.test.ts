@@ -78,7 +78,7 @@ describe("task routes", () => {
 			taskKey: string;
 		};
 		expect(unassigned.projectId).toBeNull();
-		expect(unassigned.taskKey).toBe("TASK(owner-1)-1");
+		expect(unassigned.taskKey).toBe("TASK(owner-1)-2");
 
 		const titleOnlyResponse = await app(
 			new Request("http://localhost/api/tasks", {

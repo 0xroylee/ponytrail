@@ -13,8 +13,8 @@ import {
 	loadInstanceConfig,
 	renderInstanceConfigDocument,
 } from "./instance-config";
-import type { OnboardInstanceConfig } from "./instance-config.types";
-import type { SetupDraft } from "./setup.types";
+import type { OnboardInstanceConfig } from "./types/instance-config.types";
+import type { SetupDraft } from "./types/setup.types";
 import { readExistingFile } from "./wizard-helpers";
 
 export async function writeSetupFiles(

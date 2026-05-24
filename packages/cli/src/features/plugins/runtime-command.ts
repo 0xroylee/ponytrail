@@ -6,7 +6,7 @@ import {
 import type {
 	InstanceConfigLoadResult,
 	OnboardInstanceConfig,
-} from "../setup/instance-config.types";
+} from "../setup/types/instance-config.types";
 import { installRuntimePlugin } from "./instance-registry";
 
 export interface RuntimePluginCommandDeps {

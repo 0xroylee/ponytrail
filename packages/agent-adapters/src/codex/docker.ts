@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { AgentAdapterRuntimeConfig } from "../agent-adapter.types";
+import type { AgentAdapterRuntimeConfig } from "../types/agent-adapter.types";
 
 export interface CodexRuntimeInvocation {
 	command: string;

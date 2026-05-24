@@ -7,7 +7,7 @@ import type {
 	RealtimeEventsProxyOptions,
 	RealtimeEventsSocket,
 	RealtimeEventsWebSocketServer,
-} from "./realtime-events.types";
+} from "./types/realtime-events.types";
 
 export function attachRealtimeEventsSocket(
 	options: RealtimeEventsProxyOptions,

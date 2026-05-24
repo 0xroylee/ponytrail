@@ -9,17 +9,17 @@ export {
 export { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 export { runMigrations } from "./migrations";
 export { boardTaskBranchName, generateBoardTaskKey } from "./task-keys";
-export type { BoardTaskKeyScope } from "./task-keys.types";
+export type { BoardTaskKeyScope } from "./types/task-keys.types";
 export {
 	recordPollingEvent,
 	recordPollingStatus,
 } from "./polling-observability";
 export * from "./schema";
-export type * from "./polling-observability.types";
-export type * from "./schema/schema.types";
+export type * from "./types/polling-observability.types";
+export type * from "./schema/types/schema.types";
 export type {
 	InitializeServerDatabaseOptions,
 	ServerDb,
 	ServerDatabase,
 	ServerDatabaseInitializationPhase,
-} from "./database.types";
+} from "./types/database.types";

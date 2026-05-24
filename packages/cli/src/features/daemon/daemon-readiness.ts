@@ -3,7 +3,7 @@ import type {
 	DaemonReadinessHandle,
 	DaemonReadinessOptions,
 	DaemonReadinessScheduler,
-} from "./daemon.types";
+} from "./types/daemon.types";
 
 export const DAEMON_READY_DELAY_MS = 60_000;
 export const DAEMON_READY_MESSAGE = renderDaemonReadyMessage();

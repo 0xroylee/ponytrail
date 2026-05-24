@@ -7,7 +7,7 @@ import {
 	useContext,
 } from "react";
 
-import type { OperatorIssueActionsContextValue } from "./operator-issue-actions.types";
+import type { OperatorIssueActionsContextValue } from "./types/operator-issue-actions.types";
 
 const OperatorIssueActionsContext =
 	createContext<OperatorIssueActionsContextValue | null>(null);

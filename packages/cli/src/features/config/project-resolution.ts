@@ -4,7 +4,7 @@ import type {
 	ProjectConfig,
 	ProjectRuntimeConfig,
 	ResolvedProjectConfig,
-} from "../../features/types";
+} from "../types";
 import { normalizeOptionalPath } from "./path-resolution";
 import { resolveSkillsConfig } from "./skills-resolution";
 

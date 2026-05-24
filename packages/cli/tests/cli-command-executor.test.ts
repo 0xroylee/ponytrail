@@ -8,7 +8,7 @@ import type {
 	CliCommandExecutionResult,
 	CliCommandStreamEvent,
 	RunCommandFn,
-} from "../src/features/server/cli-command-executor.types";
+} from "../src/features/server/types/cli-command-executor.types";
 import { CLI_COMMAND_SIMULATION_MATRIX } from "./cli-command-executor-simulation-matrix";
 
 const DEFAULT_OPTIONS = {

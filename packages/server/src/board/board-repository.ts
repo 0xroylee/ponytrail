@@ -13,7 +13,7 @@ import {
 	REQUIRED_BOARD_STATUSES,
 	type WorkspaceProjectBoard,
 	type WorkspaceProjectSummary,
-} from "./board.types";
+} from "./types/board.types";
 
 const LEGACY_PR_CREATED_STATUS = "pr_created";
 const BOARD_STATUS_QUERY_VALUES = [

@@ -15,8 +15,9 @@ and avoid coupling workflow logic to a single workspace.
    modules that pass command arguments as structured arrays.
 4. Keep TypeScript files under 250 lines; split files before they grow beyond
    that limit.
-5. Keep TypeScript interfaces/type aliases in dedicated `*.types.ts` modules
-   separate from runtime implementation when adding or changing contracts.
+5. Keep TypeScript interfaces/type aliases separate from runtime implementation
+   when adding or changing contracts, and save all type-related files under a
+   `types/` folder.
 6. Keep review parsing contract stable:
    - `RESULT: PASS|FAIL`
    - `SUMMARY: ...`

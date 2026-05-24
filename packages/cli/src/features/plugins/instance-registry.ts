@@ -3,8 +3,8 @@ import { loadDevosPluginManifest } from "create-devos-plugin";
 import type {
 	InstalledDevosPlugin,
 	OnboardInstanceConfig,
-} from "../setup/instance-config.types";
-import type { RuntimePluginInstallResult } from "./runtime-plugin.types";
+} from "../setup/types/instance-config.types";
+import type { RuntimePluginInstallResult } from "./types/runtime-plugin.types";
 
 export function resolvePluginPath(input: string, cwd: string): string {
 	const expanded = input.startsWith("~")

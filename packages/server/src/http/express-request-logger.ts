@@ -3,7 +3,7 @@ import type {
 	Response as ExpressResponse,
 } from "express";
 import pinoHttp from "pino-http";
-import type { ServerLogger } from "../logger.types";
+import type { ServerLogger } from "../types/logger.types";
 
 export function createExpressRequestLogger(logger: ServerLogger) {
 	return pinoHttp<ExpressRequest, ExpressResponse>({

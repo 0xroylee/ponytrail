@@ -4,7 +4,7 @@ import type {
 	PluginCheckTemplate,
 	PluginCommandTemplate,
 	PluginTemplate,
-} from "./plugin-template.types";
+} from "./types/plugin-template.types";
 
 export async function listPluginTemplates(): Promise<PluginTemplate[]> {
 	const dir = await resolveTemplatesDir();

@@ -2,7 +2,7 @@ import { isForeignKeyError } from "../http/http-utils";
 import type {
 	ProjectRepository,
 	ProjectService,
-} from "./project-service.types";
+} from "./types/project-service.types";
 
 export function createProjectService(
 	repository: ProjectRepository,

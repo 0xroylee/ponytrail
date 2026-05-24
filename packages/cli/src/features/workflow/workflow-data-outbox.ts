@@ -4,7 +4,7 @@ import type {
 	WorkflowDataOutboxContext,
 	WorkflowDataOutboxDrainResult,
 	WorkflowDataOutboxEntry,
-} from "./workflow-data-outbox.types";
+} from "./types/workflow-data-outbox.types";
 import type { WorkflowDataAction } from "./workflow-data-protocol";
 
 const STATE_ROOT_DIR = path.join(".devos", "projects");

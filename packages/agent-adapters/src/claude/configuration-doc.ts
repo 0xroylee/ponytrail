@@ -1,4 +1,4 @@
-import type { AgentConfigurationDoc } from "../agent-registry.types";
+import type { AgentConfigurationDoc } from "../types/agent-registry.types";
 import {
 	CLAUDE_AVAILABLE_MODELS,
 	CLAUDE_BACKEND,

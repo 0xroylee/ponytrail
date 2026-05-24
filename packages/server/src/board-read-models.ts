@@ -11,7 +11,7 @@ import type {
 	ProjectBoardRecord,
 	ProjectBoardTaskRecord,
 	WorkspaceProjectRecord,
-} from "./app.types";
+} from "./types/app.types";
 
 const LEGACY_PR_CREATED_STATUS = "pr_created";
 

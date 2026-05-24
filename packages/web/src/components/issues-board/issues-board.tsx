@@ -31,7 +31,7 @@ import type {
 	IssueDialogState,
 	IssueDragState,
 	IssueTab,
-} from "./issues-board.types";
+} from "./types/issues-board.types";
 import { useIssueBoardTaskActions } from "./use-issue-board-task-actions";
 import { useIssueWorkflowRun } from "./use-issue-workflow-run";
 

@@ -5,7 +5,7 @@ import type {
 	DaemonPortCleanupPorts,
 	DaemonPortCleanupRunCommand,
 	DaemonPortCleanupSleep,
-} from "./daemon.types";
+} from "./types/daemon.types";
 
 const execFileAsync = promisify(execFile);
 const TERM_WAIT_MS = 500;

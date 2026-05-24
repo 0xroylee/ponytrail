@@ -7,7 +7,7 @@ import {
 	DEFAULT_STATUS_MAP,
 	DEFAULT_WORKSPACE_NAME,
 } from "./constants";
-import type { SetupDraft, SetupDraftPromptDeps } from "./setup.types";
+import type { SetupDraft, SetupDraftPromptDeps } from "./types/setup.types";
 import { resolveUserPath } from "./wizard-helpers";
 
 const DEFAULT_CODEX_MODELS = {

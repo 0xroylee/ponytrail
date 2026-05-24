@@ -1,5 +1,5 @@
-import type { AgentBackend } from "../agent-adapter.types";
-import type { AgentModelDefinition } from "../agent-registry.types";
+import type { AgentBackend } from "../types/agent-adapter.types";
+import type { AgentModelDefinition } from "../types/agent-registry.types";
 
 export const CLAUDE_BACKEND = "claude-code" satisfies AgentBackend;
 export const CLAUDE_LABEL = "Claude Code";
