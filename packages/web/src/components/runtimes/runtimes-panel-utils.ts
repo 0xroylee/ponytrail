@@ -32,16 +32,14 @@ export function deriveRuntimeSummaries(
 
 	for (const agent of agents) {
 		const runtimeId = runtimeIdForAgent(agent);
-		const group =
-			grouped.get(runtimeId) ??
-			{
-				backends: new Set<string>(),
-				models: new Set<string>(),
-				owners: new Set<string>(),
-				totalConcurrency: 0,
-				updatedAt: "",
-				agents: [],
-			};
+		const group = grouped.get(runtimeId) ?? {
+			backends: new Set<string>(),
+			models: new Set<string>(),
+			owners: new Set<string>(),
+			totalConcurrency: 0,
+			updatedAt: "",
+			agents: [],
+		};
 
 		group.backends.add(formatRuntimeLabel(agent.backend));
 		group.models.add(agent.model);

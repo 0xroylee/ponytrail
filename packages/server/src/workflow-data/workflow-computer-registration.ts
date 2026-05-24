@@ -16,10 +16,7 @@ export function parseComputerRegistration(
 	if (strings.status === "error") {
 		return strings;
 	}
-	if (
-		value.processId !== undefined &&
-		typeof value.processId !== "number"
-	) {
+	if (value.processId !== undefined && typeof value.processId !== "number") {
 		return errorParseFrame("invalid_computer", "computer.processId is invalid");
 	}
 	if (value.user !== undefined && typeof value.user !== "string") {
@@ -41,9 +38,7 @@ export function parseComputerRegistration(
 	};
 }
 
-function readComputerStrings(
-	value: Record<string, unknown>,
-):
+function readComputerStrings(value: Record<string, unknown>):
 	| {
 			status: "ok";
 			value: Pick<
