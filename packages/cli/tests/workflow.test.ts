@@ -2,6 +2,7 @@ import { describe, expect, it, mock } from "bun:test";
 import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { stripVTControlCharacters } from "node:util";
 import type { AgentAdapter } from "adapters";
 import { handleRunCommand } from "../src/features/commands/issues/run-command";
 import type { LoadedConfig } from "../src/features/config";
@@ -1155,6 +1156,7 @@ describe("runWorkflow parallel issue regression", () => {
 					}) as unknown,
 				createAgentAdapter: () => createNeedsInfoPlanningAgent(),
 				ensureBaseBranchFresh: mock(async () => {}),
+				sendTaskOutcomeEmail: mock(async () => {}),
 			} as unknown as WorkflowRuntime),
 		);
 
@@ -1219,6 +1221,7 @@ describe("runWorkflow parallel issue regression", () => {
 					}) as unknown,
 				createAgentAdapter: () => createNeedsInfoPlanningAgent(),
 				ensureBaseBranchFresh: mock(async () => {}),
+				sendTaskOutcomeEmail: mock(async () => {}),
 			} as unknown as WorkflowRuntime),
 		);
 
@@ -3252,7 +3255,7 @@ async function captureStderr(run: () => Promise<void>): Promise<string> {
 	}) as typeof process.stderr.write;
 	try {
 		await run();
-		return output;
+		return stripVTControlCharacters(output);
 	} finally {
 		process.stderr.write = originalWrite;
 		if (originalLogLevel === undefined) {
