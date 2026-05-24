@@ -12,100 +12,105 @@ import {
 } from "react";
 
 import {
-	THEME_STORAGE_KEY,
+	applyThemeToDocument,
 	getSystemTheme,
-	readThemePreference,
+	nextThemePreference,
+	readStoredThemePreference,
 	resolveTheme,
+	writeStoredThemePreference,
 } from "@/lib/theme/theme";
-import type { ResolvedTheme, ThemePreference } from "@/lib/theme/theme.types";
+import type {
+	ResolvedTheme,
+	ThemeController,
+	ThemePreference,
+} from "@/lib/theme/theme.types";
 
-type ThemeContextValue = {
-	themePreference: ThemePreference;
-	resolvedTheme: ResolvedTheme;
-	setThemePreference: (themePreference: ThemePreference) => void;
+type Props = {
+	children: ReactNode;
 };
 
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+const ThemeContext = createContext<ThemeController | null>(null);
 
-const THEME_ATTRIBUTE = "data-theme";
-
-function applyResolvedTheme(theme: ResolvedTheme): void {
-	document.documentElement.setAttribute(THEME_ATTRIBUTE, theme);
+function getInitialThemeState(): {
+	preference: ThemePreference;
+	resolvedTheme: ResolvedTheme;
+} {
+	const preference = readStoredThemePreference(
+		typeof window === "undefined" ? undefined : window.localStorage,
+	);
+	const systemTheme = getSystemTheme(
+		typeof window === "undefined" ? undefined : window.matchMedia,
+	);
+	return {
+		preference,
+		resolvedTheme: resolveTheme(preference, systemTheme),
+	};
 }
 
-function readStoredThemePreference(): ThemePreference {
-	return readThemePreference(localStorage.getItem(THEME_STORAGE_KEY), "dark");
-}
-
-export function ThemeProvider({
-	children,
-}: {
-	children: ReactNode;
-}): ReactElement {
-	const [themePreference, setThemePreferenceState] =
-		useState<ThemePreference>("dark");
-	const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("dark");
+export function ThemeProvider({ children }: Props): ReactElement {
+	const [themeState, setThemeState] = useState(getInitialThemeState);
 
 	useEffect(() => {
-		const systemTheme = getSystemTheme(window.matchMedia);
-		const storedPreference = readStoredThemePreference();
-		const nextTheme = resolveTheme(storedPreference, systemTheme);
-		setThemePreferenceState(storedPreference);
-		setResolvedTheme(nextTheme);
-		applyResolvedTheme(nextTheme);
-	}, []);
+		applyThemeToDocument(document.documentElement, themeState.resolvedTheme);
+	}, [themeState.resolvedTheme]);
 
 	useEffect(() => {
 		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-		const onChange = (): void => {
-			if (themePreference !== "system") {
-				return;
-			}
-			const nextTheme = resolveTheme(
-				"system",
-				getSystemTheme(window.matchMedia),
-			);
-			setResolvedTheme(nextTheme);
-			applyResolvedTheme(nextTheme);
+		const syncSystemTheme = (): void => {
+			setThemeState((current) => {
+				if (current.preference !== "system") {
+					return current;
+				}
+				const systemTheme = mediaQuery.matches ? "dark" : "light";
+				return {
+					preference: "system",
+					resolvedTheme: systemTheme,
+				};
+			});
 		};
-		mediaQuery.addEventListener("change", onChange);
+		mediaQuery.addEventListener("change", syncSystemTheme);
 		return () => {
-			mediaQuery.removeEventListener("change", onChange);
+			mediaQuery.removeEventListener("change", syncSystemTheme);
 		};
-	}, [themePreference]);
+	}, []);
 
-	const setThemePreference = useCallback(
-		(nextPreference: ThemePreference): void => {
-			const systemTheme = getSystemTheme(window.matchMedia);
-			const nextResolvedTheme = resolveTheme(nextPreference, systemTheme);
-			setThemePreferenceState(nextPreference);
-			setResolvedTheme(nextResolvedTheme);
-			localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
-			applyResolvedTheme(nextResolvedTheme);
-		},
-		[],
-	);
+	const setPreference = useCallback((preference: ThemePreference): void => {
+		writeStoredThemePreference(window.localStorage, preference);
+		const systemTheme = getSystemTheme(window.matchMedia);
+		setThemeState({
+			preference,
+			resolvedTheme: resolveTheme(preference, systemTheme),
+		});
+	}, []);
 
-	const contextValue = useMemo<ThemeContextValue>(
+	const cyclePreference = useCallback((): void => {
+		setPreference(nextThemePreference(themeState.preference));
+	}, [setPreference, themeState.preference]);
+
+	const value = useMemo<ThemeController>(
 		() => ({
-			themePreference,
-			resolvedTheme,
-			setThemePreference,
+			preference: themeState.preference,
+			resolvedTheme: themeState.resolvedTheme,
+			setPreference,
+			cyclePreference,
 		}),
-		[resolvedTheme, setThemePreference, themePreference],
+		[
+			themeState.preference,
+			themeState.resolvedTheme,
+			setPreference,
+			cyclePreference,
+		],
 	);
 
 	return (
-		<ThemeContext.Provider value={contextValue}>
-			{children}
-		</ThemeContext.Provider>
+		<ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 	);
 }
 
-export function useTheme(): ThemeContextValue {
-	const contextValue = useContext(ThemeContext);
-	if (!contextValue) {
-		throw new Error("useTheme must be used within ThemeProvider");
+export function useThemeController(): ThemeController {
+	const value = useContext(ThemeContext);
+	if (!value) {
+		throw new Error("useThemeController must be used within ThemeProvider");
 	}
-	return contextValue;
+	return value;
 }

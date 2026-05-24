@@ -1,36 +1,17 @@
 "use client";
 
-import {
-	BookOpen,
-	Bot,
-	ChartColumn,
-	CircleHelp,
-	CircleUserRound,
-	Computer,
-	Contrast,
-	Inbox,
-	ListChecks,
-	Monitor,
-	Moon,
-	PanelLeft,
-	PencilLine,
-	Search,
-	Settings,
-	Sparkles,
-	SquareKanban,
-	Sun,
-	UsersRound,
-} from "lucide-react";
-import Link from "next/link";
-import type { ComponentType, ReactElement } from "react";
+import { CircleHelp, PanelLeft, PencilLine, Search } from "lucide-react";
+import type { ReactElement } from "react";
 
-import { useTheme } from "@/components/providers/theme-provider";
 import type {
 	SidebarDisplayMode,
 	SidebarNavItem,
 } from "@/components/web-shell/web-shell.types";
-import { cn } from "@/lib/utils";
+import type { ThemePreference } from "@/lib/theme/theme.types";
+import { SidebarAction } from "./web-sidebar-action";
+import { SidebarNavGroup } from "./web-sidebar-nav-group";
 import { SidebarPinnedIssues } from "./web-sidebar-pins";
+import { ThemePreferenceIcon, themeLabel } from "./web-sidebar-theme-toggle";
 
 interface WebSidebarProps {
 	mode: SidebarDisplayMode;
@@ -39,23 +20,9 @@ interface WebSidebarProps {
 	onNewIssue: () => void;
 	onSearch: () => void;
 	onToggleMode: () => void;
+	themePreference: ThemePreference;
+	onCycleThemePreference: () => void;
 }
-
-const iconByKey: Record<
-	SidebarNavItem["key"],
-	ComponentType<{ size?: number }>
-> = {
-	agents: Bot,
-	runtimes: Computer,
-	skills: BookOpen,
-	settings: Settings,
-	issues: ListChecks,
-	projects: SquareKanban,
-	inbox: Inbox,
-	autopilot: Sparkles,
-	squads: UsersRound,
-	usage: ChartColumn,
-};
 
 function nextSidebarLabel(mode: SidebarDisplayMode): string {
 	if (mode === "expanded") {
@@ -74,41 +41,18 @@ export function WebSidebar({
 	onNewIssue,
 	onSearch,
 	onToggleMode,
+	themePreference,
+	onCycleThemePreference,
 }: WebSidebarProps): ReactElement {
 	const isExpanded = mode === "expanded";
 	const isHidden = mode === "hidden";
-	const { setThemePreference, themePreference } = useTheme();
-
-	function cycleTheme(): void {
-		if (themePreference === "dark") {
-			setThemePreference("light");
-			return;
-		}
-		if (themePreference === "light") {
-			setThemePreference("system");
-			return;
-		}
-		setThemePreference("dark");
-	}
-
-	const ThemeIcon =
-		themePreference === "dark"
-			? Moon
-			: themePreference === "light"
-				? Sun
-				: Monitor;
-	const themeLabel =
-		themePreference === "dark"
-			? "Theme: dark"
-			: themePreference === "light"
-				? "Theme: light"
-				: "Theme: system";
-
 	return (
 		<aside
 			aria-label="Primary navigation"
-			className="grid h-[100dvh] max-h-[100dvh] border-r border-theme-subtle bg-theme-panel text-theme-muted"
+			className="grid h-[100dvh] max-h-[100dvh] border-r text-[var(--text-secondary)]"
 			style={{
+				background: "var(--bg-sidebar)",
+				borderColor: "var(--border-subtle)",
 				width: isHidden ? "0" : isExpanded ? "14rem" : "6.5rem",
 				opacity: isHidden ? 0 : 1,
 				pointerEvents: isHidden ? "none" : "auto",
@@ -118,26 +62,24 @@ export function WebSidebar({
 			}}
 		>
 			<header className="flex items-center gap-3 p-4">
-				<span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-theme-default bg-theme-interactive text-sm font-semibold text-theme-secondary">
+				<span
+					className="grid h-7 w-7 shrink-0 place-items-center rounded-md border text-sm font-semibold"
+					style={{
+						background: "var(--bg-surface)",
+						borderColor: "var(--border-default)",
+						color: "var(--text-primary)",
+					}}
+				>
 					R
 				</span>
 				{isExpanded ? (
-					<strong className="truncate text-xs font-medium text-theme-primary">
+					<strong className="truncate text-xs font-medium text-[var(--text-primary)]">
 						Roy Lee&apos;s Workspace
 					</strong>
 				) : null}
 				<button
-					aria-label={`${themeLabel}. Switch theme`}
-					className="grid h-8 w-8 place-items-center rounded-md border border-theme-default text-theme-muted hover-bg-theme-interactive hover:text-theme-secondary"
-					onClick={cycleTheme}
-					title={`${themeLabel}. Switch theme`}
-					type="button"
-				>
-					{isExpanded ? <ThemeIcon size={16} /> : <Contrast size={16} />}
-				</button>
-				<button
 					aria-label={nextSidebarLabel(mode)}
-					className="grid h-8 w-8 place-items-center rounded-md hover-bg-theme-interactive"
+					className="ml-auto grid h-8 w-8 place-items-center rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-secondary)]"
 					onClick={onToggleMode}
 					title={nextSidebarLabel(mode)}
 					type="button"
@@ -161,95 +103,37 @@ export function WebSidebar({
 				<SidebarPinnedIssues isExpanded={isExpanded} />
 			</div>
 			<nav className="grid content-start gap-6 px-3">
-				<NavGroup
+				<SidebarNavGroup
 					activeKey={activeKey}
 					isExpanded={isExpanded}
 					items={navItems.slice(0, 7)}
 					title="Workspace"
 				/>
-				<NavGroup
+				<SidebarNavGroup
 					activeKey={activeKey}
 					isExpanded={isExpanded}
 					items={navItems.slice(7)}
 					title="Configure"
 				/>
 			</nav>
-			<footer className="flex items-center justify-between p-4">
+			<footer className="flex items-center p-4">
 				{isExpanded ? (
-					<span className="text-xs text-theme-muted">devos.ing</span>
+					<span className="text-xs text-[var(--text-muted)]">devos.ing</span>
 				) : null}
-				<CircleHelp size={16} />
+				<div className="ml-auto flex items-center gap-2 text-[var(--text-muted)]">
+					<CircleHelp size={16} />
+					<button
+						aria-label={themeLabel(themePreference)}
+						className="grid h-8 w-8 place-items-center rounded-md border bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+						onClick={onCycleThemePreference}
+						style={{ borderColor: "var(--border-default)" }}
+						title={`${themeLabel(themePreference)} (click to cycle)`}
+						type="button"
+					>
+						<ThemePreferenceIcon preference={themePreference} />
+					</button>
+				</div>
 			</footer>
 		</aside>
-	);
-}
-
-function NavGroup({
-	title,
-	items,
-	activeKey,
-	isExpanded,
-}: {
-	title: string;
-	items: SidebarNavItem[];
-	activeKey: SidebarNavItem["key"];
-	isExpanded: boolean;
-}): ReactElement {
-	return (
-		<div className="grid gap-1">
-			{isExpanded ? (
-				<p className="mb-1 px-2 text-[0.6875rem] font-medium text-theme-muted">
-					{title}
-				</p>
-			) : null}
-			{items.map((item) => {
-				const Icon = iconByKey[item.key];
-				const isActive = item.key === activeKey;
-				return (
-					<Link
-						aria-current={isActive ? "page" : undefined}
-						className={cn(
-							"flex h-10 items-center gap-3 rounded-md px-2 text-xs font-normal",
-							isActive
-								? "bg-theme-interactive text-theme-primary"
-								: "text-theme-muted hover-bg-theme-subtle hover:text-theme-secondary",
-							!isExpanded && "justify-center",
-						)}
-						href={item.href}
-						key={item.key}
-						title={item.label}
-					>
-						<Icon size={18} />
-						{isExpanded ? <span>{item.label}</span> : null}
-					</Link>
-				);
-			})}
-		</div>
-	);
-}
-
-function SidebarAction({
-	icon: Icon,
-	isExpanded,
-	label,
-	onClick,
-}: {
-	icon: ComponentType<{ size?: number }>;
-	isExpanded: boolean;
-	label: string;
-	onClick?: () => void;
-}): ReactElement {
-	return (
-		<button
-			className={cn(
-				"flex h-9 items-center gap-3 rounded-md px-2 text-xs font-normal text-theme-muted hover-bg-theme-subtle hover:text-theme-secondary",
-				!isExpanded && "justify-center",
-			)}
-			onClick={onClick}
-			type="button"
-		>
-			<Icon size={18} />
-			{isExpanded ? <span>{label}</span> : null}
-		</button>
 	);
 }

@@ -10,6 +10,7 @@ import {
 	useState,
 } from "react";
 
+import { useThemeController } from "@/components/providers/theme-provider";
 import type {
 	SidebarDisplayMode,
 	SidebarNavItem,
@@ -62,6 +63,7 @@ export function WebOperatorShell({
 }): ReactElement {
 	const pathname = usePathname();
 	const router = useRouter();
+	const theme = useThemeController();
 	const [sidebarMode, setSidebarMode] =
 		useState<SidebarDisplayMode>("expanded");
 	const [isCompactViewport, setIsCompactViewport] = useState<boolean>(false);
@@ -134,7 +136,8 @@ export function WebOperatorShell({
 				maxHeight: "100dvh",
 				display: "grid",
 				gridTemplateColumns: viewportColumns,
-				background: "var(--bg-canvas)",
+				background: "var(--bg-app)",
+				color: "var(--text-primary)",
 				position: "relative",
 				overflowX: "clip",
 			}}
@@ -147,6 +150,8 @@ export function WebOperatorShell({
 					onNewIssue={createIssue}
 					onSearch={() => setIsSearchOpen(true)}
 					onToggleMode={toggleSidebarMode}
+					themePreference={theme.preference}
+					onCycleThemePreference={theme.cyclePreference}
 				/>
 			) : null}
 			<OperatorIssueActionsProvider value={issueActionsValue}>
