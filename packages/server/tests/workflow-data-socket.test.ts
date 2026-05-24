@@ -192,6 +192,27 @@ describe("workflow data websocket", () => {
 		expect(events.map((event) => event.type)).toContain("task.execution.event");
 	});
 
+	it("starts execution logs by project and task key when task id is stale", async () => {
+		const { socket, db } = await setupSocket();
+
+		await sendWorkflowDataRequest(socket, "taskExecutions.start", {
+			executionLogId: "exec-stale-task-id",
+			taskId: "stale-task-id",
+			projectId: "project-1",
+			issueKey: "TASK-000001",
+			startedAt: "2026-05-13T00:01:00.000Z",
+		});
+
+		const logs = await db.select().from(taskExecutionLogsTable);
+		expect(logs).toEqual([
+			expect.objectContaining({
+				id: "exec-stale-task-id",
+				taskId: "task-1",
+				status: "running",
+			}),
+		]);
+	});
+
 	it("rejects malformed frames and matches only the workflow path", async () => {
 		const { socket } = await setupSocket();
 

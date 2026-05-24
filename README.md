@@ -12,7 +12,8 @@ For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_T
 2. Build the local CLI package.
 3. Run guided onboarding.
 4. Validate your onboarding.
-5. Run one scoped workflow.
+5. Start the local server, web UI, and workflow worker.
+6. Run one scoped workflow.
 
 ```bash
 bun install
@@ -20,6 +21,7 @@ bun run build
 npx devos help
 npx devos onboard
 npx devos onboard --check
+bun run dev
 npx devos run --project <PROJECT_ID>
 ```
 
@@ -39,9 +41,20 @@ npx devos help
 npx devos onboard
 npx devos onboard --check
 
-# local workspace startup/build shortcuts
+# recommended local web UI stack: API 3001, web 3000, workflow worker
 bun run dev
+
+# if the web UI reports "No CLI worker connected to /api/workflow";
+# this starts both the command worker and continuous polling
+bun run dev:worker
+
+# standalone command worker only, without polling
+npx devos workflow-worker
+
+# production/local package daemon after build artifacts exist
 devos daemon
+
+# local workspace single-service startup/build shortcuts
 bun run dev:server
 bun run dev:web
 bun run build:server
@@ -100,8 +113,28 @@ and workflow worker together. The combined entrypoint runs `dev:server`,
 `dev:web` with `PORT=3000`, and `dev:worker` connected to `/api/workflow`.
 
 Use `bun run dev:server`, `bun run dev:web`, or `bun run dev:worker` when you
-only need one side of the local stack. Chat task creation and browser command
-streams need the workflow worker connected to `/api/workflow`.
+only need one side of the local stack. `bun run dev:worker` starts both the
+outbound command worker for `/api/workflow` and continuous workflow polling with
+`run --poll-forever`. Chat task creation and browser command streams need the
+worker connected; if the web UI returns
+`No CLI worker connected to /api/workflow`, keep the server running and start
+the dev worker with:
+
+```bash
+bun run dev:worker
+```
+
+The worker connects to `ws://127.0.0.1:3001/api/workflow` by default. Override
+that target when needed with:
+
+```bash
+DEVOS_SERVER_BASE_URL=http://127.0.0.1:3001
+DEVOS_WORKFLOW_WS_URL=ws://127.0.0.1:3001/api/workflow
+```
+
+After `bun run build`, use `devos workflow-worker` or
+`npx devos workflow-worker` from the repository root only when you want the
+standalone command worker without polling.
 
 Use `devos daemon` to run the production API server, web UI, outbound CLI workflow worker, and workflow poller together in the foreground after production artifacts already exist. The command starts the server on `PIV_SERVER_PORT=3001`, the web UI on `PORT=3000`, and a supervised `run --all-projects --poll-forever` worker by default, with command and database websocket traffic sharing `DEVOS_WORKFLOW_WS_URL` at `/api/workflow`. Override those environment variables before starting when needed.
 

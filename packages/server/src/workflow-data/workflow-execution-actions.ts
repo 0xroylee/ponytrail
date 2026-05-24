@@ -135,9 +135,11 @@ async function resolveExecutionTaskId(
 	input: WorkflowTaskExecutionStartInput,
 ): Promise<string> {
 	if (input.taskId) {
-		const result = await context.taskService.getTask(input.taskId);
-		if (result.status === "ok") return result.value.id;
-		throw workflowError("not_found", "Task not found");
+		const taskId = await resolveTaskId(context, input.taskId);
+		if (taskId) return taskId;
+		if (!input.projectId || !input.issueKey) {
+			throw workflowError("not_found", "Task not found");
+		}
 	}
 	if (!input.projectId || !input.issueKey) {
 		throw workflowError(
@@ -145,6 +147,26 @@ async function resolveExecutionTaskId(
 			"taskId or projectId plus issueKey is required",
 		);
 	}
+	const taskId = await resolveTaskIdByProjectKey(context, {
+		projectId: input.projectId,
+		issueKey: input.issueKey,
+	});
+	if (taskId) return taskId;
+	throw workflowError("not_found", "Task not found");
+}
+
+async function resolveTaskId(
+	context: WorkflowDataContext,
+	taskId: string,
+): Promise<string | undefined> {
+	const result = await context.taskService.getTask(taskId);
+	return result.status === "ok" ? result.value.id : undefined;
+}
+
+async function resolveTaskIdByProjectKey(
+	context: WorkflowDataContext,
+	input: { projectId: string; issueKey: string },
+): Promise<string | undefined> {
 	const [task] = await context.db
 		.select({ id: boardTasksTable.id })
 		.from(boardTasksTable)
@@ -154,8 +176,7 @@ async function resolveExecutionTaskId(
 				eq(boardTasksTable.projectId, input.projectId),
 			),
 		);
-	if (!task) throw workflowError("not_found", "Task not found");
-	return task.id;
+	return task?.id;
 }
 
 async function readExecutionLog(

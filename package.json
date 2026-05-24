@@ -27,7 +27,7 @@
 		"dev:landing": "bun run --filter landing dev",
 		"dev:daemon": "bun run ./packages/cli/src/index.ts daemon",
 		"dev:server": "bun run --filter devos-server start",
-		"dev:worker": "bun run ./packages/cli/src/index.ts workflow-worker",
+		"dev:worker": "bun run ./scripts/dev-worker.ts",
 		"dev:web": "bun run --filter web dev",
 		"db:migrate": "bun run --filter devos-db migrate",
 		"db:seed": "bun run --filter devos-db seed",

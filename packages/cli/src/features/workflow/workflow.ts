@@ -60,6 +60,7 @@ import {
 	shouldSkipReviewOnlyRunState,
 } from "./workflow-queue";
 import { routeProjectsForIssueProjectId } from "./workflow-routing";
+import { refreshRunStateIssueIdentity } from "./workflow-run-state-refresh";
 import {
 	type WorkflowLinearClient,
 	type WorkflowRuntime,
@@ -807,6 +808,19 @@ async function processIssue(
 			startedAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		} satisfies RunState);
+	const refreshedIdentity = existing
+		? refreshRunStateIssueIdentity(runState, issue)
+		: undefined;
+	if (refreshedIdentity?.changed) {
+		issueLogger.info(
+			{
+				previousIssueId: refreshedIdentity.previousIssueId,
+				issueId: refreshedIdentity.currentIssueId,
+			},
+			"Refreshed resumed issue identity from latest task",
+		);
+		await saveRunState(config.workspacePath, runState);
+	}
 	Object.assign(runState, normalizeBlockedPlanningFailureForResume(runState));
 
 	if (

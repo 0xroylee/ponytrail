@@ -55,6 +55,7 @@ export function createWorkflowExecutionRecorder(
 				disabled = true;
 				logger.warn(
 					{
+						taskId: state.issue.id,
 						projectId: state.projectId,
 						issueKey: state.issue.key,
 						err: normalizeError(error),
