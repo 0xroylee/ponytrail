@@ -2,7 +2,9 @@ import type { BoardTaskRow } from "devos-db";
 import { z } from "zod";
 import type {
 	TaskChatCreateIntakeResult,
+	TaskChatCreateQuestion,
 	TaskChatCreateRequest,
+	TaskChatCreateRequirementResult,
 	TaskChatCreateResponse,
 } from "../http/types/task-chat-create.types";
 import type { CliExecutor } from "../types/app.types";
@@ -26,7 +28,7 @@ export async function composeTaskChatCreate(
 	if (intake.value.status === "needs_info") {
 		return intake.value;
 	}
-	const createdTask = intake.value.task;
+	const createdTask = { ...intake.value.task, status: "plan" };
 	const persisted = await settle(() =>
 		deps.persistCreatedTask(input, createdTask),
 	);
@@ -55,18 +57,30 @@ export async function runTaskIntake(
 	return parseTaskIntakeOutput(result.commandResult?.stdout ?? "");
 }
 
+export async function runTaskRequirementIntake(
+	cliExecutor: CliExecutor,
+	input: TaskChatCreateRequest,
+): Promise<TaskChatCreateRequirementResult> {
+	const result = await cliExecutor.execute({
+		action: "task",
+		taskAction: "create",
+		request: input.request,
+		projectId: input.projectId,
+		nonInteractive: true,
+		intakeOnly: true,
+		clarificationAnswers: input.answers,
+		json: true,
+	});
+	if (result.status !== "succeeded") {
+		throw new Error(result.error ?? "Task requirement intake failed");
+	}
+	return parseTaskRequirementOutput(result.commandResult?.stdout ?? "");
+}
+
 export function parseTaskIntakeOutput(
 	output: string,
 ): TaskChatCreateIntakeResult {
-	const line = output
-		.split("\n")
-		.map((value) => value.trim())
-		.filter(Boolean)
-		.at(-1);
-	if (!line) {
-		throw new Error("Task creation returned no structured output");
-	}
-	const parsed = JSON.parse(line) as unknown;
+	const parsed = parseLastJsonLine(output);
 	const record = assertRecord(parsed);
 	if (record?.status === "linear_error") {
 		throw new Error(
@@ -79,6 +93,19 @@ export function parseTaskIntakeOutput(
 	if (!result.success) {
 		throw new Error(
 			'Task creation returned invalid structured output. Expected {"status":"created","task":{...,"content":"..."}} or {"status":"needs_info","questions":[...]}.',
+		);
+	}
+	return result.data;
+}
+
+export function parseTaskRequirementOutput(
+	output: string,
+): TaskChatCreateRequirementResult {
+	const parsed = parseLastJsonLine(output);
+	const result = requirementResultSchema.safeParse(parsed);
+	if (!result.success) {
+		throw new Error(
+			'Task requirement intake returned invalid structured output. Expected {"status":"ready","task":{...}} or {"status":"needs_info","questions":[...]}.',
 		);
 	}
 	return result.data;
@@ -102,6 +129,27 @@ const boardTaskSchema = z.object({
 	updatedAt: z.string().min(1),
 }) satisfies z.ZodType<BoardTaskRow>;
 
+const questionOptionSchema = z.object({
+	label: z.string().min(1),
+	value: z.string().min(1),
+	description: z.string().min(1).optional(),
+});
+
+const questionSchema = z.union([
+	z
+		.string()
+		.min(1)
+		.transform(
+			(question): TaskChatCreateQuestion => ({
+				question,
+			}),
+		),
+	z.object({
+		question: z.string().min(1),
+		options: z.array(questionOptionSchema).min(2).max(4).optional(),
+	}),
+]);
+
 const intakeResultSchema = z.union([
 	z.object({
 		status: z.literal("created"),
@@ -109,9 +157,35 @@ const intakeResultSchema = z.union([
 	}),
 	z.object({
 		status: z.literal("needs_info"),
-		questions: z.array(z.string().min(1)).min(1),
+		questions: z.array(questionSchema).min(1),
 	}),
 ]);
+
+const requirementResultSchema = z.union([
+	z.object({
+		status: z.literal("ready"),
+		task: z.object({
+			title: z.string().min(1),
+			description: z.string().min(1),
+		}),
+	}),
+	z.object({
+		status: z.literal("needs_info"),
+		questions: z.array(questionSchema).min(1),
+	}),
+]);
+
+function parseLastJsonLine(output: string): unknown {
+	const line = output
+		.split("\n")
+		.map((value) => value.trim())
+		.filter(Boolean)
+		.at(-1);
+	if (!line) {
+		throw new Error("Task creation returned no structured output");
+	}
+	return JSON.parse(line) as unknown;
+}
 
 function normalizeLegacyTaskCreateOutput(output: unknown): unknown {
 	const record = assertRecord(output);

@@ -17,6 +17,7 @@ export function registerTaskCommand(
 		.option("--request <TEXT|->", "request text, or - to read stdin")
 		.option("--project <PROJECT_ID>", "configured project identifier")
 		.option("--non-interactive", "disable interactive clarification")
+		.option("--intake-only", "resolve requirements without creating a task")
 		.option(
 			"--max-clarification-rounds <N>",
 			"maximum clarification rounds",
@@ -35,6 +36,7 @@ export function registerTaskCommand(
 					projectId: options.project,
 					request: options.request ?? joinRequest(requestTokens),
 					nonInteractive: options.nonInteractive ? true : undefined,
+					intakeOnly: options.intakeOnly ? true : undefined,
 					maxClarificationRounds: options.maxClarificationRounds,
 					clarificationAnswers: options.clarificationsJson,
 					json: options.json ? true : undefined,

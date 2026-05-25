@@ -46,7 +46,9 @@ describe("database scripts", () => {
 					"SELECT id FROM schema_migrations ORDER BY id",
 				);
 				expect(migrations.rows.length).toBeGreaterThan(0);
-				expect(migrations.rows.at(-1)?.id).toBe("0014_chat_session_task_id");
+				expect(migrations.rows.at(-1)?.id).toBe(
+					"0015_literal_backlog_plan_statuses",
+				);
 				const columns = await database.client.query<{ column_name: string }>(
 					`
 						SELECT column_name

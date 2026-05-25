@@ -28,6 +28,8 @@ export type {
 	ProjectBoardStatusColumn,
 	ProjectBoardTaskRecord,
 	SkillRecord,
+	TaskClarificationOption,
+	TaskClarificationQuestion,
 	TaskMutationRequest,
 	TaskCreateAnswer,
 	TaskCreateRequest,

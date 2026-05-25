@@ -18,6 +18,10 @@ import type {
 	ChatSessionUpdateRequest,
 } from "./types/chat.types";
 import type { HealthRequestOptions } from "./types/client.types";
+import type {
+	TaskClarificationOption,
+	TaskClarificationQuestion,
+} from "./types/task.types";
 
 const CHAT_SESSIONS_PATH = "/api/chat/sessions";
 
@@ -133,7 +137,7 @@ export function parseChatSessionRecord(payload: unknown): ChatSessionRecord {
 			"pendingRequest",
 			CHAT_SESSIONS_PATH,
 		),
-		pendingQuestions: readStringList(row.pendingQuestions),
+		pendingQuestions: readQuestionList(row.pendingQuestions),
 		createdAt: readString(row, "createdAt", CHAT_SESSIONS_PATH),
 		updatedAt: readString(row, "updatedAt", CHAT_SESSIONS_PATH),
 	};
@@ -179,14 +183,42 @@ function chatMessagesPath(sessionId: string): string {
 	return `${chatSessionPath(sessionId)}/messages`;
 }
 
-function readStringList(value: unknown): string[] {
-	if (
-		!Array.isArray(value) ||
-		!value.every((item) => typeof item === "string")
-	) {
+function readQuestionList(value: unknown): TaskClarificationQuestion[] {
+	if (!Array.isArray(value)) {
 		throw new Error("Invalid chat session field 'pendingQuestions'");
 	}
-	return value;
+	return value.map(readQuestion);
+}
+
+function readQuestion(value: unknown): TaskClarificationQuestion {
+	if (typeof value === "string" && value.trim()) {
+		return { question: value.trim() };
+	}
+	const row = assertObjectRecord(value, `${CHAT_SESSIONS_PATH}:question`);
+	const options =
+		"options" in row ? readQuestionOptions(row.options) : undefined;
+	return {
+		question: readString(row, "question", CHAT_SESSIONS_PATH),
+		...(options?.length ? { options } : {}),
+	};
+}
+
+function readQuestionOptions(value: unknown): TaskClarificationOption[] {
+	if (!Array.isArray(value)) {
+		throw new Error("Invalid chat session field 'pendingQuestions.options'");
+	}
+	return value.map((item) => {
+		const row = assertObjectRecord(item, `${CHAT_SESSIONS_PATH}:option`);
+		const description =
+			"description" in row
+				? readString(row, "description", CHAT_SESSIONS_PATH)
+				: undefined;
+		return {
+			label: readString(row, "label", CHAT_SESSIONS_PATH),
+			value: readString(row, "value", CHAT_SESSIONS_PATH),
+			...(description ? { description } : {}),
+		};
+	});
 }
 
 function readMetadata(value: unknown): Record<string, unknown> | null {

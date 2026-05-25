@@ -2,6 +2,7 @@ import type { ServerDatabase } from "devos-db";
 import { z } from "zod";
 import type { LocalWorkspaceIdentity } from "../local-workspace";
 import type { RealtimeEventPublisher } from "../realtime";
+import type { CliExecutor } from "../types/app.types";
 import {
 	createChatSendRealtimeCallbacks,
 	publishChatAppendResult,
@@ -27,6 +28,24 @@ const answerSchema = z.object({
 	answer: z.string().trim().min(1),
 });
 
+const clarificationOptionSchema = z.object({
+	label: z.string().trim().min(1),
+	value: z.string().trim().min(1),
+	description: z.string().trim().min(1).optional(),
+});
+
+const clarificationQuestionSchema = z.union([
+	z
+		.string()
+		.trim()
+		.min(1)
+		.transform((question) => ({ question })),
+	z.object({
+		question: z.string().trim().min(1),
+		options: z.array(clarificationOptionSchema).min(2).max(4).optional(),
+	}),
+]);
+
 const sessionCreateSchema = z.object({
 	workspaceId: z.string().trim().min(1).optional(),
 	projectId: z.string().trim().min(1).nullable().optional(),
@@ -37,7 +56,7 @@ const sessionUpdateSchema = z.object({
 	projectId: z.string().trim().min(1).nullable().optional(),
 	title: z.string().trim().min(1).optional(),
 	pendingRequest: z.string().nullable().optional(),
-	pendingQuestions: z.array(z.string().trim().min(1)).nullable().optional(),
+	pendingQuestions: z.array(clarificationQuestionSchema).nullable().optional(),
 });
 
 const messageCreateSchema = z.object({
@@ -62,12 +81,14 @@ export async function handleChatRoute(
 	pathname: string,
 	workspacePath: string,
 	workspace: LocalWorkspaceIdentity,
+	cliExecutor: CliExecutor,
 	realtimeEvents?: RealtimeEventPublisher,
 ): Promise<Response | null> {
 	const service = createChatRouteService(
 		db,
 		workspacePath,
 		workspace,
+		cliExecutor,
 		realtimeEvents,
 	);
 	if (pathname === SESSIONS_PATH) {

@@ -42,14 +42,14 @@ describe("task lifecycle e2e", () => {
 				title: "Lifecycle task",
 				content: "Exercise the board task lifecycle.",
 				priority: 1,
-				status: "todo",
+				status: "plan",
 				creatorId: "owner-1",
 			},
 		});
 
 		expect(created.taskKey).toBe("TASK(owner-1)-1");
 		expect(created.projectId).toBe("project-1");
-		expect(created.status).toBe("todo");
+		expect(created.status).toBe("plan");
 		expect(created.assigneeId).toBeNull();
 
 		const polling = await testServer.workflowDataService.handle(

@@ -647,6 +647,14 @@ function resolveTaskArgs(
 	if (jsonValidation.status !== "ok") {
 		return jsonValidation;
 	}
+	const intakeOnlyValidation = validateOptionalBooleanField(
+		request.intakeOnly,
+		"task create",
+		"intakeOnly",
+	);
+	if (intakeOnlyValidation.status !== "ok") {
+		return intakeOnlyValidation;
+	}
 	const maxClarificationRoundsValidation = validateOptionalPositiveIntegerField(
 		request.maxClarificationRounds,
 		"task create",
@@ -668,6 +676,7 @@ function resolveTaskArgs(
 		"--max-clarification-rounds",
 		maxClarificationRoundsValidation.value,
 	);
+	appendBooleanFlag(args, "--intake-only", intakeOnlyValidation.value);
 	appendBooleanFlag(args, "--json", jsonValidation.value);
 	if (clarificationAnswersValidation.value) {
 		args.push(

@@ -77,6 +77,7 @@ export interface TaskCreateActionRequest {
 	projectId?: string;
 	request: string;
 	nonInteractive?: boolean;
+	intakeOnly?: boolean;
 	maxClarificationRounds?: number;
 	clarificationAnswers?: Array<{ question: string; answer: string }>;
 	json?: boolean;

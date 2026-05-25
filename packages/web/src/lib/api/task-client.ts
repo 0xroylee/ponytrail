@@ -10,6 +10,8 @@ import { parseTaskActivityResponse } from "./task-activity-client";
 import type {
 	HealthRequestOptions,
 	ProjectBoardTaskRecord,
+	TaskClarificationOption,
+	TaskClarificationQuestion,
 	TaskCreateRequest,
 	TaskCreateResponse,
 	TaskMutationRequest,
@@ -26,22 +28,13 @@ type RequestWithBase = (
 	body?: unknown,
 ) => Promise<unknown>;
 
-function parseQuestionList(payload: unknown): string[] {
+function parseQuestionList(payload: unknown): TaskClarificationQuestion[] {
 	if (!Array.isArray(payload)) {
 		throw new Error(
 			"Invalid /api/tasks/chat-create response field 'questions'",
 		);
 	}
-	const questions: string[] = [];
-	for (const question of payload) {
-		if (typeof question !== "string") {
-			throw new Error(
-				"Invalid /api/tasks/chat-create response field 'questions'",
-			);
-		}
-		questions.push(question);
-	}
-	return questions;
+	return payload.map(parseClarificationQuestion);
 }
 
 export function parseTaskCreateResponse(payload: unknown): TaskCreateResponse {
@@ -104,6 +97,39 @@ function readOptionalNullableString(
 	key: string,
 ): string | null {
 	return key in record ? readNullableString(record, key, TASKS_PATH) : null;
+}
+
+function parseClarificationQuestion(
+	payload: unknown,
+): TaskClarificationQuestion {
+	if (typeof payload === "string" && payload.trim()) {
+		return { question: payload.trim() };
+	}
+	const row = assertObjectRecord(payload, `${TASK_CHAT_CREATE_PATH}:question`);
+	const question = readString(row, "question", TASK_CHAT_CREATE_PATH);
+	const options =
+		"options" in row ? parseQuestionOptions(row.options) : undefined;
+	return { question, ...(options?.length ? { options } : {}) };
+}
+
+function parseQuestionOptions(payload: unknown): TaskClarificationOption[] {
+	if (!Array.isArray(payload)) {
+		throw new Error(
+			"Invalid /api/tasks/chat-create response field 'questions.options'",
+		);
+	}
+	return payload.map((item) => {
+		const row = assertObjectRecord(item, `${TASK_CHAT_CREATE_PATH}:option`);
+		const description =
+			"description" in row
+				? readString(row, "description", TASK_CHAT_CREATE_PATH)
+				: undefined;
+		return {
+			label: readString(row, "label", TASK_CHAT_CREATE_PATH),
+			value: readString(row, "value", TASK_CHAT_CREATE_PATH),
+			...(description ? { description } : {}),
+		};
+	});
 }
 
 export interface TaskApiMethods {

@@ -23,7 +23,7 @@ import { parsePrNumber, withPullRequests } from "./workflow-data-mappers";
 
 const DEFAULT_TASK_CREATOR_ID = "member-1";
 const DEFAULT_TASK_PRIORITY = 1;
-const DEFAULT_TASK_STATUS = "planning";
+const DEFAULT_TASK_STATUS = "plan";
 
 export interface WorkflowDataContext {
 	db: ServerDatabase["db"];

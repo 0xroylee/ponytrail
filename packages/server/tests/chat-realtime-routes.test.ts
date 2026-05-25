@@ -44,6 +44,25 @@ describe("chat realtime routes", () => {
 		testDatabase = await createDrizzleServerTestDatabase();
 		const events: RealtimeEventPayload[] = [];
 		const app = createServerTestApp(testDatabase.db, {
+			cliExecutor: {
+				execute: async (request) => ({
+					status: "succeeded",
+					request,
+					commandResult: {
+						code: 0,
+						stdout: JSON.stringify({
+							status: "ready",
+							task: {
+								title: "Build it",
+								description: "Build it",
+							},
+						}),
+						stderr: "",
+					},
+				}),
+				executeStream: async (request) => ({ status: "succeeded", request }),
+				getHistory: () => [],
+			},
 			realtimeEvents: { publish: (event) => events.push(event) },
 			workspacePath: testDatabase.path,
 		});
@@ -85,7 +104,6 @@ describe("chat realtime routes", () => {
 			"chat.stream.started",
 			"issue.updated",
 			"chat.stream.delta",
-			"chat.stream.delta",
 			"chat.stream.completed",
 			"chat.message.created",
 			"chat.session.updated",
@@ -94,8 +112,12 @@ describe("chat realtime routes", () => {
 			{ type: "chat.message.created", message: { role: "user" } },
 			{ type: "chat.stream.started", stream: { sessionId: session.id } },
 			{ type: "issue.updated" },
-			{ type: "chat.stream.delta", stream: { delta: "Updated task " } },
-			{ type: "chat.stream.delta" },
+			{
+				type: "chat.stream.delta",
+				stream: {
+					delta: "Task TASK(owner-1)-1: Build it is ready for planning.",
+				},
+			},
 			{ type: "chat.stream.completed", stream: { sessionId: session.id } },
 			{ type: "chat.message.created", message: { role: "assistant" } },
 			{ type: "chat.session.updated", session: { id: session.id } },

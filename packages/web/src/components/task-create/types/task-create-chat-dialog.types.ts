@@ -1,4 +1,8 @@
-import type { TaskCreateAnswer, TaskCreateResponse } from "@/lib/api";
+import type {
+	TaskClarificationQuestion,
+	TaskCreateAnswer,
+	TaskCreateResponse,
+} from "@/lib/api";
 
 export interface TaskCreateChatDialogProps {
 	defaultBoardProjectId: string;
@@ -17,7 +21,7 @@ export interface TaskCreateChatState {
 	request: string;
 	projectId: string;
 	answers: TaskCreateAnswer[];
-	questions: string[];
+	questions: TaskClarificationQuestion[];
 	step: TaskCreateChatStep;
 	errorMessage: string | null;
 	result: Extract<TaskCreateResponse, { status: "created" }> | null;

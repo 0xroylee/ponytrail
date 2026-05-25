@@ -1,5 +1,6 @@
 import type { ChatSessionRow } from "devos-db";
 import type { BoardTaskApiRecord } from "../tasks";
+import { collectClarificationAnswers } from "./chat-answer-metadata";
 import {
 	DEFAULT_CHAT_ISSUE_CONTENT,
 	DEFAULT_CHAT_ISSUE_TITLE,
@@ -8,14 +9,21 @@ import {
 import { mapMessage, mapSession, titleFromMessage } from "./chat-mappers";
 import { appendChatMessage, updateChatSessionRow } from "./chat-writes";
 import type {
+	ChatClarificationQuestion,
 	ChatRepository,
 	ChatSendInput,
 	ChatSendResult,
 	ChatSendStreamCallbacks,
 	ChatServiceDeps,
-	ChatSessionIssueUpdateInput,
 	ChatSessionUpdateInput,
 } from "./types/chat.types";
+
+interface RequirementResult {
+	assistantKind: "task" | "clarification";
+	assistantText: string;
+	issue: BoardTaskApiRecord;
+	sessionUpdate: ChatSessionUpdateInput;
+}
 
 export async function sendChatMessage(
 	repository: ChatRepository,
@@ -44,22 +52,35 @@ export async function sendChatMessage(
 		userMessageId: userRecord.id,
 	});
 	try {
-		const issue = await updateIssueAfterMessage(deps, linked.issue, input);
-		const updatedSession = await updateSessionAfterMessage(
+		const requestText = linked.session.pendingRequest ?? input.content.trim();
+		const requirement = await deps.resolveTaskRequirement({
+			request: requestText,
+			projectId:
+				linked.session.projectId ?? linked.issue.projectId ?? undefined,
+			answers: await collectClarificationAnswers(repository, sessionId),
+		});
+		const outcome = await applyRequirementResult(
+			deps,
+			linked.issue,
+			linked.session,
+			requestText,
+			requirement,
+		);
+		const updatedSession = await updateSessionAfterRequirement(
 			repository,
 			linked.session,
-			input,
+			outcome.sessionUpdate,
 		);
-		const assistantChunks = assistantMessageChunks(issue, input);
+		const assistantChunks = [outcome.assistantText];
 		for (const delta of assistantChunks) {
 			stream?.onStreamDelta?.({ delta, runId: stream.runId, sessionId });
 		}
 		const assistantMessage = await appendChatMessage(repository, sessionId, {
 			content: assistantChunks.join(""),
-			kind: "task",
+			kind: outcome.assistantKind,
 			metadata: { runId: stream?.runId ?? null },
 			role: "assistant",
-			taskId: issue.id,
+			taskId: outcome.issue.id,
 		});
 		const assistantRecord = mapMessage(assistantMessage);
 		stream?.onStreamCompleted?.({
@@ -69,7 +90,7 @@ export async function sendChatMessage(
 		});
 		stream?.onAssistantMessage?.(assistantRecord);
 		return {
-			issue,
+			issue: outcome.issue,
 			session: mapSession(updatedSession),
 			messages: [userRecord, assistantRecord],
 		};
@@ -120,58 +141,75 @@ export async function ensureIssueForSession(
 	};
 }
 
-async function updateSessionAfterMessage(
+async function updateSessionAfterRequirement(
 	repository: ChatRepository,
 	session: ChatSessionRow,
-	input: ChatSendInput,
+	input: ChatSessionUpdateInput,
 ): Promise<ChatSessionRow> {
-	const update: ChatSessionUpdateInput = {
-		pendingRequest: null,
-		pendingQuestions: null,
-	};
-	if (session.title === UNTITLED_SESSION && input.content.trim()) {
-		update.title = titleFromMessage(input.content);
-	}
 	return (
-		(await updateChatSessionRow(repository, session.id, update)) ??
+		(await updateChatSessionRow(repository, session.id, input)) ??
 		(await repository.getSession(session.id)) ??
 		session
 	);
 }
 
-async function updateIssueAfterMessage(
+async function applyRequirementResult(
 	deps: ChatServiceDeps,
 	issue: BoardTaskApiRecord,
-	input: ChatSendInput,
-): Promise<BoardTaskApiRecord> {
-	const issueUpdate = issueUpdateFromMessage(issue, input.content);
-	return issueUpdate ? deps.updateIssue(issue.id, issueUpdate) : issue;
-}
-
-function issueUpdateFromMessage(
-	issue: BoardTaskApiRecord,
-	content: string,
-): ChatSessionIssueUpdateInput | null {
-	const trimmed = content.trim();
-	if (
-		!trimmed ||
-		issue.title !== DEFAULT_CHAT_ISSUE_TITLE ||
-		issue.content !== DEFAULT_CHAT_ISSUE_CONTENT
-	) {
-		return null;
+	session: ChatSessionRow,
+	requestText: string,
+	requirement: Awaited<ReturnType<ChatServiceDeps["resolveTaskRequirement"]>>,
+): Promise<RequirementResult> {
+	if (requirement.status === "needs_info") {
+		const updatedIssue = await deps.updateIssue(issue.id, {
+			status: "backlog",
+		});
+		return {
+			assistantKind: "clarification",
+			assistantText: clarificationText(requirement.questions),
+			issue: updatedIssue,
+			sessionUpdate: {
+				pendingRequest: requestText,
+				pendingQuestions: requirement.questions,
+				...(session.title === UNTITLED_SESSION
+					? { title: titleFromMessage(requestText) }
+					: {}),
+			},
+		};
 	}
+	const updatedIssue = await deps.updateIssue(issue.id, {
+		content: requirement.task.description,
+		status: "plan",
+		title: requirement.task.title,
+	});
 	return {
-		content: trimmed,
-		title: titleFromMessage(trimmed),
+		assistantKind: "task",
+		assistantText: `Task ${updatedIssue.taskKey}: ${updatedIssue.title} is ready for planning.`,
+		issue: updatedIssue,
+		sessionUpdate: {
+			pendingRequest: null,
+			pendingQuestions: null,
+			title: requirement.task.title,
+		},
 	};
 }
 
-function assistantMessageChunks(
-	issue: BoardTaskApiRecord,
-	input: ChatSendInput,
-): string[] {
-	const subject = `${issue.taskKey}: ${issue.title}`;
-	return input.answers?.length
-		? ["Saved clarification answers for ", subject]
-		: ["Updated task ", subject];
+function clarificationText(questions: ChatClarificationQuestion[]): string {
+	return [
+		"I need a bit more detail before this is ready for planning:",
+		...questions.map(formatClarificationQuestion),
+	].join("\n");
+}
+
+function formatClarificationQuestion(
+	question: ChatClarificationQuestion,
+): string {
+	const options = question.options?.length
+		? question.options
+				.map((option) => `  - ${option.label}: ${option.value}`)
+				.join("\n")
+		: "";
+	return options
+		? `- ${question.question}\n${options}`
+		: `- ${question.question}`;
 }

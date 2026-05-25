@@ -16,8 +16,12 @@ import {
 } from "./types/board.types";
 
 const LEGACY_PR_CREATED_STATUS = "pr_created";
+const LEGACY_BACKLOG_STATUS = "planning";
+const LEGACY_PLAN_STATUS = "todo";
 const BOARD_STATUS_QUERY_VALUES = [
 	...REQUIRED_BOARD_STATUSES,
+	LEGACY_BACKLOG_STATUS,
+	LEGACY_PLAN_STATUS,
 	LEGACY_PR_CREATED_STATUS,
 ];
 
@@ -166,5 +170,11 @@ function buildStatusColumns(tasks: BoardTaskSummary[]): BoardStatusColumn[] {
 }
 
 function normalizeBoardStatus(status: string): string {
+	if (status === LEGACY_BACKLOG_STATUS) {
+		return "backlog";
+	}
+	if (status === LEGACY_PLAN_STATUS) {
+		return "plan";
+	}
 	return status === LEGACY_PR_CREATED_STATUS ? "reviewing" : status;
 }

@@ -1,4 +1,8 @@
-import type { ProjectBoardTaskRecord, TaskCreateAnswer } from "./task.types";
+import type {
+	ProjectBoardTaskRecord,
+	TaskClarificationQuestion,
+	TaskCreateAnswer,
+} from "./task.types";
 
 export type ChatMessageRole = "user" | "assistant" | "system";
 export type ChatMessageKind =
@@ -15,7 +19,7 @@ export interface ChatSessionRecord {
 	taskId: string | null;
 	title: string;
 	pendingRequest: string | null;
-	pendingQuestions: string[];
+	pendingQuestions: TaskClarificationQuestion[];
 	createdAt: string;
 	updatedAt: string;
 }
@@ -42,7 +46,7 @@ export interface ChatSessionUpdateRequest {
 	projectId?: string | null;
 	title?: string;
 	pendingRequest?: string | null;
-	pendingQuestions?: string[] | null;
+	pendingQuestions?: TaskClarificationQuestion[] | null;
 }
 
 export interface ChatMessageCreateRequest {

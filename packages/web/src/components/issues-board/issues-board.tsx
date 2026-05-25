@@ -101,7 +101,7 @@ export function IssuesBoard({
 	const dialogStatus =
 		dialog?.mode === "create"
 			? dialog.status
-			: (dialog?.task.status ?? "planning");
+			: (dialog?.task.status ?? "backlog");
 
 	function openTaskDetail(taskId: string): void {
 		router.push(`/issues/${encodeURIComponent(taskId)}`);

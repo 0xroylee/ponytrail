@@ -62,6 +62,7 @@ export type SkillUpdateCommanderOptions = ProjectCommanderOptions & {
 export type TaskCreateCommanderOptions = ProjectCommanderOptions & {
 	request?: string;
 	nonInteractive?: boolean;
+	intakeOnly?: boolean;
 	maxClarificationRounds?: number;
 	clarificationsJson?: Array<{ question: string; answer: string }>;
 	json?: boolean;
@@ -95,6 +96,7 @@ export type TaskCommand = {
 	projectId?: string;
 	request?: string;
 	nonInteractive?: boolean;
+	intakeOnly?: boolean;
 	maxClarificationRounds?: number;
 	clarificationAnswers?: Array<{ question: string; answer: string }>;
 	json?: boolean;

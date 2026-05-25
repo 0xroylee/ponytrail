@@ -391,7 +391,7 @@ describe("task routes", () => {
 			new Request(`http://localhost/api/tasks/${created.id}`, {
 				method: "PATCH",
 				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ status: "todo" }),
+				body: JSON.stringify({ status: "plan" }),
 			}),
 		);
 		await app(
@@ -411,7 +411,7 @@ describe("task routes", () => {
 		});
 		expect(events[1]).toMatchObject({
 			type: "issue.updated",
-			issue: { id: created.id, status: "todo" },
+			issue: { id: created.id, status: "plan" },
 		});
 	});
 

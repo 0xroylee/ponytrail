@@ -1,5 +1,7 @@
 import type {
 	TaskIntakeDecision,
+	TaskIntakeQuestion,
+	TaskIntakeQuestionOption,
 	TaskIntakeTask,
 } from "./types/task-intake.types";
 
@@ -55,7 +57,7 @@ function parseTaskJson(output: string): TaskIntakeTask {
 	return { title, description };
 }
 
-function parseQuestionsJson(output: string): string[] {
+function parseQuestionsJson(output: string): TaskIntakeQuestion[] {
 	const jsonText = extractMarkerJson(output, "QUESTIONS_JSON", "array");
 	if (!jsonText) {
 		throw new Error(
@@ -73,18 +75,85 @@ function parseQuestionsJson(output: string): string[] {
 	if (!Array.isArray(parsed)) {
 		throw new Error("QUESTIONS_JSON must be a JSON array.");
 	}
-	const questions = parsed
-		.map((item, index) => {
-			if (typeof item !== "string") {
-				throw new Error(`QUESTIONS_JSON item ${index} must be a string.`);
-			}
-			return item.trim();
-		})
-		.filter(Boolean);
+	const questions = parsed.map(parseQuestion).filter((item) => item.question);
 	if (questions.length === 0) {
 		throw new Error("QUESTIONS_JSON must include at least one question.");
 	}
 	return questions;
+}
+
+function parseQuestion(item: unknown, index: number): TaskIntakeQuestion {
+	if (typeof item === "string") {
+		return { question: item.trim() };
+	}
+	if (!item || typeof item !== "object" || Array.isArray(item)) {
+		throw new Error(`QUESTIONS_JSON item ${index} must be a string or object.`);
+	}
+	const record = item as Record<string, unknown>;
+	if (typeof record.question !== "string" || !record.question.trim()) {
+		throw new Error(
+			`QUESTIONS_JSON item ${index}.question must be a non-empty string.`,
+		);
+	}
+	const options = parseQuestionOptions(record.options, index);
+	return {
+		question: record.question.trim(),
+		...(options ? { options } : {}),
+	};
+}
+
+function parseQuestionOptions(
+	value: unknown,
+	questionIndex: number,
+): TaskIntakeQuestionOption[] | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+	if (!Array.isArray(value)) {
+		throw new Error(
+			`QUESTIONS_JSON item ${questionIndex}.options must be an array.`,
+		);
+	}
+	if (value.length < 2 || value.length > 4) {
+		throw new Error(
+			`QUESTIONS_JSON item ${questionIndex}.options must include two to four options.`,
+		);
+	}
+	return value.map((item, optionIndex) =>
+		parseQuestionOption(item, questionIndex, optionIndex),
+	);
+}
+
+function parseQuestionOption(
+	item: unknown,
+	questionIndex: number,
+	optionIndex: number,
+): TaskIntakeQuestionOption {
+	if (!item || typeof item !== "object" || Array.isArray(item)) {
+		throw new Error(
+			`QUESTIONS_JSON item ${questionIndex}.options[${optionIndex}] must be an object.`,
+		);
+	}
+	const record = item as Record<string, unknown>;
+	if (typeof record.label !== "string" || !record.label.trim()) {
+		throw new Error(
+			`QUESTIONS_JSON item ${questionIndex}.options[${optionIndex}].label must be a non-empty string.`,
+		);
+	}
+	if (typeof record.value !== "string" || !record.value.trim()) {
+		throw new Error(
+			`QUESTIONS_JSON item ${questionIndex}.options[${optionIndex}].value must be a non-empty string.`,
+		);
+	}
+	const description =
+		typeof record.description === "string" && record.description.trim()
+			? record.description.trim()
+			: undefined;
+	return {
+		label: record.label.trim(),
+		value: record.value.trim(),
+		...(description ? { description } : {}),
+	};
 }
 
 function extractMarkerJson(

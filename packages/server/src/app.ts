@@ -52,6 +52,7 @@ export function createHandleRequest(deps: AppDeps): RouteHandler {
 				pathname,
 				deps.workspacePath ?? process.cwd(),
 				deps.workspace ?? defaultLocalWorkspace(),
+				deps.cliExecutor,
 				deps.realtimeEvents,
 			);
 			if (chatResponse) {

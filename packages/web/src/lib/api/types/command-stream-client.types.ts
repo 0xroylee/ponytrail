@@ -68,6 +68,7 @@ export interface TaskCliCommandStreamRequest {
 	projectId?: string;
 	request: string;
 	nonInteractive?: true;
+	intakeOnly?: boolean;
 	maxClarificationRounds?: number;
 	clarificationAnswers?: Array<{ question: string; answer: string }>;
 	json?: boolean;

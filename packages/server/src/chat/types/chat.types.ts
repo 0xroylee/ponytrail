@@ -17,7 +17,18 @@ export type ChatMessageKind =
 
 export interface ChatSessionRecord
 	extends Omit<ChatSessionRow, "pendingQuestions"> {
-	pendingQuestions: string[];
+	pendingQuestions: ChatClarificationQuestion[];
+}
+
+export interface ChatClarificationOption {
+	label: string;
+	value: string;
+	description?: string;
+}
+
+export interface ChatClarificationQuestion {
+	question: string;
+	options?: ChatClarificationOption[];
 }
 
 export interface ChatMessageRecord extends Omit<ChatMessageRow, "metadata"> {
@@ -35,7 +46,7 @@ export interface ChatSessionUpdateInput {
 	taskId?: string | null;
 	title?: string;
 	pendingRequest?: string | null;
-	pendingQuestions?: string[] | null;
+	pendingQuestions?: ChatClarificationQuestion[] | null;
 }
 
 export interface ChatMessageCreateInput {
@@ -102,6 +113,13 @@ export interface ChatSendAnswer {
 	answer: string;
 }
 
+export type ChatRequirementResult =
+	| {
+			status: "ready";
+			task: { title: string; description: string };
+	  }
+	| { status: "needs_info"; questions: ChatClarificationQuestion[] };
+
 export interface ChatRepository {
 	addMessage(
 		sessionId: string,
@@ -121,6 +139,11 @@ export interface ChatServiceDeps {
 	ensureDefaultProject(): Promise<BoardProjectRow>;
 	createIssue(input: ChatSessionIssueCreateInput): Promise<BoardTaskApiRecord>;
 	getIssue(issueId: string): Promise<BoardTaskApiRecord | null>;
+	resolveTaskRequirement(input: {
+		answers?: ChatSendAnswer[];
+		projectId?: string;
+		request: string;
+	}): Promise<ChatRequirementResult>;
 	updateIssue(
 		issueId: string,
 		input: ChatSessionIssueUpdateInput,
@@ -135,6 +158,7 @@ export interface ChatSessionIssueCreateInput {
 
 export interface ChatSessionIssueUpdateInput {
 	content?: string;
+	status?: string;
 	title?: string;
 }
 

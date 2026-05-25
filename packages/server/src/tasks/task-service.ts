@@ -23,6 +23,8 @@ const UPDATE_ACTIVITY_FIELDS: Array<keyof UpdateTaskPayload> = [
 	"linearUrl",
 ];
 const LEGACY_PR_CREATED_STATUS = "pr_created";
+const LEGACY_BACKLOG_STATUS = "planning";
+const LEGACY_PLAN_STATUS = "todo";
 
 export function createTaskService(repository: TaskRepository): TaskService {
 	return {
@@ -195,6 +197,12 @@ function formatValue(value: string | number | null | undefined): string {
 }
 
 function normalizeTaskStatus(status: string): string {
+	if (status === LEGACY_BACKLOG_STATUS) {
+		return "backlog";
+	}
+	if (status === LEGACY_PLAN_STATUS) {
+		return "plan";
+	}
 	return status === LEGACY_PR_CREATED_STATUS ? "reviewing" : status;
 }
 

@@ -95,11 +95,11 @@ describe("board repository", () => {
 			...REQUIRED_BOARD_STATUSES,
 		]);
 		expect(
-			board?.statusColumns.find((column) => column.status === "planning")?.tasks
+			board?.statusColumns.find((column) => column.status === "backlog")?.tasks
 				.length,
 		).toBe(1);
 		expect(
-			board?.statusColumns.find((column) => column.status === "todo")?.tasks
+			board?.statusColumns.find((column) => column.status === "plan")?.tasks
 				.length,
 		).toBe(1);
 		expect(
@@ -116,7 +116,7 @@ describe("board repository", () => {
 				?.tasks[0]?.status,
 		).toBe("reviewing");
 		expect(
-			board?.statusColumns.find((column) => column.status === "planning")
+			board?.statusColumns.find((column) => column.status === "backlog")
 				?.tasks[0]?.linearIdentifier,
 		).toBe("ROY-233");
 	});

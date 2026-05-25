@@ -46,6 +46,17 @@ export interface TaskCreateAnswer {
 	answer: string;
 }
 
+export interface TaskClarificationOption {
+	label: string;
+	value: string;
+	description?: string;
+}
+
+export interface TaskClarificationQuestion {
+	question: string;
+	options?: TaskClarificationOption[];
+}
+
 export interface TaskCreateRequest {
 	request: string;
 	projectId?: string;
@@ -59,6 +70,6 @@ export type TaskCreateResponse =
 	  }
 	| {
 			status: "needs_info";
-			questions: string[];
+			questions: TaskClarificationQuestion[];
 	  }
 	| { status: "db_error"; error: string };

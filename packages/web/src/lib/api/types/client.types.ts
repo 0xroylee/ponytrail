@@ -16,6 +16,8 @@ import type { TaskActivityResponse } from "./task-activity.types";
 import type {
 	ProjectBoardRecord,
 	ProjectBoardTaskRecord,
+	TaskClarificationOption,
+	TaskClarificationQuestion,
 	TaskCreateRequest,
 	TaskCreateResponse,
 	TaskMutationRequest,
@@ -25,6 +27,8 @@ export type {
 	ProjectBoardRecord,
 	ProjectBoardStatusColumn,
 	ProjectBoardTaskRecord,
+	TaskClarificationOption,
+	TaskClarificationQuestion,
 	TaskCreateAnswer,
 	TaskCreateRequest,
 	TaskCreateResponse,

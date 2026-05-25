@@ -29,6 +29,10 @@ describe("chat send service streaming", () => {
 			ensureDefaultProject: async () => defaultProject(),
 			createIssue: async () => issue,
 			getIssue: async () => issue,
+			resolveTaskRequirement: async () => ({
+				status: "ready",
+				task: { title: "Build it", description: "Build it" },
+			}),
 			updateIssue: async () => {
 				throw new Error("update exploded");
 			},

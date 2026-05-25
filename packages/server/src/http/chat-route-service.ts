@@ -8,12 +8,15 @@ import {
 import type { LocalWorkspaceIdentity } from "../local-workspace";
 import type { RealtimeEventPublisher } from "../realtime";
 import { createTaskRepository, createTaskService } from "../tasks";
+import { runTaskRequirementIntake } from "../tasks/task-chat-service";
+import type { CliExecutor } from "../types/app.types";
 import { ensureRealtimeLocalDefaultProject } from "./chat-route-realtime";
 
 export function createChatRouteService(
 	db: ServerDatabase["db"],
 	workspacePath: string,
 	workspace: LocalWorkspaceIdentity,
+	cliExecutor: CliExecutor,
 	realtimeEvents?: RealtimeEventPublisher,
 ) {
 	const taskService = createTaskService(createTaskRepository(db));
@@ -44,6 +47,8 @@ export function createChatRouteService(
 			const result = await taskService.getTask(issueId);
 			return result.status === "ok" ? result.value : null;
 		},
+		resolveTaskRequirement: (input) =>
+			runTaskRequirementIntake(cliExecutor, input),
 		updateIssue: async (issueId, input) => {
 			const result = await taskService.updateTask(issueId, input);
 			if (result.status !== "ok") {

@@ -685,6 +685,29 @@ components:
             properties:
               question: { type: string, minLength: 1 }
               answer: { type: string, minLength: 1 }
+    ClarificationOption:
+      type: object
+      additionalProperties: false
+      required: [label, value]
+      properties:
+        label: { type: string, minLength: 1 }
+        value: { type: string, minLength: 1 }
+        description: { type: string, minLength: 1 }
+    ClarificationQuestion:
+      oneOf:
+        - type: string
+          minLength: 1
+        - type: object
+          additionalProperties: false
+          required: [question]
+          properties:
+            question: { type: string, minLength: 1 }
+            options:
+              type: array
+              minItems: 2
+              maxItems: 4
+              items:
+                $ref: '#/components/schemas/ClarificationOption'
     ChatSessionCreateRequest:
       type: object
       additionalProperties: false
@@ -711,8 +734,7 @@ components:
           type: array
           nullable: true
           items:
-            type: string
-            minLength: 1
+            $ref: '#/components/schemas/ClarificationQuestion'
     ChatMessageCreateRequest:
       type: object
       additionalProperties: false

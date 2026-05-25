@@ -3,8 +3,11 @@ import type { TaskCommand } from "../../../args";
 import { type LoadedConfig, getProjectById } from "../../config";
 import { createBoardTaskCreator } from "../../task-intake/board-task-creator";
 import { readStdinText, withQuestionReader } from "../../task-intake/io";
-import { runTaskIntake } from "../../task-intake/run";
-import type { TaskIntakeRunResult } from "../../task-intake/types/task-intake.types";
+import { resolveTaskIntake, runTaskIntake } from "../../task-intake/run";
+import type {
+	TaskIntakeResolveResult,
+	TaskIntakeRunResult,
+} from "../../task-intake/types/task-intake.types";
 import { resolveTaskCreateRequest } from "./task-command-request";
 
 export async function handleTaskCommand(
@@ -23,7 +26,7 @@ export async function handleTaskCommand(
 	const agent = createAgentAdapter(project);
 	const taskCreator = createBoardTaskCreator(project);
 	const result = command.nonInteractive
-		? await runTaskIntake(project, agent, taskCreator, {
+		? await runTaskCommand(project, agent, taskCreator, command.intakeOnly, {
 				request: resolveNonInteractiveTaskRequest(command.request),
 				maxClarificationRounds: command.maxClarificationRounds,
 				initialAnswers: command.clarificationAnswers,
@@ -36,7 +39,7 @@ export async function handleTaskCommand(
 					askQuestion,
 					readStdin: readStdinText,
 				});
-				return runTaskIntake(project, agent, taskCreator, {
+				return runTaskCommand(project, agent, taskCreator, command.intakeOnly, {
 					request,
 					maxClarificationRounds: command.maxClarificationRounds,
 					initialAnswers: command.clarificationAnswers,
@@ -46,8 +49,20 @@ export async function handleTaskCommand(
 	writeTaskCreateResult(result, command.json === true);
 }
 
+function runTaskCommand(
+	project: Parameters<typeof runTaskIntake>[0],
+	agent: Parameters<typeof runTaskIntake>[1],
+	taskCreator: Parameters<typeof runTaskIntake>[2],
+	intakeOnly: boolean | undefined,
+	options: Parameters<typeof runTaskIntake>[3],
+): Promise<TaskIntakeRunResult | TaskIntakeResolveResult> {
+	return intakeOnly
+		? resolveTaskIntake(project, agent, options)
+		: runTaskIntake(project, agent, taskCreator, options);
+}
+
 function writeTaskCreateResult(
-	result: TaskIntakeRunResult,
+	result: TaskIntakeRunResult | TaskIntakeResolveResult,
 	json: boolean,
 ): void {
 	if (json) {
@@ -60,11 +75,15 @@ function writeTaskCreateResult(
 		);
 		return;
 	}
+	if (result.status === "ready") {
+		process.stdout.write(`Resolved task: ${result.task.title}\n`);
+		return;
+	}
 	process.stdout.write(
 		`${[
 			"Task requirements are still unclear; no board task was created.",
 			"Remaining questions:",
-			...result.questions.map((question) => `- ${question}`),
+			...result.questions.map((question) => `- ${question.question}`),
 		].join("\n")}\n`,
 	);
 }

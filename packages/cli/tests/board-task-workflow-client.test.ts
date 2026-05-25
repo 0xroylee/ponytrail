@@ -74,7 +74,7 @@ describe("BoardTaskWorkflowClient", () => {
 			},
 			{
 				action: "tasks.update",
-				payload: { taskId: "task-1", values: { status: "planning" } },
+				payload: { taskId: "task-1", values: { status: "backlog" } },
 			},
 			{
 				action: "tasks.addComment",

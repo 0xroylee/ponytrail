@@ -67,7 +67,7 @@ describe("chat task create route", () => {
 		expect(body.task.taskKey).toBe("TASK(owner-1)-1");
 		expect(body.task.title).toBe("Compose task creation");
 		expect(body.task.content).toBe("Create both task records.");
-		expect(body.task.status).toBe("planning");
+		expect(body.task.status).toBe("plan");
 		expect(body.task.linkedPr).toBeNull();
 		expect(body.task.projectId).toBe("project-1");
 		expect(body.task.assigneeId).toBeNull();
@@ -78,8 +78,7 @@ describe("chat task create route", () => {
 		).getWorkspaceProjectBoard("owner-1", "project-1");
 		expect(board).not.toBeNull();
 		expect(
-			board?.statusColumns.find((column) => column.status === "planning")
-				?.tasks,
+			board?.statusColumns.find((column) => column.status === "plan")?.tasks,
 		).toHaveLength(1);
 		expect(calls).toEqual([
 			{
@@ -124,7 +123,7 @@ describe("chat task create route", () => {
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({
 			status: "needs_info",
-			questions: ["Which project?"],
+			questions: [{ question: "Which project?" }],
 		});
 		const tasks = await testDatabase.db.select().from(boardTasksTable);
 		expect(tasks).toHaveLength(0);
@@ -172,7 +171,7 @@ describe("chat task create route", () => {
 		expect(body.status).toBe("created");
 		expect(body.task.projectId).toBeNull();
 		expect(body.task.taskKey).toBe("TASK(owner-1)-1");
-		expect(body.task.status).toBe("planning");
+		expect(body.task.status).toBe("plan");
 		expect(body.task.linkedPr).toBeNull();
 		expect(body.task.assigneeId).toBeNull();
 		const tasks = await testDatabase.db.select().from(boardTasksTable);

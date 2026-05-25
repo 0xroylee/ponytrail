@@ -69,7 +69,7 @@ const taskMutationRequest: TaskMutationRequest = {
 	title: "Add issue board",
 	content: "Render persisted issue board",
 	priority: 1,
-	status: "planning",
+	status: "backlog",
 	creatorId: "member-1",
 	assigneeId: "member-2",
 };

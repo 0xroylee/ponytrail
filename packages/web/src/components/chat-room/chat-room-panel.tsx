@@ -19,6 +19,7 @@ import { executeCommandInput } from "./chat-room-command-actions";
 import { ChatRoomPanelView } from "./chat-room-panel-view";
 import { replaceAt } from "./chat-room-state-utils";
 import { chatStreamLinesForSession } from "./chat-room-stream-utils";
+import { shouldShowChatThinkingIndicator } from "./chat-thinking-state";
 import type {
 	ChatAnswerPayload,
 	ChatRoomPanelProps,
@@ -73,6 +74,13 @@ export function ChatRoomPanel({
 		...commandStreamLines,
 		...chatStreamLinesForSession(chatStreamsByRunId, selectedSessionId),
 	];
+	const isThinking = shouldShowChatThinkingIndicator({
+		hasPendingQuestions: Boolean(selectedSession?.pendingQuestions.length),
+		isSending: sendMessage.isPending,
+		selectedSessionId,
+		sendingSessionId: sendMessage.variables?.sessionId,
+		streamLineCount: streamLines.length,
+	});
 	const mutationBusy =
 		createSession.isPending ||
 		updateSession.isPending ||
@@ -169,7 +177,7 @@ export function ChatRoomPanel({
 		}
 		const answers: ChatAnswerPayload = selectedSession.pendingQuestions.map(
 			(question, index) => ({
-				question,
+				question: question.question,
 				answer: pendingAnswers[index]?.trim() ?? "",
 			}),
 		);
@@ -195,6 +203,7 @@ export function ChatRoomPanel({
 			isCreatingSession={createSession.isPending}
 			isMessagesLoading={messagesQuery.isLoading}
 			isSending={sendMessage.isPending}
+			isThinking={isThinking}
 			messages={messagesQuery.data ?? []}
 			messagesError={messagesQuery.error}
 			pendingAnswers={pendingAnswers}

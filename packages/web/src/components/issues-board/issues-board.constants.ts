@@ -7,8 +7,8 @@ export const DEFAULT_WORKSPACE_ID = "owner-1";
 export const DEFAULT_CREATOR_ID = "member-1";
 
 export const STATUS_ORDER = [
-	"planning",
-	"todo",
+	"backlog",
+	"plan",
 	"implementing",
 	"reviewing",
 	"testing",
@@ -16,8 +16,8 @@ export const STATUS_ORDER = [
 ] as const;
 
 export const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
-	planning: { label: "Backlog", tone: "border-slate-700/70 bg-[#17181c]" },
-	todo: { label: "To Do", tone: "border-slate-700/70 bg-[#17181c]" },
+	backlog: { label: "Backlog", tone: "border-slate-700/70 bg-[#17181c]" },
+	plan: { label: "Plan", tone: "border-slate-700/70 bg-[#17181c]" },
 	implementing: {
 		label: "In Progress",
 		tone: "border-yellow-900/50 bg-[#19160f]",

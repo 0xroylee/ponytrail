@@ -1,6 +1,6 @@
 export const REQUIRED_BOARD_STATUSES = [
-	"planning",
-	"todo",
+	"backlog",
+	"plan",
 	"implementing",
 	"reviewing",
 	"testing",

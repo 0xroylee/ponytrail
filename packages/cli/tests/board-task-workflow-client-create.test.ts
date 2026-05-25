@@ -33,8 +33,8 @@ describe("BoardTaskWorkflowClient task creation", () => {
 			"tasks.createWorkflowTask",
 		]);
 		expect(calls.map((call) => call.payload)).toMatchObject([
-			{ title: "Backlog task", status: "planning" },
-			{ title: "Planned task", status: "todo" },
+			{ title: "Backlog task", status: "backlog" },
+			{ title: "Planned task", status: "plan" },
 		]);
 	});
 });

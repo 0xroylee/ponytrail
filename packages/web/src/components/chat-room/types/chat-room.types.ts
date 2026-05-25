@@ -42,6 +42,7 @@ export interface ChatStreamLine {
 export interface ChatTranscriptProps {
 	error: Error | null;
 	isLoading: boolean;
+	isThinking: boolean;
 	messages: ChatMessageRecord[];
 	pendingAnswers: string[];
 	session: ChatSessionRecord | null;

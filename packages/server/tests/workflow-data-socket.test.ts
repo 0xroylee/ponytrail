@@ -94,7 +94,7 @@ describe("workflow data websocket", () => {
 				title: "Planned",
 				content: "Ready",
 				priority: 1,
-				status: "todo",
+				status: "plan",
 				creatorId: "owner-1",
 			},
 		);
@@ -123,14 +123,14 @@ describe("workflow data websocket", () => {
 			expect.objectContaining({
 				branchName: "owner-1/1",
 				taskKey: "TASK(owner-1)-1",
-				status: "todo",
+				status: "plan",
 			}),
 		);
 		expect(intake.payload).toEqual(
 			expect.objectContaining({
 				branchName: "owner-1/2",
 				taskKey: "TASK(owner-1)-2",
-				status: "planning",
+				status: "plan",
 				creatorId: "owner-1",
 			}),
 		);
@@ -282,7 +282,7 @@ async function setupSocket() {
 		title: "Task",
 		content: "Body",
 		priority: 1,
-		status: "todo",
+		status: "plan",
 		creatorId: "owner-1",
 		dueDate: null,
 		linkedPr: null,

@@ -3,9 +3,10 @@
 import { CheckCircle2, CircleAlert } from "lucide-react";
 import type { ReactElement } from "react";
 
+import { TextShimmer } from "@/components/loading/text-shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ChatMessageRecord } from "@/lib/api";
+import type { ChatMessageRecord, TaskClarificationQuestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import type { ChatTranscriptProps } from "./types/chat-room.types";
@@ -13,6 +14,7 @@ import type { ChatTranscriptProps } from "./types/chat-room.types";
 export function ChatTranscript({
 	error,
 	isLoading,
+	isThinking,
 	messages,
 	pendingAnswers,
 	session,
@@ -20,6 +22,10 @@ export function ChatTranscript({
 	onAnswerChange,
 	onSubmitAnswers,
 }: ChatTranscriptProps): ReactElement {
+	const pendingQuestions = session?.pendingQuestions ?? [];
+	const hasPendingQuestions = pendingQuestions.length > 0;
+	const showThinking =
+		isThinking && !hasPendingQuestions && streamLines.length === 0;
 	return (
 		<div className="min-h-0 overflow-auto px-4 py-6">
 			<div className="mx-auto grid max-w-4xl gap-4">
@@ -36,14 +42,15 @@ export function ChatTranscript({
 				{messages.map((message) => (
 					<ChatMessageBubble key={message.id} message={message} />
 				))}
-				{session?.pendingQuestions.length ? (
+				{hasPendingQuestions ? (
 					<ClarificationBox
 						answers={pendingAnswers}
-						questions={session.pendingQuestions}
+						questions={pendingQuestions}
 						onAnswerChange={onAnswerChange}
 						onSubmit={onSubmitAnswers}
 					/>
 				) : null}
+				{showThinking ? <ThinkingLine /> : null}
 				{streamLines.length > 0 ? (
 					<div className="justify-self-start whitespace-pre-wrap rounded-md border border-zinc-800 bg-[#17181c] px-3 py-2 font-mono text-xs text-zinc-300">
 						{streamLines.map((line) => (
@@ -58,6 +65,17 @@ export function ChatTranscript({
 				) : null}
 			</div>
 		</div>
+	);
+}
+
+function ThinkingLine(): ReactElement {
+	return (
+		<output
+			aria-live="polite"
+			className="justify-self-start rounded-md border border-zinc-800 bg-[#17181c] px-3 py-2 text-sm"
+		>
+			<TextShimmer>Thinking...</TextShimmer>
+		</output>
 	);
 }
 
@@ -104,7 +122,7 @@ function ClarificationBox({
 	onSubmit,
 }: {
 	answers: string[];
-	questions: string[];
+	questions: TaskClarificationQuestion[];
 	onAnswerChange: (index: number, value: string) => void;
 	onSubmit: () => void;
 }): ReactElement {
@@ -115,9 +133,26 @@ function ClarificationBox({
 				<label
 					className="grid gap-1.5 text-sm"
 					htmlFor={`clarification-answer-${index}`}
-					key={question}
+					key={question.question}
 				>
-					<span className="text-zinc-300">{question}</span>
+					<span className="text-zinc-300">{question.question}</span>
+					{question.options?.length ? (
+						<div className="flex flex-wrap gap-2">
+							{question.options.map((option) => (
+								<Button
+									key={option.value}
+									onClick={() => onAnswerChange(index, option.value)}
+									size="sm"
+									type="button"
+									variant={
+										answers[index] === option.value ? "default" : "secondary"
+									}
+								>
+									{option.label}
+								</Button>
+							))}
+						</div>
+					) : null}
 					<Input
 						className="w-[min(36rem,78vw)]"
 						id={`clarification-answer-${index}`}

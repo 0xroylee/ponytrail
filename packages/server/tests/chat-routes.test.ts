@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "bun:test";
 import {
 	boardProjectsTable,
 	boardTasksTable,
-	chatMessagesTable,
 	chatSessionsTable,
 	eq,
 } from "devos-db";
@@ -108,7 +107,7 @@ describe("chat routes", () => {
 			title: "Untitled chat",
 			content: "",
 			priority: 0,
-			status: "planning",
+			status: "backlog",
 			creatorId: "owner-1",
 		});
 		expect(events.map((event) => (event as { type: string }).type)).toEqual([
@@ -127,7 +126,7 @@ describe("chat routes", () => {
 		});
 	});
 
-	it("updates the session issue from the first chat message without task intake", async () => {
+	it("resolves the first chat message through task intake", async () => {
 		testDatabase = await createDrizzleServerTestDatabase();
 		const cliCalls: unknown[] = [];
 		const events: unknown[] = [];
@@ -135,7 +134,16 @@ describe("chat routes", () => {
 			cliExecutor: {
 				execute: async (request) => {
 					cliCalls.push(request);
-					return { status: "succeeded", request };
+					return {
+						status: "succeeded",
+						request,
+						commandResult: {
+							code: 0,
+							stdout:
+								'{"status":"ready","task":{"title":"Build the dashboard","description":"Build the dashboard"}}\n',
+							stderr: "",
+						},
+					};
 				},
 				executeStream: async (request) => {
 					cliCalls.push(request);
@@ -159,7 +167,7 @@ describe("chat routes", () => {
 
 		expect(response.status).toBe(200);
 		const body = (await response.json()) as {
-			issue: { content: string; id: string; title: string };
+			issue: { content: string; id: string; status: string; title: string };
 			messages: Array<{ content: string; taskId: string | null }>;
 			session: { taskId: string | null; title: string };
 		};
@@ -169,6 +177,7 @@ describe("chat routes", () => {
 			id: session.taskId,
 			title: "Build the dashboard",
 			content: "Build the dashboard",
+			status: "plan",
 		});
 		expect(body.messages).toHaveLength(2);
 		expect(body.messages[0]).toMatchObject({
@@ -176,12 +185,24 @@ describe("chat routes", () => {
 			taskId: session.taskId,
 		});
 		expect(body.messages[1]).toMatchObject({
-			content: "Updated task TASK(owner-1)-1: Build the dashboard",
+			content:
+				"Task TASK(owner-1)-1: Build the dashboard is ready for planning.",
 			role: "assistant",
 			kind: "task",
 			taskId: session.taskId,
 		});
-		expect(cliCalls).toEqual([]);
+		expect(cliCalls).toEqual([
+			{
+				action: "task",
+				taskAction: "create",
+				request: "Build the dashboard",
+				projectId: "default",
+				nonInteractive: true,
+				intakeOnly: true,
+				clarificationAnswers: [],
+				json: true,
+			},
+		]);
 		expect(events.map((event) => (event as { type: string }).type)).toEqual([
 			"project.created",
 			"issue.created",
@@ -190,53 +211,9 @@ describe("chat routes", () => {
 			"chat.stream.started",
 			"issue.updated",
 			"chat.stream.delta",
-			"chat.stream.delta",
 			"chat.stream.completed",
 			"chat.message.created",
 			"chat.session.updated",
 		]);
-	});
-
-	it("creates and attaches an issue for legacy sessions without task ids", async () => {
-		testDatabase = await createDrizzleServerTestDatabase();
-		const app = createServerTestApp(testDatabase.db, {
-			workspacePath: testDatabase.path,
-		});
-		await testDatabase.db.insert(chatSessionsTable).values({
-			id: "legacy-session",
-			workspaceId: "owner-1",
-			projectId: null,
-			taskId: null,
-			title: "Untitled",
-			pendingRequest: null,
-			pendingQuestions: null,
-			createdAt: "2026-05-13T00:00:00.000Z",
-			updatedAt: "2026-05-13T00:00:00.000Z",
-		});
-
-		const response = await app(
-			createJsonRequest("POST", "/api/chat/sessions/legacy-session/send", {
-				content: "Legacy chat request",
-			}),
-		);
-
-		expect(response.status).toBe(200);
-		const body = (await response.json()) as {
-			messages: Array<{ taskId: string | null }>;
-			session: { projectId: string | null; taskId: string | null };
-		};
-		expect(body.session.projectId).toBe("default");
-		expect(body.session.taskId).toBeTruthy();
-		const taskId = body.session.taskId;
-		if (!taskId) {
-			throw new Error("Expected legacy session to have a task id");
-		}
-		expect(body.messages[0]?.taskId).toBe(taskId);
-
-		const tasks = await testDatabase.db.select().from(boardTasksTable);
-		const messages = await testDatabase.db.select().from(chatMessagesTable);
-		expect(tasks).toHaveLength(1);
-		expect(tasks[0]?.id).toBe(taskId);
-		expect(messages[0]?.taskId).toBe(taskId);
 	});
 });

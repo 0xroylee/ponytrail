@@ -70,7 +70,7 @@ export function TaskCreateChatDialog({
 				setState((current) => ({
 					...current,
 					answers: response.questions.map((question) => ({
-						question,
+						question: question.question,
 						answer: "",
 					})),
 					questions: response.questions,
@@ -175,9 +175,28 @@ export function TaskCreateChatDialog({
 							<label
 								className="grid gap-1.5 text-sm text-zinc-400"
 								htmlFor={`task-create-chat-answer-${index}`}
-								key={question}
+								key={question.question}
 							>
-								<span>{question}</span>
+								<span>{question.question}</span>
+								{question.options?.length ? (
+									<div className="flex flex-wrap gap-2">
+										{question.options.map((option) => (
+											<Button
+												key={option.value}
+												onClick={() => updateAnswer(index, option.value)}
+												size="sm"
+												type="button"
+												variant={
+													state.answers[index]?.answer === option.value
+														? "default"
+														: "secondary"
+												}
+											>
+												{option.label}
+											</Button>
+										))}
+									</div>
+								) : null}
 								<Input
 									id={`task-create-chat-answer-${index}`}
 									onChange={(event) => updateAnswer(index, event.target.value)}

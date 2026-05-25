@@ -39,9 +39,11 @@ export async function buildTaskIntakePrompt(
 		answerSection,
 		"",
 		"Decide whether the goal and requirements are clear enough to create one actionable Linear issue.",
+		"When asking for clarification, return one to three questions. A question may be a string, or an object with a question field and optional options array.",
+		"Use options only when the operator can choose between clear alternatives; include two to four options with label and value, plus optional description.",
 		"Return the final section in exactly this contract:",
 		"RESULT: CLEAR or NEEDS_INFO",
 		'TASK_JSON: {"title":"...","description":"..."}',
-		'QUESTIONS_JSON: ["..."]',
+		'QUESTIONS_JSON: ["...", {"question":"...","options":[{"label":"...","value":"...","description":"..."}]}]',
 	].join("\n");
 }

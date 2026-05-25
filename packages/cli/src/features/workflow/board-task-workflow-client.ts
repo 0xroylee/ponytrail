@@ -17,9 +17,11 @@ import type {
 	WorkflowLinearClient,
 } from "./types/workflow.types";
 
-const BACKLOG_STATUS = "planning";
-const READY_STATUS = "todo";
+const BACKLOG_STATUS = "backlog";
+const READY_STATUS = "plan";
 const LEGACY_PR_CREATED_STATUS = "pr_created";
+const LEGACY_BACKLOG_STATUS = "planning";
+const LEGACY_READY_STATUS = "todo";
 const REVIEW_STATUS = "reviewing";
 const REVIEW_STATUSES = new Set(["pr_created", "reviewing", "testing", "done"]);
 const DEFAULT_CREATOR_ID = "member-1";
@@ -45,7 +47,9 @@ class BoardTaskWorkflowClient implements WorkflowLinearClient {
 		return tasks
 			.filter(({ task }) => this.matchesProjectScope(task.projectId, options))
 			.filter(({ task }) => (taskKey ? task.taskKey === taskKey : true))
-			.filter(({ task }) => (taskKey ? true : task.status === READY_STATUS))
+			.filter(({ task }) =>
+				taskKey ? true : normalizeBoardStatus(task.status) === READY_STATUS,
+			)
 			.map(mapTaskToWorkflowIssue);
 	}
 
@@ -59,12 +63,14 @@ class BoardTaskWorkflowClient implements WorkflowLinearClient {
 	async fetchReviewOnlyWork(): Promise<WorkflowIssue[]> {
 		return (await this.store.listTasks())
 			.filter(({ task }) => task.projectId === this.config.id)
-			.filter(({ task }) => REVIEW_STATUSES.has(task.status))
+			.filter(({ task }) =>
+				REVIEW_STATUSES.has(normalizeBoardStatus(task.status)),
+			)
 			.map(mapTaskToWorkflowIssue);
 	}
 
 	async isAssignedState(stateId: string): Promise<boolean> {
-		return stateId === READY_STATUS;
+		return normalizeBoardStatus(stateId) === READY_STATUS;
 	}
 
 	async markStage(issueId: string, stage: string): Promise<void> {
@@ -183,6 +189,12 @@ function mapTaskToWorkflowIssue(
 }
 
 function normalizeBoardStatus(status: string): string {
+	if (status === LEGACY_BACKLOG_STATUS) {
+		return BACKLOG_STATUS;
+	}
+	if (status === LEGACY_READY_STATUS) {
+		return READY_STATUS;
+	}
 	return status === LEGACY_PR_CREATED_STATUS ? REVIEW_STATUS : status;
 }
 

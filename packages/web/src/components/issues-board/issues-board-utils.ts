@@ -11,6 +11,8 @@ import {
 import type { IssueDraft, IssueTab } from "./types/issues-board.types";
 
 const LEGACY_PR_CREATED_STATUS = "pr_created";
+const LEGACY_BACKLOG_STATUS = "planning";
+const LEGACY_PLAN_STATUS = "todo";
 
 export function getStatusLabel(status: string): string {
 	const normalized = normalizeBoardStatus(status);
@@ -71,7 +73,7 @@ export function toggleAllColumns(
 ): void {
 	setVisibleStatuses(() =>
 		visibleStatuses.length === STATUS_ORDER.length
-			? ["planning"]
+			? ["backlog"]
 			: [...STATUS_ORDER],
 	);
 }
@@ -143,5 +145,11 @@ function normalizeIndex(index: number): number {
 }
 
 export function normalizeBoardStatus(status: string): string {
+	if (status === LEGACY_BACKLOG_STATUS) {
+		return "backlog";
+	}
+	if (status === LEGACY_PLAN_STATUS) {
+		return "plan";
+	}
 	return status === LEGACY_PR_CREATED_STATUS ? "reviewing" : status;
 }

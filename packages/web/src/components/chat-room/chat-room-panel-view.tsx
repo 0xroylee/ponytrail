@@ -20,6 +20,7 @@ export interface ChatRoomPanelViewProps {
 	isCreatingSession: boolean;
 	isMessagesLoading: boolean;
 	isSending: boolean;
+	isThinking: boolean;
 	messages: ChatMessageRecord[];
 	messagesError: Error | null;
 	pendingAnswers: string[];
@@ -48,6 +49,7 @@ export function ChatRoomPanelView({
 	isCreatingSession,
 	isMessagesLoading,
 	isSending,
+	isThinking,
 	messages,
 	messagesError,
 	pendingAnswers,
@@ -102,6 +104,7 @@ export function ChatRoomPanelView({
 				<ChatTranscript
 					error={messagesError}
 					isLoading={isMessagesLoading}
+					isThinking={isThinking}
 					messages={messages}
 					pendingAnswers={pendingAnswers}
 					session={selectedSession}

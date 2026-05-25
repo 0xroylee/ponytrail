@@ -6,6 +6,7 @@ import { buildTaskIntakePrompt } from "./prompts";
 import type {
 	RunTaskIntakeOptions,
 	TaskIntakeAnswer,
+	TaskIntakeResolveResult,
 	TaskIntakeRunResult,
 	TaskIntakeTaskCreator,
 } from "./types/task-intake.types";
@@ -18,6 +19,19 @@ export async function runTaskIntake(
 	taskCreator: TaskIntakeTaskCreator,
 	options: RunTaskIntakeOptions,
 ): Promise<TaskIntakeRunResult> {
+	const result = await resolveTaskIntake(config, agent, options);
+	if (result.status === "needs_info") {
+		return result;
+	}
+	const task = await taskCreator.createTask(result.task);
+	return { status: "created", task };
+}
+
+export async function resolveTaskIntake(
+	config: ResolvedProjectConfig,
+	agent: Pick<AgentAdapter, "runTaskIntake">,
+	options: RunTaskIntakeOptions,
+): Promise<TaskIntakeResolveResult> {
 	const request = options.request.trim();
 	if (!request) {
 		throw new Error("task create requires a non-empty request");
@@ -47,18 +61,17 @@ export async function runTaskIntake(
 			result.finalMessage || result.stdout,
 		);
 		if (decision.result === "CLEAR") {
-			const task = await taskCreator.createTask(decision.task);
-			return { status: "created", task };
+			return { status: "ready", task: decision.task };
 		}
 		if (clarificationRounds >= maxClarificationRounds) {
 			return { status: "needs_info", questions: decision.questions };
 		}
 		clarificationRounds += 1;
 		for (const question of decision.questions) {
-			const providedAnswer = providedAnswers.get(question);
+			const providedAnswer = providedAnswers.get(question.question);
 			if (providedAnswer) {
 				answers.push({
-					question,
+					question: question.question,
 					answer: providedAnswer,
 				});
 				continue;
@@ -67,8 +80,8 @@ export async function runTaskIntake(
 				return { status: "needs_info", questions: decision.questions };
 			}
 			answers.push({
-				question,
-				answer: await options.askQuestion(question),
+				question: question.question,
+				answer: await options.askQuestion(question.question),
 			});
 		}
 	}

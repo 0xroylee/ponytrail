@@ -8,9 +8,20 @@ export interface TaskIntakeTask {
 	description: string;
 }
 
+export interface TaskIntakeQuestionOption {
+	label: string;
+	value: string;
+	description?: string;
+}
+
+export interface TaskIntakeQuestion {
+	question: string;
+	options?: TaskIntakeQuestionOption[];
+}
+
 export type TaskIntakeDecision =
 	| { result: "CLEAR"; task: TaskIntakeTask }
-	| { result: "NEEDS_INFO"; questions: string[] };
+	| { result: "NEEDS_INFO"; questions: TaskIntakeQuestion[] };
 
 export interface TaskIntakeCreatedTask {
 	id: string;
@@ -44,9 +55,16 @@ export interface RunTaskIntakeOptions {
 	askQuestion(question: string): Promise<string>;
 }
 
+export type TaskIntakeResolveResult =
+	| {
+			status: "ready";
+			task: TaskIntakeTask;
+	  }
+	| { status: "needs_info"; questions: TaskIntakeQuestion[] };
+
 export type TaskIntakeRunResult =
 	| {
 			status: "created";
 			task: TaskIntakeCreatedTask;
 	  }
-	| { status: "needs_info"; questions: string[] };
+	| { status: "needs_info"; questions: TaskIntakeQuestion[] };

@@ -38,7 +38,33 @@ describe("parseTaskIntakeDecision", () => {
 			),
 		).toEqual({
 			result: "NEEDS_INFO",
-			questions: ["Which workflow should change?"],
+			questions: [{ question: "Which workflow should change?" }],
+		});
+	});
+
+	it("parses needs-info questions with options", () => {
+		expect(
+			parseTaskIntakeDecision(
+				[
+					"RESULT: NEEDS_INFO",
+					`QUESTIONS_JSON: [{"question":"Which agent?","options":[{"label":"Codex","value":"codex"},{"label":"Claude","value":"claude","description":"Use Claude Code"}]}]`,
+				].join("\n"),
+			),
+		).toEqual({
+			result: "NEEDS_INFO",
+			questions: [
+				{
+					question: "Which agent?",
+					options: [
+						{ label: "Codex", value: "codex" },
+						{
+							label: "Claude",
+							value: "claude",
+							description: "Use Claude Code",
+						},
+					],
+				},
+			],
 		});
 	});
 
@@ -188,7 +214,7 @@ describe("runTaskIntake", () => {
 		);
 		expect(result).toEqual({
 			status: "needs_info",
-			questions: ["Who is this for?"],
+			questions: [{ question: "Who is this for?" }],
 		});
 	});
 
@@ -214,7 +240,7 @@ describe("runTaskIntake", () => {
 		);
 		expect(result).toEqual({
 			status: "needs_info",
-			questions: ["Which workflow?"],
+			questions: [{ question: "Which workflow?" }],
 		});
 		expect(created).toBe(false);
 	});
@@ -245,7 +271,7 @@ describe("runTaskIntake", () => {
 		);
 		expect(result).toEqual({
 			status: "needs_info",
-			questions: ["Which project?"],
+			questions: [{ question: "Which project?" }],
 		});
 		expect(questionAsked).toBe(false);
 		expect(prompts[0]).toContain("Q: Who?");

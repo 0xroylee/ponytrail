@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { TaskClarificationQuestion } from "@/lib/api";
 import { useCreateTaskMutation } from "@/lib/api/queries";
 import { formatTaskCreateError } from "./task-create-chat-errors";
 
@@ -19,7 +20,9 @@ export function TaskCreatePanel(): ReactElement {
 	const [request, setRequest] = useState<string>("");
 	const [projectId, setProjectId] = useState<string>("default");
 	const [answers, setAnswers] = useState<ClarificationAnswer[]>([]);
-	const [activeQuestions, setActiveQuestions] = useState<string[]>([]);
+	const [activeQuestions, setActiveQuestions] = useState<
+		TaskClarificationQuestion[]
+	>([]);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	const canSubmitInitial = request.trim().length > 0 && !createTask.isPending;
@@ -60,7 +63,7 @@ export function TaskCreatePanel(): ReactElement {
 				setActiveQuestions(response.questions);
 				setAnswers(
 					response.questions.map((question) => ({
-						question,
+						question: question.question,
 						answer: "",
 					})),
 				);
@@ -147,8 +150,29 @@ export function TaskCreatePanel(): ReactElement {
 				<div style={{ marginTop: "1rem" }}>
 					<h3 style={{ marginTop: 0 }}>Clarification Questions</h3>
 					{activeQuestions.map((question, index) => (
-						<div key={question} style={{ marginBottom: "0.75rem" }}>
-							<p style={{ marginTop: 0, marginBottom: "0.5rem" }}>{question}</p>
+						<div key={question.question} style={{ marginBottom: "0.75rem" }}>
+							<p style={{ marginTop: 0, marginBottom: "0.5rem" }}>
+								{question.question}
+							</p>
+							{question.options?.length ? (
+								<div className="mb-2 flex flex-wrap gap-2">
+									{question.options.map((option) => (
+										<Button
+											key={option.value}
+											onClick={() => updateAnswer(index, option.value)}
+											size="sm"
+											type="button"
+											variant={
+												answers[index]?.answer === option.value
+													? "default"
+													: "secondary"
+											}
+										>
+											{option.label}
+										</Button>
+									))}
+								</div>
+							) : null}
 							<Input
 								type="text"
 								value={answers[index]?.answer ?? ""}
