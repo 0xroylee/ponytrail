@@ -4,9 +4,7 @@ import { chatMessagesTable, chatSessionsTable } from "devos-db";
 import type { NewChatMessageRow, NewChatSessionRow } from "devos-db";
 import type { ChatRepository } from "./types/chat.types";
 
-export function createChatRepository(
-	db: ServerDatabase["db"],
-): ChatRepository {
+export function createChatRepository(db: ServerDatabase["db"]): ChatRepository {
 	return {
 		async listSessions(workspaceId) {
 			return db

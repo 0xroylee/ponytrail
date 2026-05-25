@@ -49,6 +49,10 @@ const MIGRATIONS: Migration[] = [
 		id: "0013_chat_sessions",
 		fileName: "0013_chat_sessions.sql",
 	},
+	{
+		id: "0014_chat_session_task_id",
+		fileName: "0014_chat_session_task_id.sql",
+	},
 ];
 
 async function ensureMigrationsTable(

@@ -18,6 +18,7 @@ import type {
 	ChatSessionUpdateRequest,
 } from "./types/chat.types";
 import type { ServerStateQueryOptions } from "./types/queries.types";
+import type { ProjectBoardTaskRecord } from "./types/task.types";
 import { createWebApiClient } from "./web-client";
 
 const apiClient = createWebApiClient();
@@ -55,7 +56,10 @@ export function useCreateChatSessionMutation(): UseMutationResult<
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (input) => apiClient.createChatSession(input),
-		onSuccess: (session) => upsertSession(queryClient, session),
+		onSuccess: (session) => {
+			upsertSession(queryClient, session);
+			invalidateIssueCollections(queryClient, session.workspaceId);
+		},
 	});
 }
 
@@ -96,13 +100,12 @@ export function useSendChatMessageMutation(): UseMutationResult<
 			apiClient.sendChatMessage(sessionId, message),
 		onSuccess: (response) => {
 			upsertSession(queryClient, response.session);
+			upsertIssue(queryClient, response.issue);
 			queryClient.setQueryData<ChatMessageRecord[]>(
 				serverStateQueryKeys.chatMessages(response.session.id),
 				(current = []) => mergeMessages(current, response.messages),
 			);
-			void queryClient.invalidateQueries({
-				queryKey: serverStateQueryKeys.boardTasks,
-			});
+			invalidateIssueCollections(queryClient, response.session.workspaceId);
 		},
 	});
 }
@@ -125,6 +128,35 @@ function appendMessage(
 		serverStateQueryKeys.chatMessages(message.sessionId),
 		(current = []) => mergeMessages(current, [message]),
 	);
+}
+
+function upsertIssue(
+	queryClient: ReturnType<typeof useQueryClient>,
+	issue: ProjectBoardTaskRecord,
+): void {
+	queryClient.setQueryData(serverStateQueryKeys.boardTask(issue.id), issue);
+	queryClient.setQueryData<ProjectBoardTaskRecord[]>(
+		serverStateQueryKeys.boardTasks,
+		(current = []) => mergeById(current, [issue]),
+	);
+	void queryClient.invalidateQueries({
+		queryKey: serverStateQueryKeys.taskActivity(issue.id),
+	});
+}
+
+function invalidateIssueCollections(
+	queryClient: ReturnType<typeof useQueryClient>,
+	workspaceId: string,
+): void {
+	void queryClient.invalidateQueries({
+		queryKey: serverStateQueryKeys.boardTasks,
+	});
+	void queryClient.invalidateQueries({
+		queryKey: serverStateQueryKeys.projectBoards,
+	});
+	void queryClient.invalidateQueries({
+		queryKey: serverStateQueryKeys.workspaceProjects(workspaceId),
+	});
 }
 
 function mergeSessions(

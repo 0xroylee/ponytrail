@@ -5,10 +5,7 @@ import type {
 	NewChatMessageRow,
 	NewChatSessionRow,
 } from "devos-db";
-import type {
-	TaskChatCreateAnswer,
-	TaskChatCreateResponse,
-} from "../../http/types/task-chat-create.types";
+import type { BoardTaskApiRecord } from "../../tasks";
 
 export type ChatMessageRole = "user" | "assistant" | "system";
 export type ChatMessageKind =
@@ -23,8 +20,7 @@ export interface ChatSessionRecord
 	pendingQuestions: string[];
 }
 
-export interface ChatMessageRecord
-	extends Omit<ChatMessageRow, "metadata"> {
+export interface ChatMessageRecord extends Omit<ChatMessageRow, "metadata"> {
 	metadata: Record<string, unknown> | null;
 }
 
@@ -36,6 +32,7 @@ export interface ChatSessionCreateInput {
 
 export interface ChatSessionUpdateInput {
 	projectId?: string | null;
+	taskId?: string | null;
 	title?: string;
 	pendingRequest?: string | null;
 	pendingQuestions?: string[] | null;
@@ -51,14 +48,19 @@ export interface ChatMessageCreateInput {
 }
 
 export interface ChatSendInput {
-	answers?: TaskChatCreateAnswer[];
+	answers?: ChatSendAnswer[];
 	content: string;
 }
 
 export interface ChatSendResult {
+	issue: BoardTaskApiRecord;
 	messages: ChatMessageRecord[];
 	session: ChatSessionRecord;
-	taskCreate: TaskChatCreateResponse;
+}
+
+export interface ChatSendAnswer {
+	question: string;
+	answer: string;
 }
 
 export interface ChatRepository {
@@ -78,11 +80,23 @@ export interface ChatRepository {
 
 export interface ChatServiceDeps {
 	ensureDefaultProject(): Promise<BoardProjectRow>;
-	runTaskCreate(input: {
-		answers?: TaskChatCreateAnswer[];
-		projectId?: string;
-		request: string;
-	}): Promise<TaskChatCreateResponse>;
+	createIssue(input: ChatSessionIssueCreateInput): Promise<BoardTaskApiRecord>;
+	getIssue(issueId: string): Promise<BoardTaskApiRecord | null>;
+	updateIssue(
+		issueId: string,
+		input: ChatSessionIssueUpdateInput,
+	): Promise<BoardTaskApiRecord>;
+}
+
+export interface ChatSessionIssueCreateInput {
+	content: string;
+	projectId: string;
+	title: string;
+}
+
+export interface ChatSessionIssueUpdateInput {
+	content?: string;
+	title?: string;
 }
 
 export interface ChatService {

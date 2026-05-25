@@ -1,4 +1,11 @@
 import type { ChatMessageRow, ChatSessionRow } from "devos-db";
+import type { BoardTaskApiRecord } from "../tasks";
+import {
+	DEFAULT_CHAT_ISSUE_CONTENT,
+	DEFAULT_CHAT_ISSUE_TITLE,
+	UNTITLED_SESSION,
+} from "./chat-defaults";
+import { mapMessage, mapSession, titleFromMessage } from "./chat-mappers";
 import type {
 	ChatMessageCreateInput,
 	ChatRepository,
@@ -6,11 +13,9 @@ import type {
 	ChatSendResult,
 	ChatService,
 	ChatServiceDeps,
+	ChatSessionIssueUpdateInput,
 	ChatSessionUpdateInput,
 } from "./types/chat.types";
-import { mapMessage, mapSession, titleFromMessage } from "./chat-mappers";
-
-const UNTITLED_SESSION = "Untitled";
 
 export function createChatService(
 	repository: ChatRepository,
@@ -23,12 +28,18 @@ export function createChatService(
 		async createSession(input) {
 			const projectId =
 				input.projectId ?? (await deps.ensureDefaultProject()).id;
+			const issue = await deps.createIssue({
+				content: DEFAULT_CHAT_ISSUE_CONTENT,
+				projectId,
+				title: DEFAULT_CHAT_ISSUE_TITLE,
+			});
 			const now = new Date().toISOString();
 			return mapSession(
 				await repository.createSession({
 					id: crypto.randomUUID(),
 					workspaceId: input.workspaceId,
 					projectId,
+					taskId: issue.id,
 					title: input.title?.trim() || UNTITLED_SESSION,
 					pendingRequest: null,
 					pendingQuestions: null,
@@ -53,8 +64,14 @@ export function createChatService(
 			if (!session) {
 				return null;
 			}
-			const message = await appendMessage(repository, sessionId, input);
-			await touchSession(repository, session);
+			const linked = await ensureIssueForSession(repository, deps, session);
+			const message = await appendMessage(repository, sessionId, {
+				...input,
+				taskId: input.taskId ?? linked.issue.id,
+			});
+			await repository.updateSession(linked.session.id, {
+				updatedAt: new Date().toISOString(),
+			});
 			return mapMessage(message);
 		},
 		async sendMessage(sessionId, input) {
@@ -69,61 +86,81 @@ async function sendMessage(
 	sessionId: string,
 	input: ChatSendInput,
 ): Promise<ChatSendResult | null> {
-	let session = await repository.getSession(sessionId);
+	const session = await repository.getSession(sessionId);
 	if (!session) {
 		return null;
 	}
-	if (!session.projectId) {
-		const project = await deps.ensureDefaultProject();
-		session =
-			(await repository.updateSession(sessionId, {
-				projectId: project.id,
-				updatedAt: new Date().toISOString(),
-			})) ?? session;
-	}
-	const request = input.answers?.length
-		? (session.pendingRequest ?? input.content)
-		: input.content;
+	const linked = await ensureIssueForSession(repository, deps, session);
 	const userMessage = await appendMessage(repository, sessionId, {
 		content: input.content,
 		kind: input.answers?.length ? "clarification" : "message",
 		metadata: input.answers ? { answers: input.answers } : null,
 		role: "user",
+		taskId: linked.issue.id,
 	});
-	const taskCreate = await deps.runTaskCreate({
-		request,
-		projectId: session.projectId ?? undefined,
-		answers: input.answers,
-	});
-	const assistantMessage = await appendTaskResultMessage(
+	const issue = await updateIssueAfterMessage(deps, linked.issue, input);
+	const updatedSession = await updateSessionAfterMessage(
 		repository,
-		sessionId,
-		taskCreate,
+		linked.session,
+		input,
 	);
-	session = await updateSessionAfterTask(repository, session, input, taskCreate);
 	return {
-		session: mapSession(session),
-		messages: [userMessage, assistantMessage].map(mapMessage),
-		taskCreate,
+		issue,
+		session: mapSession(updatedSession),
+		messages: [userMessage].map(mapMessage),
 	};
 }
 
-async function updateSessionAfterTask(
+async function ensureIssueForSession(
+	repository: ChatRepository,
+	deps: ChatServiceDeps,
+	session: ChatSessionRow,
+): Promise<{ issue: BoardTaskApiRecord; session: ChatSessionRow }> {
+	const existingIssue = session.taskId
+		? await deps.getIssue(session.taskId)
+		: null;
+	if (existingIssue) {
+		const projectId =
+			session.projectId ??
+			existingIssue.projectId ??
+			(await deps.ensureDefaultProject()).id;
+		if (session.projectId === projectId) {
+			return { issue: existingIssue, session };
+		}
+		const updated = await repository.updateSession(session.id, {
+			projectId,
+			updatedAt: new Date().toISOString(),
+		});
+		return { issue: existingIssue, session: updated ?? session };
+	}
+	const projectId = session.projectId ?? (await deps.ensureDefaultProject()).id;
+	const issue = await deps.createIssue({
+		content: DEFAULT_CHAT_ISSUE_CONTENT,
+		projectId,
+		title: DEFAULT_CHAT_ISSUE_TITLE,
+	});
+	const updated = await repository.updateSession(session.id, {
+		projectId,
+		taskId: issue.id,
+		updatedAt: new Date().toISOString(),
+	});
+	return {
+		issue,
+		session: updated ?? { ...session, projectId, taskId: issue.id },
+	};
+}
+
+async function updateSessionAfterMessage(
 	repository: ChatRepository,
 	session: ChatSessionRow,
 	input: ChatSendInput,
-	taskCreate: ChatSendResult["taskCreate"],
 ): Promise<ChatSessionRow> {
-	const update: ChatSessionUpdateInput = {};
+	const update: ChatSessionUpdateInput = {
+		pendingRequest: null,
+		pendingQuestions: null,
+	};
 	if (session.title === UNTITLED_SESSION && input.content.trim()) {
 		update.title = titleFromMessage(input.content);
-	}
-	if (taskCreate.status === "needs_info") {
-		update.pendingRequest = session.pendingRequest ?? input.content;
-		update.pendingQuestions = taskCreate.questions;
-	} else {
-		update.pendingRequest = null;
-		update.pendingQuestions = null;
 	}
 	return (
 		(await updateSession(repository, session.id, update)) ??
@@ -132,33 +169,31 @@ async function updateSessionAfterTask(
 	);
 }
 
-async function appendTaskResultMessage(
-	repository: ChatRepository,
-	sessionId: string,
-	taskCreate: ChatSendResult["taskCreate"],
-): Promise<ChatMessageRow> {
-	if (taskCreate.status === "needs_info") {
-		return appendMessage(repository, sessionId, {
-			content: taskCreate.questions.join("\n"),
-			kind: "clarification",
-			metadata: { questions: taskCreate.questions },
-			role: "assistant",
-		});
+async function updateIssueAfterMessage(
+	deps: ChatServiceDeps,
+	issue: BoardTaskApiRecord,
+	input: ChatSendInput,
+): Promise<BoardTaskApiRecord> {
+	const issueUpdate = issueUpdateFromMessage(issue, input.content);
+	return issueUpdate ? deps.updateIssue(issue.id, issueUpdate) : issue;
+}
+
+function issueUpdateFromMessage(
+	issue: BoardTaskApiRecord,
+	content: string,
+): ChatSessionIssueUpdateInput | null {
+	const trimmed = content.trim();
+	if (
+		!trimmed ||
+		issue.title !== DEFAULT_CHAT_ISSUE_TITLE ||
+		issue.content !== DEFAULT_CHAT_ISSUE_CONTENT
+	) {
+		return null;
 	}
-	if (taskCreate.status === "created") {
-		return appendMessage(repository, sessionId, {
-			content: `Created ${taskCreate.task.taskKey}`,
-			kind: "task",
-			metadata: { taskKey: taskCreate.task.taskKey },
-			role: "assistant",
-			taskId: taskCreate.task.id,
-		});
-	}
-	return appendMessage(repository, sessionId, {
-		content: taskCreate.error,
-		kind: "error",
-		role: "assistant",
-	});
+	return {
+		content: trimmed,
+		title: titleFromMessage(trimmed),
+	};
 }
 
 async function appendMessage(
@@ -185,12 +220,17 @@ async function updateSession(
 	sessionId: string,
 	input: ChatSessionUpdateInput,
 ): Promise<ChatSessionRow | null> {
-	const update: Partial<ChatSessionRow> = { updatedAt: new Date().toISOString() };
+	const update: Partial<ChatSessionRow> = {
+		updatedAt: new Date().toISOString(),
+	};
 	if (input.title !== undefined) {
 		update.title = input.title.trim() || UNTITLED_SESSION;
 	}
 	if (input.projectId !== undefined) {
 		update.projectId = input.projectId;
+	}
+	if (input.taskId !== undefined) {
+		update.taskId = input.taskId;
 	}
 	if (input.pendingRequest !== undefined) {
 		update.pendingRequest = input.pendingRequest;
@@ -201,13 +241,4 @@ async function updateSession(
 			: null;
 	}
 	return repository.updateSession(sessionId, update);
-}
-
-function touchSession(
-	repository: ChatRepository,
-	session: ChatSessionRow,
-): Promise<ChatSessionRow | null> {
-	return repository.updateSession(session.id, {
-		updatedAt: new Date().toISOString(),
-	});
 }

@@ -78,7 +78,7 @@ export function ChatRoomSidebar({
 							>
 								<span className="block truncate">{session.title}</span>
 								<span className="mt-1 block truncate text-xs text-zinc-600">
-									{session.projectId ?? "No project"}
+									{session.taskId ?? session.projectId ?? "No issue"}
 								</span>
 							</button>
 						))}

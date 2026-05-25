@@ -1,14 +1,17 @@
 import type { ServerDatabase } from "devos-db";
 import { z } from "zod";
 import { createChatRepository, createChatService } from "../chat";
-import { ensureLocalDefaultProject, LOCAL_WORKSPACE_ID } from "../local-workspace";
+import {
+	DEFAULT_CHAT_ISSUE_PRIORITY,
+	DEFAULT_CHAT_ISSUE_STATUS,
+	DEFAULT_CHAT_ISSUE_TITLE,
+} from "../chat/chat-defaults";
+import {
+	LOCAL_WORKSPACE_ID,
+	ensureLocalDefaultProject,
+} from "../local-workspace";
 import type { RealtimeEventPublisher } from "../realtime";
 import { createTaskRepository, createTaskService } from "../tasks";
-import {
-	composeTaskChatCreate,
-	runTaskIntake,
-} from "../tasks/task-chat-service";
-import type { CliExecutor } from "../types/app.types";
 import {
 	badRequest,
 	methodNotAllowed,
@@ -59,17 +62,11 @@ const sendMessageSchema = z.object({
 export async function handleChatRoute(
 	request: Request,
 	db: ServerDatabase["db"],
-	cliExecutor: CliExecutor,
 	pathname: string,
 	workspacePath: string,
 	realtimeEvents?: RealtimeEventPublisher,
 ): Promise<Response | null> {
-	const service = createChatRouteService(
-		db,
-		cliExecutor,
-		workspacePath,
-		realtimeEvents,
-	);
+	const service = createChatRouteService(db, workspacePath, realtimeEvents);
 	if (pathname === SESSIONS_PATH) {
 		return handleSessionsRoute(request, service);
 	}
@@ -98,31 +95,38 @@ export async function handleChatRoute(
 
 function createChatRouteService(
 	db: ServerDatabase["db"],
-	cliExecutor: CliExecutor,
 	workspacePath: string,
 	realtimeEvents?: RealtimeEventPublisher,
 ) {
 	const taskService = createTaskService(createTaskRepository(db));
 	return createChatService(createChatRepository(db), {
 		ensureDefaultProject: () => ensureLocalDefaultProject(db, workspacePath),
-		runTaskCreate: async (input) => {
-			const result = await composeTaskChatCreate(input, {
-				runTaskIntake: (request) => runTaskIntake(cliExecutor, request),
-				persistCreatedTask: async (request, task) => {
-					const persisted = await taskService.ensureChatCreatedTask(
-						request,
-						task,
-					);
-					if (persisted.status !== "ok") {
-						throw new Error("Invalid task create payload");
-					}
-					return persisted.value;
-				},
+		createIssue: async (input) => {
+			const result = await taskService.createTask({
+				content: input.content,
+				creatorId: LOCAL_WORKSPACE_ID,
+				priority: DEFAULT_CHAT_ISSUE_PRIORITY,
+				projectId: input.projectId,
+				status: DEFAULT_CHAT_ISSUE_STATUS,
+				title: input.title || DEFAULT_CHAT_ISSUE_TITLE,
 			});
-			if (result.status === "created") {
-				realtimeEvents?.publish({ type: "issue.created", issue: result.task });
+			if (result.status !== "ok") {
+				throw new Error("Default chat issue creation failed");
 			}
-			return result;
+			realtimeEvents?.publish({ type: "issue.created", issue: result.value });
+			return result.value;
+		},
+		getIssue: async (issueId) => {
+			const result = await taskService.getTask(issueId);
+			return result.status === "ok" ? result.value : null;
+		},
+		updateIssue: async (issueId, input) => {
+			const result = await taskService.updateTask(issueId, input);
+			if (result.status !== "ok") {
+				throw new Error("Default chat issue update failed");
+			}
+			realtimeEvents?.publish({ type: "issue.updated", issue: result.value });
+			return result.value;
 		},
 	});
 }
@@ -176,7 +180,9 @@ async function handleMessagesRoute(
 ): Promise<Response> {
 	if (request.method === "GET") {
 		const messages = await service.getMessages(sessionId);
-		return messages ? jsonSuccess(messages) : notFound("Chat session not found");
+		return messages
+			? jsonSuccess(messages)
+			: notFound("Chat session not found");
 	}
 	if (request.method !== "POST") {
 		return methodNotAllowed();
@@ -210,10 +216,7 @@ async function handleSendRoute(
 async function parseBody<T extends z.ZodTypeAny>(
 	request: Request,
 	schema: T,
-): Promise<
-	| { ok: true; value: z.infer<T> }
-	| { ok: false; error: string }
-> {
+): Promise<{ ok: true; value: z.infer<T> } | { ok: false; error: string }> {
 	const body = await parseObjectJsonBody(request);
 	if (!body.ok) {
 		return body;

@@ -5,7 +5,7 @@ import {
 	readNullableString,
 	readString,
 } from "./response-utils";
-import { parseTaskCreateResponse } from "./task-client";
+import { parseProjectBoardTaskRecord } from "./task-client";
 import type {
 	ChatMessageCreateRequest,
 	ChatMessageKind,
@@ -126,6 +126,7 @@ export function parseChatSessionRecord(payload: unknown): ChatSessionRecord {
 		id: readString(row, "id", CHAT_SESSIONS_PATH),
 		workspaceId: readString(row, "workspaceId", CHAT_SESSIONS_PATH),
 		projectId: readNullableString(row, "projectId", CHAT_SESSIONS_PATH),
+		taskId: readNullableString(row, "taskId", CHAT_SESSIONS_PATH),
 		title: readString(row, "title", CHAT_SESSIONS_PATH),
 		pendingRequest: readNullableString(
 			row,
@@ -166,7 +167,7 @@ function parseChatSendResponse(payload: unknown): ChatSendResponse {
 			`${CHAT_SESSIONS_PATH}/:id/send:messages`,
 			parseChatMessageRecord,
 		),
-		taskCreate: parseTaskCreateResponse(row.taskCreate),
+		issue: parseProjectBoardTaskRecord(row.issue),
 	};
 }
 
@@ -179,7 +180,10 @@ function chatMessagesPath(sessionId: string): string {
 }
 
 function readStringList(value: unknown): string[] {
-	if (!Array.isArray(value) || !value.every((item) => typeof item === "string")) {
+	if (
+		!Array.isArray(value) ||
+		!value.every((item) => typeof item === "string")
+	) {
 		throw new Error("Invalid chat session field 'pendingQuestions'");
 	}
 	return value;

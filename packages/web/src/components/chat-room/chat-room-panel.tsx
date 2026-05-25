@@ -12,11 +12,11 @@ import {
 } from "@/lib/api/chat-queries";
 import { useWorkspaceProjectsQuery } from "@/lib/api/realtime-queries";
 
-import { ChatComposer } from "./chat-composer";
 import { parseChatCommand } from "./chat-command-utils";
-import { LOCAL_WORKSPACE_ID } from "./chat-room.constants";
+import { ChatComposer } from "./chat-composer";
 import { executeCommandInput } from "./chat-room-command-actions";
 import { ChatRoomSidebar } from "./chat-room-sidebar";
+import { LOCAL_WORKSPACE_ID } from "./chat-room.constants";
 import { ChatTranscript } from "./chat-transcript";
 import type {
 	ChatAnswerPayload,
@@ -29,7 +29,9 @@ export function ChatRoomPanel({
 }: ChatRoomPanelProps): ReactElement {
 	const [activeSessionId, setActiveSessionId] = useState("");
 	const [draft, setDraft] = useState("");
-	const [answerDrafts, setAnswerDrafts] = useState<Record<string, string[]>>({});
+	const [answerDrafts, setAnswerDrafts] = useState<Record<string, string[]>>(
+		{},
+	);
 	const [streamLines, setStreamLines] = useState<ChatStreamLine[]>([]);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const handledNewSessionRequest = useRef(0);
@@ -103,7 +105,9 @@ export function ChatRoomPanel({
 		setErrorMessage(null);
 		try {
 			const session = await ensureSession();
-			const command = parseChatCommand(content, { projectId: session.projectId });
+			const command = parseChatCommand(content, {
+				projectId: session.projectId,
+			});
 			await executeInput(session.id, content, command);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : "Send failed");
@@ -175,7 +179,16 @@ export function ChatRoomPanel({
 						{selectedSession?.title ?? "Untitled"}
 					</h1>
 					<p className="m-0 mt-1 truncate text-xs text-zinc-500">
-						{selectedSession?.projectId ?? "default"}
+						{selectedSession?.taskId ? (
+							<a
+								className="underline-offset-4 hover:text-zinc-300 hover:underline"
+								href={`/issues/${encodeURIComponent(selectedSession.taskId)}`}
+							>
+								Issue {selectedSession.taskId}
+							</a>
+						) : (
+							(selectedSession?.projectId ?? "default")
+						)}
 					</p>
 				</header>
 				<ChatTranscript

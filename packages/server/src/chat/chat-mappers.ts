@@ -1,8 +1,5 @@
 import type { ChatMessageRow, ChatSessionRow } from "devos-db";
-import type {
-	ChatMessageRecord,
-	ChatSessionRecord,
-} from "./types/chat.types";
+import type { ChatMessageRecord, ChatSessionRecord } from "./types/chat.types";
 
 export function mapSession(session: ChatSessionRow): ChatSessionRecord {
 	return {
@@ -28,7 +25,8 @@ function parseStringArray(value: string | null): string[] {
 		return [];
 	}
 	const parsed = JSON.parse(value) as unknown;
-	return Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
+	return Array.isArray(parsed) &&
+		parsed.every((item) => typeof item === "string")
 		? parsed
 		: [];
 }
