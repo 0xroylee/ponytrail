@@ -58,7 +58,7 @@ function renderInline(text: string): ReactNode[] {
 		if (part.isCode) {
 			return (
 				<code
-					className="rounded border border-zinc-700 bg-zinc-800/70 px-1.5 py-0.5 font-mono text-zinc-200"
+					className="rounded border border-zinc-700 bg-surface-active/70 px-1.5 py-0.5 font-mono text-zinc-200"
 					key={part.key}
 				>
 					{part.text}

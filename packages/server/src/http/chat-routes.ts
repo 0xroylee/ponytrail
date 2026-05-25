@@ -28,11 +28,17 @@ const answerSchema = z.object({
 	answer: z.string().trim().min(1),
 });
 
-const clarificationOptionSchema = z.object({
-	label: z.string().trim().min(1),
-	value: z.string().trim().min(1),
-	description: z.string().trim().min(1).optional(),
-});
+const clarificationOptionSchema = z
+	.object({
+		label: z.string().trim().min(1),
+		value: z.string().trim().min(1),
+		description: z.string().trim().min(1).optional(),
+		recommended: z.boolean().optional(),
+	})
+	.transform(({ recommended, ...option }) => ({
+		...option,
+		...(recommended === true ? { recommended } : {}),
+	}));
 
 const clarificationQuestionSchema = z.union([
 	z

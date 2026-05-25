@@ -19,6 +19,45 @@ import type {
 import type { BoardTaskApiRecord } from "../src/tasks";
 
 describe("chat send service streaming", () => {
+	it("preserves recommended options in pending clarification questions", async () => {
+		const session = chatSession();
+		const issue = boardTask();
+		const messages: ChatMessageRow[] = [];
+		const repository = createRepository(session, messages);
+		const deps: ChatServiceDeps = {
+			ensureDefaultProject: async () => defaultProject(),
+			createIssue: async () => issue,
+			getIssue: async () => issue,
+			resolveTaskRequirement: async () => ({
+				status: "needs_info",
+				questions: [
+					{
+						question: "Which agent?",
+						options: [
+							{ label: "Codex", value: "codex", recommended: true },
+							{ label: "Claude", value: "claude", recommended: false },
+						],
+					},
+				],
+			}),
+			updateIssue: async (_issueId, input) => ({ ...issue, ...input }),
+		};
+
+		const result = await sendChatMessage(repository, deps, session.id, {
+			content: "Route agent choice",
+		});
+
+		expect(result?.session.pendingQuestions).toEqual([
+			{
+				question: "Which agent?",
+				options: [
+					{ label: "Codex", value: "codex", recommended: true },
+					{ label: "Claude", value: "claude" },
+				],
+			},
+		]);
+	});
+
 	it("emits stream error after a durable user message when send fails", async () => {
 		const session = chatSession();
 		const issue = boardTask();

@@ -18,22 +18,24 @@ export function SidebarPinnedIssues({
 		return null;
 	}
 	return (
-		<div className="grid gap-1 border-t border-zinc-900 pt-3">
-			<p className="px-2 text-xs font-semibold text-zinc-500">Pinned</p>
+		<div className="grid gap-1 border-t border-border pt-3">
+			<p className="px-2 text-xs font-semibold text-muted-foreground">Pinned</p>
 			{pinnedIssues.map((issue) => (
 				<div className="group flex items-center gap-1" key={issue.id}>
 					<Link
-						className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
+						className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-surface-hover hover:text-zinc-200"
 						href={`/issues/${encodeURIComponent(issue.id)}`}
 						title={issue.title}
 					>
 						<Pin className="shrink-0" size={13} />
 						<span className="truncate">{issue.taskKey}</span>
-						<span className="truncate text-zinc-600">{issue.title}</span>
+						<span className="truncate text-muted-foreground/80">
+							{issue.title}
+						</span>
 					</Link>
 					<Button
 						aria-label={`Unpin ${issue.taskKey}`}
-						className="h-7 w-7 shrink-0 text-zinc-600 opacity-0 hover:bg-zinc-900 hover:text-zinc-200 group-hover:opacity-100"
+						className="h-7 w-7 shrink-0 text-muted-foreground/80 opacity-0 hover:bg-surface-hover hover:text-zinc-200 group-hover:opacity-100"
 						onClick={() => unpinIssue(issue.id)}
 						size="icon"
 						type="button"

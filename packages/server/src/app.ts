@@ -13,6 +13,7 @@ import {
 } from "./http/response";
 import { handleTasksRoute } from "./http/tasks-routes";
 import { handleWorkspaceBoardRoute } from "./http/workspace-board-routes";
+import { handleWorkspaceEnvironmentRoute } from "./http/workspace-environment-routes";
 import { defaultLocalWorkspace } from "./local-workspace";
 import { parseNotificationServerRequest } from "./notifications/notification-server-request";
 import { parseNotificationRequest } from "./notifications/notifications-request";
@@ -34,6 +35,17 @@ export function createHandleRequest(deps: AppDeps): RouteHandler {
 				workspaceId: workspace.id,
 				name: workspace.name,
 			});
+		}
+
+		const environmentResponse = await handleWorkspaceEnvironmentRoute(
+			request,
+			deps.db,
+			pathname,
+			deps.workspacePath ?? process.cwd(),
+			deps.workspace ?? defaultLocalWorkspace(),
+		);
+		if (environmentResponse) {
+			return environmentResponse;
 		}
 
 		const cliResponse = await handleCliRoute(

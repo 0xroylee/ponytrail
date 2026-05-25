@@ -14,8 +14,8 @@ export function ChatRoomHeader({
 	onOpenTaskDetails,
 }: ChatRoomHeaderProps): ReactElement {
 	return (
-		<header className="flex items-center justify-between gap-3 border-b border-zinc-900 bg-[#111216] px-4 py-3">
-			<div className="flex min-w-0 items-center gap-3">
+		<header className="flex items-center justify-between gap-3 border-b border-border bg-surface-inset px-4 py-3">
+			<div className="flex min-w-0 flex-1 items-center gap-3">
 				<Button
 					asChild
 					className="cursor-pointer md:hidden"
@@ -28,11 +28,18 @@ export function ChatRoomHeader({
 				</Button>
 				<div className="min-w-0">
 					<h1 className="m-0 truncate text-base font-semibold">{title}</h1>
-					<p className="m-0 mt-1 truncate text-xs text-zinc-500">{projectId}</p>
+					<p className="m-0 mt-1 truncate text-xs text-muted-foreground">
+						{projectId}
+					</p>
 				</div>
 			</div>
 			{activeTaskId ? (
-				<Button onClick={onOpenTaskDetails} type="button" variant="secondary">
+				<Button
+					className="shrink-0"
+					onClick={onOpenTaskDetails}
+					type="button"
+					variant="secondary"
+				>
 					<FileText size={16} />
 					<span className="hidden sm:inline">Task details</span>
 					<span className="sm:hidden">Details</span>

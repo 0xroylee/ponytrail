@@ -1,7 +1,7 @@
 import type { SetupDraft } from "./types/setup.types";
 
 export function renderEnvFile(
-	draft: Pick<SetupDraft, "notifications">,
+	draft: Pick<SetupDraft, "notifications" | "workflow">,
 ): string {
 	return `${renderEnvEntries(buildEnvUpdates(draft))}\n`;
 }
@@ -48,9 +48,10 @@ export function mergeEnvFile(
 }
 
 export function buildEnvUpdates(
-	draft: Pick<SetupDraft, "notifications">,
+	draft: Pick<SetupDraft, "notifications" | "workflow">,
 ): Record<string, string | undefined> {
 	const updates: Record<string, string | undefined> = {};
+	updates.PIV_ISOLATED_WORKTREES = draft.workflow.isolatedWorktrees ? "1" : "0";
 	if (draft.notifications.email.resendApiKey) {
 		updates.RESEND_API_KEY = draft.notifications.email.resendApiKey;
 	}

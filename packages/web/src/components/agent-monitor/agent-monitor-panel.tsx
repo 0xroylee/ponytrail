@@ -94,7 +94,7 @@ function renderRuntimeTabs(
 						onClick={() => onRuntimeTabChange(tab.id)}
 						aria-pressed={isActive}
 						className={`grid h-auto min-w-[8.5rem] justify-start gap-1 text-left ${
-							isActive ? "border-blue-400 bg-zinc-800" : ""
+							isActive ? "border-blue-400 bg-surface-active" : ""
 						}`}
 						variant="outline"
 					>

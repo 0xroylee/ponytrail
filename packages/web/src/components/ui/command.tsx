@@ -13,7 +13,7 @@ const Command = React.forwardRef<
 	<CommandPrimitive
 		ref={ref}
 		className={cn(
-			"flex h-full w-full flex-col overflow-hidden rounded-md bg-[#15161a] text-zinc-100",
+			"flex h-full w-full flex-col overflow-hidden rounded-md bg-surface-panel text-zinc-100",
 			className,
 		)}
 		{...props}
@@ -29,11 +29,11 @@ const CommandInput = React.forwardRef<
 		className="flex min-w-0 flex-1 items-center gap-3 px-4"
 		cmdk-input-wrapper=""
 	>
-		<Search className="h-4 w-4 shrink-0 text-zinc-500" />
+		<Search className="h-4 w-4 shrink-0 text-muted-foreground" />
 		<CommandPrimitive.Input
 			ref={ref}
 			className={cn(
-				"flex h-12 w-full bg-transparent py-3 text-sm outline-none placeholder:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-50",
+				"flex h-12 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground/80 disabled:cursor-not-allowed disabled:opacity-50",
 				className,
 			)}
 			{...props}
@@ -63,7 +63,10 @@ const CommandEmpty = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<CommandPrimitive.Empty
 		ref={ref}
-		className={cn("px-3 py-10 text-center text-sm text-zinc-500", className)}
+		className={cn(
+			"px-3 py-10 text-center text-sm text-muted-foreground",
+			className,
+		)}
 		{...props}
 	/>
 ));
@@ -76,7 +79,7 @@ const CommandGroup = React.forwardRef<
 	<CommandPrimitive.Group
 		ref={ref}
 		className={cn(
-			"py-2 text-zinc-100 [&_[cmdk-group-heading]]:mb-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-zinc-500",
+			"py-2 text-zinc-100 [&_[cmdk-group-heading]]:mb-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground",
 			className,
 		)}
 		{...props}
@@ -91,7 +94,7 @@ const CommandItem = React.forwardRef<
 	<CommandPrimitive.Item
 		ref={ref}
 		className={cn(
-			"relative flex min-h-12 cursor-default select-none items-center gap-3 rounded-md px-3 py-2 text-sm text-zinc-300 outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-zinc-800 data-[selected=true]:text-zinc-100 data-[disabled=true]:opacity-50",
+			"relative flex min-h-12 cursor-default select-none items-center gap-3 rounded-md px-3 py-2 text-sm text-zinc-300 outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-surface-active data-[selected=true]:text-zinc-100 data-[disabled=true]:opacity-50",
 			className,
 		)}
 		{...props}

@@ -1,6 +1,7 @@
 import {
 	assertObjectRecord,
 	parseListResponse,
+	readNullableString,
 	readNumber,
 	readString,
 	readStringArray,
@@ -31,6 +32,12 @@ export function parseTokenUsageRecord(payload: unknown): TokenUsageRecord {
 	return {
 		id: readString(row, "id", "/api/token-usage"),
 		runId: readString(row, "runId", "/api/token-usage"),
+		taskId: readNullableString(row, "taskId", "/api/token-usage"),
+		taskExecutionLogId: readNullableString(
+			row,
+			"taskExecutionLogId",
+			"/api/token-usage",
+		),
 		stage: readString(row, "stage", "/api/token-usage"),
 		inputTokens: readNumber(row, "inputTokens", "/api/token-usage"),
 		outputTokens: readNumber(row, "outputTokens", "/api/token-usage"),

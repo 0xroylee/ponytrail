@@ -1,14 +1,25 @@
 "use client";
 
-import { type ReactElement, useEffect, useState } from "react";
+import { type ReactElement, useEffect, useRef, useState } from "react";
 
 import { TextShimmer } from "@/components/loading/text-shimmer";
 import type { ChatMessageRecord } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+import { ChatEnvironmentPanel } from "./chat-environment-panel";
 import { resolveChatMessageDisplay } from "./chat-message-display";
 import { ChatMissionProgress } from "./chat-mission-progress";
 import type { ChatTranscriptProps } from "./types/chat-room.types";
+
+const DEVOS_ING_LOGO = [
+	"█████████   █████████   ███     ███   ████████    █████████          ███   ███    ███    ████████",
+	"███    ███  ███         ███     ███  ███    ███  ███    ███         ███   ████   ███   ███    ███",
+	"███    ███  ███          ███   ███   ███    ███  ███                ███   █████  ███   ███",
+	"███    ███  ████████      ███ ███    ███    ███  ████████           ███   ███ ██ ███   ███  █████",
+	"███    ███  ███            █████     ███    ███         ███         ███   ███  █████   ███    ███",
+	"███    ███  ███             ███      ███    ███  ███    ███   ███   ███   ███   ████   ███    ███",
+	"█████████   █████████       ███       ████████    █████████    ███   ███   ███    ███    ████████",
+].join("\n");
 
 export function ChatTranscript({
 	error,
@@ -19,23 +30,53 @@ export function ChatTranscript({
 	session,
 	streamLines,
 	workingStartedAt,
+	onDraftCommand,
 }: ChatTranscriptProps): ReactElement {
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const previousSessionIdRef = useRef<string | null>(null);
+	const sessionId = session?.id ?? null;
+	const sessionTaskId = session?.taskId ?? null;
+	const missionTaskId = missionProgress?.taskId ?? null;
+	const missionIsPending =
+		Boolean(sessionTaskId) &&
+		(missionTaskId !== sessionTaskId || missionProgress?.state === "loading");
+	const renderedContentKey = [
+		messages.length,
+		missionProgress?.updatedAt ?? "",
+		missionProgress?.notes.length ?? 0,
+		missionProgress?.executions.length ?? 0,
+		streamLines.length,
+	].join(":");
 	const showThinking = isThinking && streamLines.length === 0;
 	const showWorkingHeader =
 		Boolean(workingStartedAt) && (showThinking || streamLines.length > 0);
+
+	useEffect(() => {
+		if (!sessionId) {
+			previousSessionIdRef.current = null;
+			return;
+		}
+		if (previousSessionIdRef.current === sessionId || isLoading) return;
+		if (missionIsPending) return;
+		if (!renderedContentKey) return;
+		const frame = window.requestAnimationFrame(() => {
+			const container = scrollContainerRef.current;
+			if (!container) return;
+			container.scrollTop = container.scrollHeight;
+			previousSessionIdRef.current = sessionId;
+		});
+		return () => window.cancelAnimationFrame(frame);
+	}, [sessionId, isLoading, missionIsPending, renderedContentKey]);
+
 	return (
-		<div className="min-h-0 overflow-auto px-4 py-6">
-			<div className="mx-auto grid max-w-4xl gap-4">
+		<div
+			className="relative min-h-0 min-w-0 overflow-auto px-4 py-6"
+			ref={scrollContainerRef}
+		>
+			<div className="mx-auto grid min-w-0 max-w-4xl gap-4 xl:mr-[22rem]">
 				{isLoading ? <StatusLine text="Loading session..." /> : null}
 				{error ? <ErrorLine text={error.message} /> : null}
-				{!isLoading && messages.length === 0 ? (
-					<div className="pt-[18dvh] text-center text-zinc-500">
-						<h1 className="mb-2 text-2xl font-semibold text-zinc-100">
-							{session?.title ?? "Untitled"}
-						</h1>
-						<p className="m-0 text-sm">Ready for a task.</p>
-					</div>
-				) : null}
+				{!isLoading && messages.length === 0 ? <EmptyTranscriptLogo /> : null}
 				{messages.map((message) => (
 					<ChatMessageBubble key={message.id} message={message} />
 				))}
@@ -45,7 +86,7 @@ export function ChatTranscript({
 				) : null}
 				{showThinking ? <ThinkingLine /> : null}
 				{streamLines.length > 0 ? (
-					<div className="justify-self-start whitespace-pre-wrap rounded-md border border-zinc-800 bg-[#17181c] px-3 py-2 font-mono text-xs text-zinc-300">
+					<div className="justify-self-start whitespace-pre-wrap rounded-md border border-border bg-surface-panel px-3 py-2 font-mono text-xs text-zinc-300">
 						{streamLines.map((line) => (
 							<div
 								className={line.stream === "stderr" ? "text-red-200" : ""}
@@ -57,6 +98,25 @@ export function ChatTranscript({
 					</div>
 				) : null}
 			</div>
+			<ChatEnvironmentPanel
+				missionProgress={missionProgress}
+				projectId={session?.projectId ?? null}
+				onDraftCommand={onDraftCommand}
+			/>
+		</div>
+	);
+}
+
+function EmptyTranscriptLogo(): ReactElement {
+	return (
+		<div className="grid justify-items-center pt-[26dvh] text-center">
+			<pre
+				aria-hidden="true"
+				className="m-0 select-none whitespace-pre font-mono text-[5px] font-black leading-[1.08] text-[#5a5350] sm:text-[8px] md:text-[10px] lg:text-xs"
+			>
+				{DEVOS_ING_LOGO}
+			</pre>
+			<h1 className="sr-only">DEVOS.ING</h1>
 		</div>
 	);
 }
@@ -75,10 +135,10 @@ function WorkingSectionHeader({
 
 	return (
 		<div className="grid gap-4 pt-2">
-			<p className="m-0 text-lg font-medium text-zinc-500">
+			<p className="m-0 text-lg font-medium text-muted-foreground">
 				Working for {formatElapsedSeconds(startedAt, now)}s
 			</p>
-			<div className="h-px bg-zinc-800" />
+			<div className="h-px bg-surface-active" />
 		</div>
 	);
 }
@@ -115,12 +175,14 @@ function ChatMessageBubble({
 			className={cn(
 				"grid max-w-[min(42rem,90%)] gap-2 rounded-md border px-3 py-2 text-sm",
 				isUser
-					? "justify-self-end border-zinc-700 bg-zinc-800 text-zinc-100"
-					: "justify-self-start border-zinc-800 bg-[#17181c] text-zinc-200",
+					? "justify-self-end border-zinc-700 bg-surface-active text-zinc-100"
+					: "justify-self-start border-border bg-surface-panel text-zinc-200",
 				isError && "border-red-900/60 bg-red-950/30 text-red-100",
 			)}
 		>
-			<p className="m-0 whitespace-pre-wrap leading-6">{message.content}</p>
+			<p className="m-0 whitespace-pre-wrap break-words leading-6">
+				{message.content}
+			</p>
 		</article>
 	);
 }
@@ -135,7 +197,9 @@ function AssistantNote({
 			className="grid max-w-[min(42rem,90%)] justify-self-start gap-2 px-1 py-1 text-sm text-zinc-300"
 			data-chat-message-display="assistant-note"
 		>
-			<p className="m-0 whitespace-pre-wrap leading-6">{message.content}</p>
+			<p className="m-0 whitespace-pre-wrap break-words leading-6">
+				{message.content}
+			</p>
 		</article>
 	);
 }
@@ -147,17 +211,19 @@ function PlanMessage({
 }): ReactElement {
 	return (
 		<article
-			className="grid max-w-[min(46rem,94%)] justify-self-start gap-2 rounded-md border border-blue-900/50 bg-[#121722] px-3 py-2 text-sm text-zinc-200"
+			className="grid max-w-[min(46rem,94%)] justify-self-start gap-2 rounded-md border border-blue-900/50 bg-surface-plan px-3 py-2 text-sm text-zinc-200"
 			data-chat-message-display="plan"
 		>
 			<div className="text-xs font-medium uppercase text-blue-300">Plan</div>
-			<p className="m-0 whitespace-pre-wrap leading-6">{message.content}</p>
+			<p className="m-0 whitespace-pre-wrap break-words leading-6">
+				{message.content}
+			</p>
 		</article>
 	);
 }
 
 function StatusLine({ text }: { text: string }): ReactElement {
-	return <p className="m-0 text-sm text-zinc-500">{text}</p>;
+	return <p className="m-0 text-sm text-muted-foreground">{text}</p>;
 }
 
 function ErrorLine({ text }: { text: string }): ReactElement {

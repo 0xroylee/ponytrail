@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { shouldShowChatThinkingIndicator } from "../src/components/chat-room/chat-thinking-state";
@@ -88,28 +89,34 @@ describe("chat thinking indicator", () => {
 	});
 
 	it("keeps pending clarification controls out of the transcript", () => {
+		const queryClient = new QueryClient();
 		const html = renderToStaticMarkup(
-			createElement(ChatTranscript, {
-				error: null,
-				isLoading: false,
-				isThinking: false,
-				missionProgress: null,
-				messages: [],
-				session: chatSession({
-					pendingQuestions: [
-						{
-							question: "Which agent?",
-							options: [
-								{ label: "Codex", value: "codex" },
-								{ label: "Claude", value: "claude" },
-							],
-						},
-						{ question: "What scope?" },
-					],
+			createElement(
+				QueryClientProvider,
+				{ client: queryClient },
+				createElement(ChatTranscript, {
+					error: null,
+					isLoading: false,
+					isThinking: false,
+					missionProgress: null,
+					messages: [],
+					session: chatSession({
+						pendingQuestions: [
+							{
+								question: "Which agent?",
+								options: [
+									{ label: "Codex", value: "codex" },
+									{ label: "Claude", value: "claude" },
+								],
+							},
+							{ question: "What scope?" },
+						],
+					}),
+					streamLines: [],
+					workingStartedAt: null,
+					onDraftCommand: () => undefined,
 				}),
-				streamLines: [],
-				workingStartedAt: null,
-			}),
+			),
 		);
 
 		expect(html).not.toContain("What scope?");
@@ -129,7 +136,7 @@ describe("chat thinking indicator", () => {
 			streamLines: [],
 		});
 		expect(noteHtml).toContain('data-chat-message-display="assistant-note"');
-		expect(noteHtml).not.toContain("border-zinc-800 bg-[#17181c]");
+		expect(noteHtml).not.toContain("border-border bg-surface-panel");
 
 		const planHtml = renderTranscript({
 			isThinking: false,
@@ -169,7 +176,9 @@ describe("chat thinking indicator", () => {
 
 		expect(html).toContain('data-chat-message-display="standard"');
 		expect(html).toContain('data-chat-message-display="error"');
-		expect(html).toContain("justify-self-end border-zinc-700 bg-zinc-800");
+		expect(html).toContain(
+			"justify-self-end border-zinc-700 bg-surface-active",
+		);
 		expect(html).toContain("border-red-900");
 	});
 });
@@ -191,17 +200,23 @@ function renderTranscript({
 	}>;
 	workingStartedAt?: string | null;
 }): string {
+	const queryClient = new QueryClient();
 	return renderToStaticMarkup(
-		createElement(ChatTranscript, {
-			error: null,
-			isLoading: false,
-			isThinking,
-			missionProgress: null,
-			messages,
-			session,
-			streamLines,
-			workingStartedAt,
-		}),
+		createElement(
+			QueryClientProvider,
+			{ client: queryClient },
+			createElement(ChatTranscript, {
+				error: null,
+				isLoading: false,
+				isThinking,
+				missionProgress: null,
+				messages,
+				session,
+				streamLines,
+				workingStartedAt,
+				onDraftCommand: () => undefined,
+			}),
+		),
 	);
 }
 

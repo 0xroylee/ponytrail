@@ -163,7 +163,7 @@ export function TaskCreateChatDialog({
 					onStateChange={setState}
 				/>
 				{state.step === "clarifying" ? (
-					<div className="grid gap-3 rounded-lg border border-zinc-800 bg-[#141519] p-3">
+					<div className="grid gap-3 rounded-lg border border-border bg-surface-input p-3">
 						{clarificationStep.currentQuestion ? (
 							<TaskCreateClarificationStep
 								answer={

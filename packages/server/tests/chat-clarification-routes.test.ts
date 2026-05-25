@@ -109,7 +109,7 @@ describe("chat clarification routes", () => {
 			{
 				question: "Which agent?",
 				options: [
-					{ label: "Codex", value: "codex" },
+					{ label: "Codex", value: "codex", recommended: true },
 					{ label: "Claude", value: "claude" },
 				],
 			},
@@ -147,6 +147,6 @@ describe("chat clarification routes", () => {
 
 function intakeOutput(callCount: number): string {
 	return callCount === 1
-		? '{"status":"needs_info","questions":[{"question":"Which agent?","options":[{"label":"Codex","value":"codex"},{"label":"Claude","value":"claude"}]}]}\n'
+		? '{"status":"needs_info","questions":[{"question":"Which agent?","options":[{"label":"Codex","value":"codex","recommended":true},{"label":"Claude","value":"claude","recommended":false}]}]}\n'
 		: '{"status":"ready","task":{"title":"Route agent choice","description":"Use the selected agent."}}\n';
 }

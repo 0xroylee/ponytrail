@@ -31,6 +31,9 @@ export function ChatRoomSidebar({
 	onSelectSession,
 }: ChatRoomSidebarProps): ReactElement {
 	const [sidebarView, setSidebarView] = useState<ChatRoomSidebarView>("main");
+	const [collapsedProjectIds, setCollapsedProjectIds] = useState<Set<string>>(
+		() => new Set(),
+	);
 	const isSettingsView = sidebarView === "settings";
 	const sessionGroups = buildChatSessionProjectGroups({
 		activeSessionId,
@@ -56,10 +59,29 @@ export function ChatRoomSidebar({
 		onCloseSidebar();
 	}
 
+	function toggleProjectGroup(
+		groupId: string,
+		isActive: boolean,
+		firstSessionId: string,
+	): void {
+		setCollapsedProjectIds((current) => {
+			const next = new Set(current);
+			if (!isActive || next.has(groupId)) {
+				next.delete(groupId);
+				return next;
+			}
+			next.add(groupId);
+			return next;
+		});
+		if (firstSessionId !== activeSessionId) {
+			onSelectSession(firstSessionId);
+		}
+	}
+
 	return (
 		<aside
 			aria-label="Projects and sessions"
-			className="fixed inset-y-0 left-0 z-40 grid min-h-0 w-[18rem] max-w-[calc(100vw-2rem)] -translate-x-full border-r border-zinc-900 bg-[#15161a] shadow-2xl transition-transform peer-checked:translate-x-0 md:static md:z-auto md:max-w-none md:translate-x-0 md:shadow-none"
+			className="fixed inset-y-0 left-0 z-40 grid min-h-0 w-[18rem] max-w-[calc(100vw-2rem)] -translate-x-full border-r border-border bg-surface-panel shadow-2xl transition-transform peer-checked:translate-x-0 md:static md:z-auto md:max-w-none md:translate-x-0 md:shadow-none"
 		>
 			<div className="relative h-full min-h-0 overflow-hidden">
 				<div
@@ -72,7 +94,7 @@ export function ChatRoomSidebar({
 					)}
 					inert={isSettingsView ? true : undefined}
 				>
-					<div className="grid gap-2 border-b border-zinc-900 p-3">
+					<div className="grid gap-2 border-b border-border p-3">
 						<div className="flex min-w-0 gap-2">
 							<Button
 								className="min-w-0 flex-1 justify-start"
@@ -108,29 +130,33 @@ export function ChatRoomSidebar({
 						</Button>
 					</div>
 					<div className="min-h-0 overflow-auto p-3">
-						<div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-zinc-500">
+						<div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
 							<Folder size={14} />
 							Sessions
 						</div>
 						<div className="grid gap-1">
 							{sessionGroups.map((group) => {
-								const firstSessionId = group.sessions[0]?.id;
-								const GroupIcon = group.isActive ? ChevronDown : ChevronRight;
+								const firstSessionId = group.sessions[0]?.id ?? "";
+								const isExpanded =
+									group.isActive && !collapsedProjectIds.has(group.id);
+								const GroupIcon = isExpanded ? ChevronDown : ChevronRight;
 								return (
 									<div className="grid gap-1" key={group.id}>
 										<Button
-											aria-expanded={group.isActive}
+											aria-expanded={isExpanded}
 											className={cn(
 												"h-9 min-w-0 justify-start gap-2 px-2 text-left text-sm",
 												group.isActive
-													? "bg-zinc-900 text-zinc-100"
-													: "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200",
+													? "bg-surface-hover text-zinc-100"
+													: "text-zinc-400 hover:bg-surface-hover hover:text-zinc-200",
 											)}
-											onClick={() => {
-												if (!group.isActive && firstSessionId) {
-													onSelectSession(firstSessionId);
-												}
-											}}
+											onClick={() =>
+												toggleProjectGroup(
+													group.id,
+													group.isActive,
+													firstSessionId,
+												)
+											}
 											size="sm"
 											title={group.label}
 											type="button"
@@ -141,18 +167,18 @@ export function ChatRoomSidebar({
 											<span className="min-w-0 flex-1 truncate">
 												{group.label}
 											</span>
-											<span className="shrink-0 rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] leading-none text-zinc-500">
+											<span className="shrink-0 rounded bg-surface-active px-1.5 py-0.5 text-[11px] leading-none text-muted-foreground">
 												{group.sessions.length}
 											</span>
 										</Button>
-										{group.isActive ? (
+										{isExpanded ? (
 											<div className="grid gap-1 pl-6">
 												{group.sessions.map((session) => (
 													<div
 														className={cn(
-															"rounded-md group grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] gap-1 hover:bg-zinc-900 hover:text-zinc-200",
+															"rounded-md group grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] gap-1 hover:bg-surface-hover hover:text-zinc-200",
 															session.id === activeSessionId
-																? "bg-zinc-800 text-zinc-100"
+																? "bg-surface-active text-zinc-100"
 																: "text-zinc-400",
 														)}
 														key={session.id}
@@ -167,9 +193,6 @@ export function ChatRoomSidebar({
 																<span className="block truncate">
 																	{session.title}
 																</span>
-																{/* <span className="mt-1 block truncate text-xs text-zinc-600">
-																	{session.taskId ?? "No issue"}
-																</span> */}
 															</span>
 														</Button>
 														<Button
@@ -191,15 +214,15 @@ export function ChatRoomSidebar({
 								);
 							})}
 							{sessions.length === 0 ? (
-								<div className="rounded-md border border-dashed border-zinc-800 px-3 py-4 text-sm text-zinc-500">
+								<div className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
 									No sessions yet
 								</div>
 							) : null}
 						</div>
 					</div>
-					<nav className="border-t border-zinc-900 p-3">
+					<nav className="border-t border-border p-3">
 						<Button
-							className="h-9 w-full justify-start gap-2 px-2 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+							className="h-9 w-full justify-start gap-2 px-2 text-xs text-zinc-400 hover:bg-surface-hover hover:text-zinc-200"
 							onClick={showSettingsSidebar}
 							size="sm"
 							type="button"

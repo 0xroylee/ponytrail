@@ -77,7 +77,7 @@ export function WebSidebar({
 	return (
 		<aside
 			aria-label="Primary navigation"
-			className="grid h-[100dvh] max-h-[100dvh] border-r border-zinc-900 bg-[#15161a] text-zinc-400"
+			className="grid h-[100dvh] max-h-[100dvh] border-r border-border bg-surface-panel text-zinc-400"
 			style={{
 				width: isHidden ? "0" : isExpanded ? "14rem" : "6.5rem",
 				opacity: isHidden ? 0 : 1,
@@ -88,7 +88,7 @@ export function WebSidebar({
 			}}
 		>
 			<header className="flex items-center gap-3 p-4">
-				<span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-zinc-700 bg-zinc-800 text-sm font-semibold text-zinc-200">
+				<span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-zinc-700 bg-surface-active text-sm font-semibold text-zinc-200">
 					R
 				</span>
 				{isExpanded ? (
@@ -139,7 +139,7 @@ export function WebSidebar({
 			</nav>
 			<footer className="flex items-center justify-between p-4">
 				{isExpanded ? (
-					<span className="text-xs text-zinc-500">devos.ing</span>
+					<span className="text-xs text-muted-foreground">devos.ing</span>
 				) : null}
 				<CircleHelp size={16} />
 			</footer>
@@ -161,7 +161,7 @@ function NavGroup({
 	return (
 		<div className="grid gap-1">
 			{isExpanded ? (
-				<p className="mb-1 px-2 text-[0.6875rem] font-medium text-zinc-500">
+				<p className="mb-1 px-2 text-[0.6875rem] font-medium text-muted-foreground">
 					{title}
 				</p>
 			) : null}
@@ -174,8 +174,8 @@ function NavGroup({
 						className={cn(
 							"flex h-10 items-center gap-3 rounded-md px-2 text-xs font-normal",
 							isActive
-								? "bg-zinc-800 text-zinc-100"
-								: "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200",
+								? "bg-surface-active text-zinc-100"
+								: "text-muted-foreground hover:bg-surface-hover hover:text-zinc-200",
 							!isExpanded && "justify-center",
 						)}
 						href={item.href}
@@ -205,7 +205,7 @@ function SidebarAction({
 	return (
 		<Button
 			className={cn(
-				"h-9 justify-start gap-3 px-2 text-xs font-normal text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200",
+				"h-9 justify-start gap-3 px-2 text-xs font-normal text-muted-foreground hover:bg-surface-hover hover:text-zinc-200",
 				!isExpanded && "justify-center",
 			)}
 			onClick={onClick}

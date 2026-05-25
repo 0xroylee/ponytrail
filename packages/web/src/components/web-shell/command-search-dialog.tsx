@@ -102,14 +102,14 @@ export function CommandSearchDialog({
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent
-				className="w-[min(44rem,calc(100vw-1.5rem))] max-w-none gap-0 overflow-hidden bg-[#15161a] p-0"
+				className="w-[min(44rem,calc(100vw-1.5rem))] max-w-none gap-0 overflow-hidden bg-surface-panel p-0"
 				showCloseButton={false}
 			>
 				<DialogTitle className="sr-only" id="command-search-title">
 					Search
 				</DialogTitle>
 				<Command shouldFilter={false}>
-					<header className="flex items-center border-b border-zinc-900">
+					<header className="flex items-center border-b border-border">
 						<CommandInput
 							aria-label="Search commands and issues"
 							onValueChange={updateQuery}
@@ -169,7 +169,7 @@ function ResultItem({
 	const Icon = resultIcon(result);
 	return (
 		<CommandItem onSelect={onSelect} value={result.id}>
-			<Icon className="shrink-0 text-zinc-500" size={17} />
+			<Icon className="shrink-0 text-muted-foreground" size={17} />
 			<span className="min-w-0 flex-1">
 				<span
 					className={cn(
@@ -179,12 +179,12 @@ function ResultItem({
 				>
 					{result.label}
 				</span>
-				<span className="block truncate text-xs text-zinc-500">
+				<span className="block truncate text-xs text-muted-foreground">
 					{isCopied ? "Copied" : result.detail}
 				</span>
 			</span>
 			{result.kind === "navigation" && result.navKey === activeKey ? (
-				<span className="text-xs text-zinc-500">Current</span>
+				<span className="text-xs text-muted-foreground">Current</span>
 			) : null}
 		</CommandItem>
 	);
@@ -192,7 +192,9 @@ function ResultItem({
 
 function DialogState({ label }: { label: string }): ReactElement {
 	return (
-		<p className="px-3 py-10 text-center text-sm text-zinc-500">{label}</p>
+		<p className="px-3 py-10 text-center text-sm text-muted-foreground">
+			{label}
+		</p>
 	);
 }
 

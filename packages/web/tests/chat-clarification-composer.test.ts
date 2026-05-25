@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ChatClarificationComposer } from "../src/components/chat-room/chat-clarification-composer";
 import { resolveClarificationAnswerAction } from "../src/components/chat-room/chat-clarification-state";
 import { ChatRoomPanelView } from "../src/components/chat-room/chat-room-panel-view";
+import { TaskCreateClarificationStep } from "../src/components/task-create/task-create-clarification-step";
 import type { ChatSessionRecord } from "../src/lib/api";
 
 describe("chat clarification composer", () => {
@@ -54,6 +55,27 @@ describe("chat clarification composer", () => {
 		expect(html).toContain("Which agent?");
 		expect(html).toContain("Next");
 		expect(html).not.toContain("What scope?");
+	});
+
+	it("renders recommended task-create clarification options", () => {
+		const html = renderToStaticMarkup(
+			createElement(TaskCreateClarificationStep, {
+				answer: "",
+				currentIndex: 0,
+				question: {
+					question: "Which agent?",
+					options: [
+						{ label: "Codex", value: "codex", recommended: true },
+						{ label: "Claude", value: "claude" },
+					],
+				},
+				onAnswerChange: () => undefined,
+			}),
+		);
+
+		expect(html).toContain("Which agent?");
+		expect(html).toContain("Codex");
+		expect(html).toContain("Recommended");
 	});
 
 	it("resolves option clicks as immediate advance or submit actions", () => {

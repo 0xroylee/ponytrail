@@ -1,6 +1,8 @@
 export interface TokenUsageRecord {
 	id: string;
 	runId: string;
+	taskId: string | null;
+	taskExecutionLogId: string | null;
 	stage: string;
 	inputTokens: number;
 	outputTokens: number;

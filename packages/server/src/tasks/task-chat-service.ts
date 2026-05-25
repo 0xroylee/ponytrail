@@ -129,11 +129,17 @@ const boardTaskSchema = z.object({
 	updatedAt: z.string().min(1),
 }) satisfies z.ZodType<BoardTaskRow>;
 
-const questionOptionSchema = z.object({
-	label: z.string().min(1),
-	value: z.string().min(1),
-	description: z.string().min(1).optional(),
-});
+const questionOptionSchema = z
+	.object({
+		label: z.string().min(1),
+		value: z.string().min(1),
+		description: z.string().min(1).optional(),
+		recommended: z.boolean().optional(),
+	})
+	.transform(({ recommended, ...option }) => ({
+		...option,
+		...(recommended === true ? { recommended } : {}),
+	}));
 
 const questionSchema = z.union([
 	z

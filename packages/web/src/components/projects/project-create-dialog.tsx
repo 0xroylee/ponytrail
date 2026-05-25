@@ -37,10 +37,10 @@ export function ProjectCreateDialog({
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
 			<DialogContent
-				className="grid max-h-[min(46rem,calc(100dvh-2rem))] max-w-2xl grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden bg-[#17181c] p-0"
+				className="grid max-h-[min(46rem,calc(100dvh-2rem))] max-w-2xl grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden bg-surface-panel p-0"
 				showCloseButton={false}
 			>
-				<DialogHeader className="flex-row items-center justify-between gap-3 space-y-0 border-b border-zinc-800 px-4 py-3 text-left">
+				<DialogHeader className="flex-row items-center justify-between gap-3 space-y-0 border-b border-border px-4 py-3 text-left">
 					<div className="min-w-0">
 						<DialogTitle className="truncate text-base">
 							New project
@@ -64,7 +64,7 @@ export function ProjectCreateDialog({
 					<div className="grid content-start gap-4 overflow-auto p-4">
 						{PROJECT_FORM_FIELD_GROUPS.map((group) => (
 							<fieldset
-								className="grid gap-3 border-0 border-t border-zinc-800 p-0 pt-4 first:border-t-0 first:pt-0"
+								className="grid gap-3 border-0 border-t border-border p-0 pt-4 first:border-t-0 first:pt-0"
 								key={group.title}
 							>
 								<legend className="mb-1 text-sm font-medium text-zinc-300">
@@ -97,7 +97,7 @@ export function ProjectCreateDialog({
 							</p>
 						) : null}
 					</div>
-					<footer className="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-800 px-4 py-3">
+					<footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-4 py-3">
 						<Button
 							onClick={onClose}
 							size="sm"

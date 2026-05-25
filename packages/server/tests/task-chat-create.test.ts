@@ -103,7 +103,8 @@ describe("chat task create route", () => {
 				request,
 				commandResult: {
 					code: 0,
-					stdout: '{"status":"needs_info","questions":["Which project?"]}\n',
+					stdout:
+						'{"status":"needs_info","questions":[{"question":"Which project?","options":[{"label":"Default","value":"default","recommended":true},{"label":"Custom","value":"custom","recommended":false}]}]}\n',
 					stderr: "",
 				},
 			}),
@@ -123,7 +124,15 @@ describe("chat task create route", () => {
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({
 			status: "needs_info",
-			questions: [{ question: "Which project?" }],
+			questions: [
+				{
+					question: "Which project?",
+					options: [
+						{ label: "Default", value: "default", recommended: true },
+						{ label: "Custom", value: "custom" },
+					],
+				},
+			],
 		});
 		const tasks = await testDatabase.db.select().from(boardTasksTable);
 		expect(tasks).toHaveLength(0);

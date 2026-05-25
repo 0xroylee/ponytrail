@@ -22,7 +22,7 @@ export function TaskCreateDialogHeader({
 	return (
 		<DialogHeader className="flex-row items-start justify-between gap-4 space-y-0 text-left">
 			<div>
-				<p className="mb-1 text-xs font-medium uppercase text-zinc-500">
+				<p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
 					New Issue
 				</p>
 				<DialogTitle>Chat to create a task</DialogTitle>

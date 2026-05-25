@@ -19,7 +19,6 @@ export type {
 	CurrentWorkspaceRecord,
 	HealthRequestOptions,
 	HealthResponse,
-	HealthStatus,
 	InboxMessageRecord,
 	InboxMessageScope,
 	JobRecord,
@@ -38,6 +37,11 @@ export type {
 	WorkspaceProjectRecord,
 	WorkspaceProjectsResponse,
 } from "./types/client.types";
+export type {
+	WorkspaceEnvironmentGitStatus,
+	WorkspaceEnvironmentMcpSource,
+	WorkspaceEnvironmentResponse,
+} from "./types/workspace-environment.types";
 export type {
 	PollingEventRecord,
 	PollingStatusRecord,

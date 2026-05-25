@@ -175,7 +175,7 @@ export function WebOperatorShell({
 				maxHeight: "100dvh",
 				display: "grid",
 				gridTemplateColumns: viewportColumns,
-				background: "#0f1013",
+				background: "hsl(var(--background))",
 				position: "relative",
 				overflowX: "clip",
 			}}

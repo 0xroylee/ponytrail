@@ -63,7 +63,7 @@ function ActivityList({
 }): ReactElement {
 	return (
 		<div className="grid gap-3">
-			<div className="flex h-8 items-center gap-2 rounded-md border border-zinc-700 bg-[#101115] px-2 text-sm text-zinc-400">
+			<div className="flex h-8 items-center gap-2 rounded-md border border-zinc-700 bg-surface-inset px-2 text-sm text-zinc-400">
 				<ChevronDown size={16} />
 				<span>{formatCount(activities.length)}</span>
 			</div>
@@ -92,7 +92,7 @@ function ActivityItem({
 				<span className="font-medium text-zinc-300">{activity.actorId}</span>{" "}
 				{activity.title}
 			</p>
-			<time className="whitespace-nowrap text-zinc-500">
+			<time className="whitespace-nowrap text-muted-foreground">
 				{formatRelativeTime(activity.createdAt)}
 			</time>
 		</div>
@@ -105,7 +105,7 @@ function ActivityCard({
 	activity: TaskActivityRecord;
 }): ReactElement {
 	return (
-		<article className="rounded-lg border border-zinc-800 bg-[#18191d] p-5">
+		<article className="rounded-lg border border-border bg-card p-5">
 			<header className="mb-5 flex items-center justify-between gap-3">
 				<div className="flex min-w-0 items-center gap-3">
 					<ActivityIcon activity={activity} isLarge />
@@ -114,14 +114,16 @@ function ActivityCard({
 							<span className="font-semibold text-zinc-100">
 								{activity.actorId}
 							</span>{" "}
-							<span className="text-zinc-500">
+							<span className="text-muted-foreground">
 								{formatRelativeTime(activity.createdAt)}
 							</span>
 						</p>
-						<p className="m-0 text-xs text-zinc-500">{activity.title}</p>
+						<p className="m-0 text-xs text-muted-foreground">
+							{activity.title}
+						</p>
 					</div>
 				</div>
-				<MoreHorizontal className="text-zinc-500" size={18} />
+				<MoreHorizontal className="text-muted-foreground" size={18} />
 			</header>
 			{activity.body.trim() ? <ActivityRichText body={activity.body} /> : null}
 			{activity.steps?.length ? <ActivitySteps activity={activity} /> : null}
@@ -135,18 +137,18 @@ function ActivitySteps({
 	activity: TaskActivityRecord;
 }): ReactElement {
 	return (
-		<div className="mt-4 grid gap-2 border-t border-zinc-800 pt-4">
+		<div className="mt-4 grid gap-2 border-t border-border pt-4">
 			{activity.steps?.map((step) => (
 				<div
-					className="grid gap-1 rounded-md border border-zinc-800/70 bg-[#141519] px-3 py-2 text-sm"
+					className="grid gap-1 rounded-md border border-border/70 bg-surface-input px-3 py-2 text-sm"
 					key={step.id}
 				>
 					<div className="flex items-center justify-between gap-3">
 						<span className="font-medium text-zinc-200">{step.action}</span>
-						<span className="text-xs text-zinc-500">{step.status}</span>
+						<span className="text-xs text-muted-foreground">{step.status}</span>
 					</div>
 					{step.detail ? (
-						<p className="m-0 text-zinc-500">{step.detail}</p>
+						<p className="m-0 text-muted-foreground">{step.detail}</p>
 					) : null}
 				</div>
 			))}
@@ -171,7 +173,7 @@ function ActivityIcon({
 				: MessageSquareText;
 	return (
 		<span
-			className={`${size} grid shrink-0 place-items-center rounded-full bg-zinc-800 text-zinc-400`}
+			className={`${size} grid shrink-0 place-items-center rounded-full bg-surface-active text-zinc-400`}
 		>
 			<Icon size={iconSize} />
 		</span>
@@ -180,7 +182,7 @@ function ActivityIcon({
 
 function ActivityState({ label }: { label: string }): ReactElement {
 	return (
-		<div className="grid min-h-32 place-items-center rounded-lg border border-zinc-800 bg-[#18191d] text-sm text-zinc-500">
+		<div className="grid min-h-32 place-items-center rounded-lg border border-border bg-card text-sm text-muted-foreground">
 			{label}
 		</div>
 	);

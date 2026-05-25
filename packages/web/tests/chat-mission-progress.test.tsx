@@ -1,7 +1,11 @@
 import { describe, expect, it } from "bun:test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createChatMissionProgressModel } from "../src/components/chat-room/chat-mission-progress-state";
+import {
+	createChatMissionProgressModel,
+	isActiveMissionStatus,
+} from "../src/components/chat-room/chat-mission-progress-state";
 import { ChatTranscript } from "../src/components/chat-room/chat-transcript";
 import type { ChatMissionProgressViewModel } from "../src/components/chat-room/types/chat-mission-progress.types";
 import type {
@@ -30,6 +34,25 @@ describe("chat mission progress", () => {
 		expect(emptyHtml).not.toContain('data-chat-mission-progress="true"');
 	});
 
+	it("shows the DEVOS.ING logo instead of an empty task prompt", () => {
+		const html = renderTranscript({ missionProgress: null });
+		const text = textContent(html);
+
+		expect(text).toContain("DEVOS.ING");
+		expect(text).not.toContain("Untitled");
+		expect(text).not.toContain("Ready for a task.");
+	});
+
+	it("treats only active workflow statuses as mission-visible", () => {
+		expect(isActiveMissionStatus("backlog")).toBe(false);
+		expect(isActiveMissionStatus("plan")).toBe(false);
+		expect(isActiveMissionStatus("done")).toBe(false);
+		expect(isActiveMissionStatus("blocked")).toBe(false);
+		expect(isActiveMissionStatus("implementing")).toBe(true);
+		expect(isActiveMissionStatus("reviewing")).toBe(true);
+		expect(isActiveMissionStatus("testing")).toBe(true);
+	});
+
 	it("maps task activity into status, notes, logs, steps, and result", () => {
 		const mission = missionModel();
 
@@ -47,13 +70,34 @@ describe("chat mission progress", () => {
 		const html = renderTranscript({ missionProgress: mission });
 		const text = textContent(html);
 		expect(text).toContain("Implementing");
+		expect(html).toContain('data-mission-section="status"');
+		expect(html).toContain('data-mission-section="plan-updates"');
+		expect(html).toContain('data-mission-section="progress-steps"');
+		expect(html).toContain('data-mission-section="execution-logs"');
+		expect(html).toContain('data-mission-section="result"');
 		expect(html).toContain("Plan &amp; updates");
-		expect(text).toContain("Progress logs");
+		expect(text).toContain("Progress steps");
+		expect(text).toContain("Execution logs");
+		expect(text).not.toContain("Progress logs");
 		expect(text).toContain("changed status from `plan` to `implementing`");
 		expect(text).toContain("implementation succeeded");
 		expect(text).toContain("Planning complete");
 		expect(text).toContain("Needs retry");
 		expect(text).toContain("Result: succeeded");
+	});
+
+	it("renders blocked mission results as warning instead of success", () => {
+		const mission = missionModel("blocked");
+
+		expect(mission.latestResult).toEqual({
+			label: "blocked",
+			tone: "warning",
+		});
+
+		const html = renderTranscript({ missionProgress: mission });
+		expect(html).toContain('data-mission-section="result"');
+		expect(html).toContain("text-amber-300");
+		expect(html).not.toContain("text-emerald-300");
 	});
 });
 
@@ -64,26 +108,32 @@ function renderTranscript({
 	messages?: ChatMessageRecord[];
 	missionProgress: ChatMissionProgressViewModel | null;
 }): string {
+	const queryClient = new QueryClient();
 	return renderToStaticMarkup(
-		createElement(ChatTranscript, {
-			error: null,
-			isLoading: false,
-			isThinking: false,
-			missionProgress,
-			messages,
-			session: chatSession(),
-			streamLines: [],
-			workingStartedAt: null,
-		}),
+		createElement(
+			QueryClientProvider,
+			{ client: queryClient },
+			createElement(ChatTranscript, {
+				error: null,
+				isLoading: false,
+				isThinking: false,
+				missionProgress,
+				messages,
+				session: chatSession(),
+				streamLines: [],
+				workingStartedAt: null,
+				onDraftCommand: () => undefined,
+			}),
+		),
 	);
 }
 
-function missionModel(): ChatMissionProgressViewModel {
+function missionModel(status = "succeeded"): ChatMissionProgressViewModel {
 	return createChatMissionProgressModel({
 		task: boardTask(),
 		activity: {
 			taskId: "task-42",
-			activities: [statusComment(), executionActivity()],
+			activities: [statusComment(), executionActivity(status)],
 		},
 	});
 }
@@ -101,7 +151,7 @@ function statusComment(): TaskActivityRecord {
 	};
 }
 
-function executionActivity(): TaskActivityRecord {
+function executionActivity(status: string): TaskActivityRecord {
 	return {
 		id: "exec-1",
 		kind: "execution",
@@ -112,7 +162,7 @@ function executionActivity(): TaskActivityRecord {
 			"[2026-05-20T00:02:00.000Z stdout] Planning complete",
 			"[2026-05-20T00:02:01.000Z stderr] Needs retry",
 		].join("\n"),
-		status: "succeeded",
+		status,
 		createdAt: "2026-05-20T00:02:00.000Z",
 		steps: [
 			{

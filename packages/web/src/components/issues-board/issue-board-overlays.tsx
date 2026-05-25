@@ -7,6 +7,7 @@ import type { ProjectBoardTaskRecord, TaskMutationRequest } from "@/lib/api";
 
 import { IssueCardContextMenu } from "./issue-card-context-menu";
 import { IssueDialog } from "./issue-dialog";
+import { IssueTaskDetailPanel } from "./issue-task-detail-panel";
 import { IssueWorkflowRunPanel } from "./issue-workflow-run-panel";
 import type {
 	IssueContextMenuState,
@@ -22,7 +23,9 @@ interface IssueBoardOverlaysProps {
 	errorMessage: string | null;
 	isChatDialogOpen: boolean;
 	isSaving: boolean;
+	selectedDetailTaskId: string | null;
 	onCloseChatDialog: () => void;
+	onCloseDetailPanel: () => void;
 	onCloseDialog: () => void;
 	onCloseMenu: () => void;
 	onCopyLink: (task: ProjectBoardTaskRecord) => void;
@@ -43,7 +46,9 @@ export function IssueBoardOverlays({
 	errorMessage,
 	isChatDialogOpen,
 	isSaving,
+	selectedDetailTaskId,
 	onCloseChatDialog,
+	onCloseDetailPanel,
 	onCloseDialog,
 	onCloseMenu,
 	onCopyLink,
@@ -88,6 +93,10 @@ export function IssueBoardOverlays({
 					onClose={onCloseChatDialog}
 				/>
 			) : null}
+			<IssueTaskDetailPanel
+				taskId={selectedDetailTaskId}
+				onClose={onCloseDetailPanel}
+			/>
 			<IssueWorkflowRunPanel
 				runState={workflowRun.state}
 				onClose={workflowRun.clearRunState}

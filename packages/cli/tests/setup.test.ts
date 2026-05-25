@@ -57,6 +57,9 @@ const draft: SetupDraft = {
 			to: ["alerts@example.com", "ops@example.com"],
 		},
 	},
+	workflow: {
+		isolatedWorktrees: true,
+	},
 	statusMap: DEFAULT_STATUS_MAP,
 	labelMap: DEFAULT_LABEL_MAP,
 	codex: {
@@ -242,6 +245,7 @@ describe("setup helpers", () => {
 				enabled: false,
 				to: [],
 			});
+			expect(draft.workflow.isolatedWorktrees).toBe(true);
 			expect(draft.statusMap).toEqual(DEFAULT_STATUS_MAP);
 			expect(draft.codex.sandbox).toBe("workspace-write");
 			expect(draft.codex.reasoningEfforts).toMatchObject({
@@ -351,12 +355,19 @@ describe("setup helpers", () => {
 		expect(merged).toContain("JWT_SECRET=jwt");
 	});
 
+	it("renders isolated worktree onboarding env by default", () => {
+		const env = renderEnvFile(draft);
+
+		expect(env).toContain("PIV_ISOLATED_WORKTREES=1");
+	});
+
 	it("writes integration values to sqlite without touching the server DB", async () => {
 		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-test-"));
 		try {
 			await writeSetupFiles(tempDir, draft);
 			const sqliteEnv = await loadSqliteEnv(tempDir);
 			expect(sqliteEnv?.LINEAR_API_KEY).toBe("lin_secret_123");
+			expect(sqliteEnv?.PIV_ISOLATED_WORKTREES).toBe("1");
 			expect(sqliteEnv?.GITHUB_REPO_OWNER).toBeUndefined();
 			expect(sqliteEnv?.GITHUB_REPO_NAME).toBeUndefined();
 			expect(sqliteEnv?.GITHUB_BASE_BRANCH).toBeUndefined();
@@ -370,6 +381,7 @@ describe("setup helpers", () => {
 
 			const envPath = path.join(tempDir, ".env");
 			const envContent = await readFile(envPath, "utf8");
+			expect(envContent).toContain("PIV_ISOLATED_WORKTREES=1");
 			expect(envContent).not.toContain("LINEAR_API_KEY");
 			expect(envContent).not.toContain("GITHUB_REPO_OWNER");
 			expect(envContent).not.toContain("GITHUB_REPO_NAME");

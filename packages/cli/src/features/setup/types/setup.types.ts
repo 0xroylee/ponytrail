@@ -17,6 +17,9 @@ export interface SetupDraft {
 			to: string[];
 		};
 	};
+	workflow: {
+		isolatedWorktrees: boolean;
+	};
 	statusMap: {
 		backlog: string;
 		assigned: string;

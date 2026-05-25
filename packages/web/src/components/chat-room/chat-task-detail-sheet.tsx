@@ -27,7 +27,7 @@ export function ChatTaskDetailSheet({
 	return (
 		<Sheet open={isOpen && Boolean(taskId)} onOpenChange={handleOpenChange}>
 			<SheetContent aria-describedby={undefined}>
-				<SheetHeader className="border-b border-zinc-800 px-5 py-4 pr-12">
+				<SheetHeader className="border-b border-border px-5 py-4 pr-12">
 					<SheetTitle>Task details</SheetTitle>
 				</SheetHeader>
 				<div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
@@ -70,7 +70,7 @@ function renderSheetContent(
 
 function SheetState({ label }: { label: string }): ReactElement {
 	return (
-		<div className="grid min-h-64 place-items-center rounded-lg border border-zinc-800 bg-[#18191d] text-sm text-zinc-500">
+		<div className="grid min-h-64 place-items-center rounded-lg border border-border bg-card text-sm text-muted-foreground">
 			{label}
 		</div>
 	);

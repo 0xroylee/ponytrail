@@ -66,12 +66,16 @@ export function createReadRepositories(
 		listTokenUsage: async () =>
 			readRows(
 				database,
-				`SELECT id, run_id, stage, input_tokens, output_tokens, total_tokens, recorded_at
+				`SELECT id, run_id, task_id, task_execution_log_id, stage, input_tokens, output_tokens, total_tokens, recorded_at
 				 FROM token_usage
 				 ORDER BY id ASC`,
 				(row): TokenUsageRecord => ({
 					id: String(row.id),
 					runId: String(row.run_id),
+					taskId: row.task_id ? String(row.task_id) : null,
+					taskExecutionLogId: row.task_execution_log_id
+						? String(row.task_execution_log_id)
+						: null,
 					stage: String(row.stage),
 					inputTokens: Number(row.input_tokens),
 					outputTokens: Number(row.output_tokens),

@@ -12,6 +12,14 @@ import type {
 	CliCommandStreamRequest,
 } from "./command-stream-client.types";
 import type { PollingStatusResponse } from "./polling-status.types";
+import type {
+	AgentRecord,
+	AgentUpdateRequest,
+	CommandHistoryRecord,
+	JobRecord,
+	SkillRecord,
+	TokenUsageRecord,
+} from "./server-state.types";
 import type { TaskActivityResponse } from "./task-activity.types";
 import type {
 	ProjectBoardRecord,
@@ -22,6 +30,7 @@ import type {
 	TaskCreateResponse,
 	TaskMutationRequest,
 } from "./task.types";
+import type { WorkspaceEnvironmentResponse } from "./workspace-environment.types";
 
 export type {
 	ProjectBoardRecord,
@@ -36,6 +45,19 @@ export type {
 } from "./task.types";
 export type { PollingStatusResponse } from "./polling-status.types";
 export type {
+	AgentRecord,
+	AgentUpdateRequest,
+	CommandHistoryRecord,
+	JobRecord,
+	SkillRecord,
+	TokenUsageRecord,
+} from "./server-state.types";
+export type {
+	WorkspaceEnvironmentGitStatus,
+	WorkspaceEnvironmentMcpSource,
+	WorkspaceEnvironmentResponse,
+} from "./workspace-environment.types";
+export type {
 	ChatMessageCreateRequest,
 	ChatMessageKind,
 	ChatMessageRecord,
@@ -47,83 +69,12 @@ export type {
 	ChatSessionUpdateRequest,
 } from "./chat.types";
 
-export type HealthStatus = "ok";
-
 export interface HealthResponse {
-	status: HealthStatus;
+	status: "ok";
 }
 
 export interface HealthRequestOptions {
 	signal?: AbortSignal;
-}
-
-export interface TokenUsageRecord {
-	id: string;
-	runId: string;
-	stage: string;
-	inputTokens: number;
-	outputTokens: number;
-	totalTokens: number;
-	recordedAt: string;
-}
-
-export interface JobRecord {
-	id: string;
-	projectId: string;
-	issueKey: string;
-	stage: string;
-	status: string;
-	createdAt: string;
-}
-
-export interface AgentRecord {
-	id: string;
-	name: string;
-	description: string;
-	logo: string;
-	runtime: string;
-	backend: string;
-	model: string;
-	concurrency: number;
-	owner: string;
-	createdAt: string;
-	updatedAt: string;
-	skills: string[];
-	recentWork: string[];
-	activity: string[];
-	instructions: string;
-}
-
-export interface AgentUpdateRequest {
-	name?: string;
-	description?: string;
-	logo?: string;
-	runtime?: string;
-	backend?: string;
-	model?: string;
-	concurrency?: number;
-	owner?: string;
-	createdAt?: string;
-	updatedAt?: string;
-	skills?: string[];
-	recentWork?: string[];
-	activity?: string[];
-	instructions?: string;
-}
-
-export interface SkillRecord {
-	id: string;
-	name: string;
-	description: string;
-	source: string;
-	updatedAt: string;
-}
-
-export interface CommandHistoryRecord {
-	id: string;
-	command: string;
-	exitCode: number;
-	executedAt: string;
 }
 
 export interface CurrentWorkspaceRecord {
@@ -199,6 +150,10 @@ export interface ApiClient {
 	getCurrentWorkspace(
 		options?: HealthRequestOptions,
 	): Promise<CurrentWorkspaceRecord>;
+	getWorkspaceEnvironment(
+		projectId?: string,
+		options?: HealthRequestOptions,
+	): Promise<WorkspaceEnvironmentResponse>;
 	listTokenUsage(options?: HealthRequestOptions): Promise<TokenUsageRecord[]>;
 	listJobs(options?: HealthRequestOptions): Promise<JobRecord[]>;
 	listAgents(options?: HealthRequestOptions): Promise<AgentRecord[]>;

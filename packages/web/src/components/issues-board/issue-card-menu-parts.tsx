@@ -10,7 +10,7 @@ export function MenuField({
 	label: string;
 }): ReactElement {
 	return (
-		<div className="grid gap-1 text-xs text-zinc-500">
+		<div className="grid gap-1 text-xs text-muted-foreground">
 			<span>{label}</span>
 			{children}
 		</div>
@@ -33,7 +33,7 @@ export function MenuButton({
 			className={`h-8 justify-start gap-2 px-2 text-sm ${
 				danger
 					? "text-red-300 hover:bg-red-950/40"
-					: "text-zinc-300 hover:bg-zinc-800"
+					: "text-zinc-300 hover:bg-surface-active"
 			}`}
 			onClick={onClick}
 			size="sm"

@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
 
+import { ClarificationOptionButton } from "@/components/clarification/clarification-option-button";
 import {
 	buildClarificationAnswers,
 	hasClarificationAnswer,
@@ -136,16 +137,18 @@ export function TaskCreatePanel(): ReactElement {
 	return (
 		<section
 			style={{
-				border: "1px solid #27272a",
+				border: "1px solid hsl(var(--border))",
 				borderRadius: "8px",
-				background: "#18191d",
+				background: "hsl(var(--card))",
 				color: "#f4f4f5",
 				padding: "1rem",
 				width: "100%",
 			}}
 		>
 			<h2 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Create Task</h2>
-			<p style={{ marginTop: 0, color: "#a1a1aa" }}>{statusText}</p>
+			<p style={{ marginTop: 0, color: "hsl(var(--muted-foreground))" }}>
+				{statusText}
+			</p>
 			<label
 				htmlFor="task-create-requirement"
 				style={{ display: "block", marginBottom: "0.5rem" }}
@@ -195,25 +198,17 @@ export function TaskCreatePanel(): ReactElement {
 							{clarificationStep.currentQuestion.options?.length ? (
 								<div className="mb-2 flex flex-wrap gap-2">
 									{clarificationStep.currentQuestion.options.map((option) => (
-										<Button
+										<ClarificationOptionButton
 											key={option.value}
-											onClick={() =>
-												updateAnswer(
-													clarificationStep.currentIndex,
-													option.value,
-												)
+											onSelect={(value) =>
+												updateAnswer(clarificationStep.currentIndex, value)
 											}
-											size="sm"
-											type="button"
-											variant={
+											option={option}
+											selected={
 												answers[clarificationStep.currentIndex]?.answer ===
 												option.value
-													? "default"
-													: "secondary"
 											}
-										>
-											{option.label}
-										</Button>
+										/>
 									))}
 								</div>
 							) : null}

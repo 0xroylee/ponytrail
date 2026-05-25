@@ -7,7 +7,7 @@ export default function RuntimesPage(): ReactElement {
 		<section className="grid h-[100dvh] max-h-[100dvh] content-start gap-4 overflow-auto p-[clamp(0.75rem,3vw,1.25rem)]">
 			<header className="grid gap-1">
 				<h1 className="m-0 text-xl font-semibold text-zinc-100">Runtimes</h1>
-				<p className="m-0 text-sm text-zinc-500">
+				<p className="m-0 text-sm text-muted-foreground">
 					Configured agent runtime coverage and capacity.
 				</p>
 			</header>

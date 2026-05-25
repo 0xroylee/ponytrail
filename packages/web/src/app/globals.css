@@ -4,25 +4,33 @@
 
 :root {
 	color-scheme: dark;
-	--background: 228 10% 10%;
+	--background: 225 10% 15%;
 	--foreground: 240 5% 96%;
-	--card: 225 10% 11%;
+	--card: 225 9% 20%;
 	--card-foreground: 240 5% 96%;
-	--popover: 225 10% 11%;
+	--popover: 225 9% 19%;
 	--popover-foreground: 240 5% 96%;
-	--primary: 240 4% 24%;
+	--primary: 240 4% 30%;
 	--primary-foreground: 240 5% 96%;
-	--secondary: 240 4% 16%;
+	--secondary: 225 8% 24%;
 	--secondary-foreground: 240 5% 90%;
-	--muted: 240 5% 18%;
-	--muted-foreground: 240 5% 64%;
-	--accent: 240 4% 16%;
+	--muted: 225 8% 24%;
+	--muted-foreground: 240 6% 74%;
+	--accent: 225 8% 27%;
 	--accent-foreground: 240 5% 96%;
 	--destructive: 0 73% 41%;
 	--destructive-foreground: 0 0% 98%;
-	--border: 240 4% 16%;
-	--input: 240 4% 16%;
+	--border: 225 7% 31%;
+	--input: 225 8% 24%;
 	--ring: 240 5% 64%;
+	--surface-base: 225 10% 15%;
+	--surface-panel: 225 9% 19%;
+	--surface-raised: 225 8% 23%;
+	--surface-inset: 225 9% 18%;
+	--surface-input: 225 8% 24%;
+	--surface-active: 225 7% 28%;
+	--surface-hover: 225 7% 25%;
+	--surface-plan: 221 24% 22%;
 	--radius: 0.5rem;
 }
 
@@ -36,6 +44,6 @@ body {
 	max-height: 100dvh;
 	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 		"Segoe UI", sans-serif;
-	background: #0f1013;
+	background: hsl(var(--background));
 	color: #f4f4f5;
 }

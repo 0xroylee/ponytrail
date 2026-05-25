@@ -21,10 +21,10 @@ export function IssueDetailPage(): ReactElement {
 	}
 
 	return (
-		<section className="h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#0f1013] text-zinc-100">
-			<header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 bg-[#111216] px-5 py-4">
+		<section className="h-[100dvh] max-h-[100dvh] overflow-y-auto bg-background text-zinc-100">
+			<header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-inset px-5 py-4">
 				<div>
-					<p className="mb-1 text-sm text-zinc-500">
+					<p className="mb-1 text-sm text-muted-foreground">
 						Roy Lee&apos;s Workspace / Issues /
 					</p>
 					<h1 className="m-0 text-xl font-semibold">Task details</h1>
@@ -67,7 +67,7 @@ function renderDetailContent(
 
 function DetailState({ label }: { label: string }): ReactElement {
 	return (
-		<div className="grid min-h-[24rem] place-items-center rounded-lg border border-zinc-800 bg-[#18191d] text-sm text-zinc-500">
+		<div className="grid min-h-[24rem] place-items-center rounded-lg border border-border bg-card text-sm text-muted-foreground">
 			{label}
 		</div>
 	);

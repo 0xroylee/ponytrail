@@ -113,8 +113,8 @@ export function IssueDetailEditor({
 
 	return (
 		<article className="grid gap-5">
-			<section className="rounded-lg border border-zinc-800 bg-[#18191d] p-5">
-				<div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-500">
+			<section className="rounded-lg border border-border bg-card p-5">
+				<div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
 					<div className="flex min-w-0 flex-wrap items-center gap-2">
 						<span>{task.taskKey}</span>
 						<span>/</span>
@@ -139,7 +139,7 @@ export function IssueDetailEditor({
 					/>
 				</EditableField>
 			</section>
-			<section className="grid gap-3 rounded-lg border border-zinc-800 bg-[#18191d] p-5 sm:grid-cols-2">
+			<section className="grid gap-3 rounded-lg border border-border bg-card p-5 sm:grid-cols-2">
 				<EditableField label="Status">
 					<NativeSelect
 						aria-label="Status"
@@ -220,7 +220,7 @@ function SaveStatus({
 				: saveState === "error"
 					? (errorMessage ?? "Save failed")
 					: "Autosave ready";
-	return <span className="text-xs text-zinc-500">{label}</span>;
+	return <span className="text-xs text-muted-foreground">{label}</span>;
 }
 
 function EditableField({

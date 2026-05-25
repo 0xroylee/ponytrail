@@ -2,6 +2,7 @@
 
 import type { KeyboardEvent, ReactElement } from "react";
 
+import { ClarificationOptionButton } from "@/components/clarification/clarification-option-button";
 import { resolveClarificationStep } from "@/components/clarification/clarification-queue-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,7 @@ export function ChatClarificationComposer({
 
 	return (
 		<div className="px-4 py-3">
-			<div className="mx-auto grid max-w-4xl gap-3 rounded-md border border-zinc-800 bg-[#17181c] p-3">
+			<div className="mx-auto grid max-w-4xl gap-3 rounded-md border border-border bg-surface-panel p-3">
 				<div className="grid gap-2 text-sm">
 					<span
 						className="text-zinc-300"
@@ -46,23 +47,13 @@ export function ChatClarificationComposer({
 					{step.currentQuestion.options?.length ? (
 						<div className="flex flex-wrap gap-2">
 							{step.currentQuestion.options.map((option) => (
-								<Button
+								<ClarificationOptionButton
 									disabled={disabled}
 									key={option.value}
-									onClick={() =>
-										onSelectOption(step.currentIndex, option.value)
-									}
-									size="sm"
-									type="button"
-									variant={answer === option.value ? "default" : "secondary"}
-								>
-									<span>{option.label}</span>
-									{option.recommended ? (
-										<span className="rounded-sm border border-sky-500/40 bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-sky-200">
-											Recommended
-										</span>
-									) : null}
-								</Button>
+									onSelect={(value) => onSelectOption(step.currentIndex, value)}
+									option={option}
+									selected={answer === option.value}
+								/>
 							))}
 						</div>
 					) : null}

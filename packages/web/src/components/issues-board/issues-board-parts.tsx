@@ -27,9 +27,11 @@ export function BoardHeader({
 	onCreateIssue: () => void;
 }): ReactElement {
 	return (
-		<header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 bg-[#111216] px-5 py-4">
+		<header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-inset px-5 py-4">
 			<div>
-				<p className="mb-1 text-sm text-zinc-500">Roy Lee&apos;s Workspace /</p>
+				<p className="mb-1 text-sm text-muted-foreground">
+					Roy Lee&apos;s Workspace /
+				</p>
 				<h1 className="m-0 text-xl font-semibold">Issues</h1>
 			</div>
 			<div className="flex flex-wrap items-center gap-2">
@@ -38,8 +40,8 @@ export function BoardHeader({
 						className={cn(
 							"rounded-md border px-3 py-2 text-sm capitalize",
 							activeTab === tab
-								? "border-zinc-600 bg-zinc-800 text-white"
-								: "border-zinc-800 text-zinc-400 hover:bg-zinc-900",
+								? "border-zinc-600 bg-surface-active text-white"
+								: "border-border text-zinc-400 hover:bg-surface-hover",
 						)}
 						key={tab}
 						onClick={() => onTabChange(tab)}
@@ -82,14 +84,14 @@ export function ColumnToggles({
 	onToggle: (status: string) => void;
 }): ReactElement {
 	return (
-		<div className="flex gap-2 overflow-x-auto border-b border-zinc-900 px-5 py-2">
+		<div className="flex gap-2 overflow-x-auto border-b border-border px-5 py-2">
 			{STATUS_ORDER.map((status) => (
 				<Button
 					className={cn(
 						"whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs",
 						visibleStatuses.includes(status)
 							? "border-zinc-600 text-zinc-100"
-							: "border-zinc-900 text-zinc-500",
+							: "border-border text-muted-foreground",
 					)}
 					key={status}
 					onClick={() => onToggle(status)}
@@ -122,7 +124,7 @@ export function BoardToolbar({
 	onToggleSort: () => void;
 }): ReactElement {
 	return (
-		<div className="flex flex-wrap items-center gap-3 border-b border-zinc-900 px-5 py-3">
+		<div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
 			<Input
 				aria-label="Search issues"
 				className="h-9 min-w-52 flex-1"
@@ -226,7 +228,7 @@ export function BoardContent({
 
 function BoardState({ label }: { label: string }): ReactElement {
 	return (
-		<div className="grid min-h-[24rem] place-items-center text-sm text-zinc-500">
+		<div className="grid min-h-[24rem] place-items-center text-sm text-muted-foreground">
 			{label}
 		</div>
 	);

@@ -47,7 +47,7 @@ export function IssueColumn({
 	onTaskDrop,
 	onTaskPointerDrop,
 }: IssueColumnProps): ReactElement {
-	const tone = STATUS_PRESENTATION[column.status]?.tone ?? "bg-[#17181c]";
+	const tone = STATUS_PRESENTATION[column.status]?.tone ?? "bg-surface-panel";
 	const canDrop = Boolean(dragState && dragState.status !== column.status);
 	const isDropTarget = canDrop && dragOverStatus === column.status;
 
@@ -101,11 +101,13 @@ export function IssueColumn({
 		>
 			<header className="mb-4 flex items-center justify-between gap-3">
 				<div className="flex items-center gap-2">
-					<Circle className="text-zinc-500" size={15} />
+					<Circle className="text-muted-foreground" size={15} />
 					<h2 className="m-0 text-sm font-semibold">
 						{getStatusLabel(column.status)}
 					</h2>
-					<span className="text-sm text-zinc-500">{column.tasks.length}</span>
+					<span className="text-sm text-muted-foreground">
+						{column.tasks.length}
+					</span>
 				</div>
 				<div className="flex items-center gap-1">
 					<Button size="icon" type="button" variant="ghost">
@@ -124,7 +126,9 @@ export function IssueColumn({
 			</header>
 			<div className="grid content-start gap-3 overflow-y-auto pr-1">
 				{column.tasks.length === 0 ? (
-					<p className="mt-16 text-center text-sm text-zinc-500">No issues</p>
+					<p className="mt-16 text-center text-sm text-muted-foreground">
+						No issues
+					</p>
 				) : (
 					column.tasks.map((task) => (
 						<IssueCard

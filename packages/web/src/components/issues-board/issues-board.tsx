@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
 
 import type { ProjectBoardTaskRecord, TaskMutationRequest } from "@/lib/api";
@@ -42,7 +41,6 @@ interface IssuesBoardProps {
 export function IssuesBoard({
 	createIssueRequest,
 }: IssuesBoardProps): ReactElement {
-	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<IssueTab>("all");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sortNewestFirst, setSortNewestFirst] = useState(true);
@@ -56,6 +54,9 @@ export function IssuesBoard({
 	const [contextMenu, setContextMenu] = useState<IssueContextMenuState | null>(
 		null,
 	);
+	const [selectedDetailTaskId, setSelectedDetailTaskId] = useState<
+		string | null
+	>(null);
 	const [isChatDialogOpen, setIsChatDialogOpen] = useState(false);
 	const [mutationError, setMutationError] = useState<string | null>(null);
 
@@ -102,10 +103,6 @@ export function IssuesBoard({
 		dialog?.mode === "create"
 			? dialog.status
 			: (dialog?.task.status ?? "backlog");
-
-	function openTaskDetail(taskId: string): void {
-		router.push(`/issues/${encodeURIComponent(taskId)}`);
-	}
 
 	function openIssueMenu(
 		task: ProjectBoardTaskRecord,
@@ -185,7 +182,7 @@ export function IssuesBoard({
 	}
 
 	return (
-		<section className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#0f1013] text-zinc-100">
+		<section className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-background text-zinc-100">
 			<BoardHeader
 				activeTab={activeTab}
 				onTabChange={setActiveTab}
@@ -216,7 +213,7 @@ export function IssuesBoard({
 				onDropStatusEnter={enterDropStatus}
 				onDropStatusLeave={leaveDropStatus}
 				onCreateIssue={(status) => setDialog({ mode: "create", status })}
-				onOpenIssue={(task) => openTaskDetail(task.id)}
+				onOpenIssue={(task) => setSelectedDetailTaskId(task.id)}
 				onOpenIssueMenu={openIssueMenu}
 				onTaskDragEnd={endTaskDrag}
 				onTaskDragStart={startTaskDrag}
@@ -232,7 +229,9 @@ export function IssuesBoard({
 				errorMessage={mutationError}
 				isChatDialogOpen={isChatDialogOpen}
 				isSaving={createTask.isPending || updateTask.isPending}
+				selectedDetailTaskId={selectedDetailTaskId}
 				onCloseChatDialog={() => setIsChatDialogOpen(false)}
+				onCloseDetailPanel={() => setSelectedDetailTaskId(null)}
 				onCloseDialog={() => setDialog(null)}
 				onCloseMenu={() => setContextMenu(null)}
 				onCopyLink={copyIssueLink}

@@ -73,7 +73,14 @@ function parsePendingOption(item: unknown) {
 		typeof record.description === "string" && record.description.trim()
 			? record.description.trim()
 			: undefined;
-	return [{ label, value, ...(description ? { description } : {}) }];
+	return [
+		{
+			label,
+			value,
+			...(description ? { description } : {}),
+			...(record.recommended === true ? { recommended: true } : {}),
+		},
+	];
 }
 
 function parseRecord(value: string | null): Record<string, unknown> | null {

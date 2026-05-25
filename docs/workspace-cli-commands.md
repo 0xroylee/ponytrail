@@ -70,6 +70,7 @@ npx devos onboard --check
 Expected behavior:
 
 - `onboard` runs the guided onboarding wizard.
+- Default onboarding persists `PIV_ISOLATED_WORKTREES=1`, enabling per-issue isolated git worktrees for local runs.
 - `onboard --check` runs onboarding validation checks only.
 
 Configuration notes:

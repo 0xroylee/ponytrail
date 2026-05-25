@@ -56,7 +56,7 @@ export function ChatRoomSettingsSidebar({
 			)}
 			inert={!isActive ? true : undefined}
 		>
-			<header className="border-b border-zinc-900 p-3">
+			<header className="border-b border-border p-3">
 				<div className="flex min-w-0 gap-2">
 					<Button
 						className="min-w-0 flex-1 justify-start"
@@ -81,7 +81,7 @@ export function ChatRoomSettingsSidebar({
 				</div>
 			</header>
 			<nav className="min-h-0 overflow-auto p-3">
-				<div className="mb-2 px-2 text-xs font-medium uppercase text-zinc-500">
+				<div className="mb-2 px-2 text-xs font-medium uppercase text-muted-foreground">
 					Workspace
 				</div>
 				<div className="grid gap-1">
@@ -94,8 +94,8 @@ export function ChatRoomSettingsSidebar({
 								className={cn(
 									"flex h-9 items-center gap-2 rounded-md px-2 text-xs",
 									isActiveItem
-										? "bg-zinc-800 text-zinc-100"
-										: "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200",
+										? "bg-surface-active text-zinc-100"
+										: "text-muted-foreground hover:bg-surface-hover hover:text-zinc-200",
 								)}
 								href={item.href}
 								key={item.key}

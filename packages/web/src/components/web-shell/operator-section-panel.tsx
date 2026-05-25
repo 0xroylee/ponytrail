@@ -28,15 +28,17 @@ export function OperatorSectionPanel({
 		>
 			<header
 				style={{
-					border: "1px solid #27272a",
+					border: "1px solid hsl(var(--border))",
 					borderRadius: "8px",
-					background: "#18191d",
+					background: "hsl(var(--card))",
 					color: "#f4f4f5",
 					padding: "1rem",
 				}}
 			>
 				<h1 style={{ margin: "0 0 0.45rem" }}>{content.heading}</h1>
-				<p style={{ margin: 0, color: "#a1a1aa" }}>{content.description}</p>
+				<p style={{ margin: 0, color: "hsl(var(--muted-foreground))" }}>
+					{content.description}
+				</p>
 			</header>
 			<div
 				style={{

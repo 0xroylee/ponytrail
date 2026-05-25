@@ -17,6 +17,7 @@ import type {
 	SkillRecord,
 	TaskCreateResponse,
 	TokenUsageRecord,
+	WorkspaceEnvironmentResponse,
 } from "./types/client.types";
 import type { PollingStatusResponse } from "./types/polling-status.types";
 import type {
@@ -95,6 +96,18 @@ export function useCurrentWorkspaceQuery(
 	return useQuery({
 		queryKey: serverStateQueryKeys.currentWorkspace,
 		queryFn: () => apiClient.getCurrentWorkspace(),
+		enabled: options?.enabled,
+		refetchInterval: resolveRefetchInterval(options),
+	});
+}
+
+export function useWorkspaceEnvironmentQuery(
+	projectId?: string | null,
+	options?: ServerStateQueryOptions,
+): UseQueryResult<WorkspaceEnvironmentResponse, Error> {
+	return useQuery({
+		queryKey: serverStateQueryKeys.workspaceEnvironment(projectId ?? null),
+		queryFn: () => apiClient.getWorkspaceEnvironment(projectId ?? undefined),
 		enabled: options?.enabled,
 		refetchInterval: resolveRefetchInterval(options),
 	});

@@ -39,6 +39,9 @@ export async function collectSetupDraft(
 				to: [],
 			},
 		},
+		workflow: {
+			isolatedWorktrees: true,
+		},
 		statusMap: { ...DEFAULT_STATUS_MAP },
 		labelMap: DEFAULT_LABEL_MAP,
 		codex: {

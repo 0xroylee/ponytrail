@@ -97,11 +97,13 @@ export function ProjectsPanel(): ReactElement {
 	}
 
 	return (
-		<section className="grid h-[100dvh] max-h-[100dvh] min-w-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-[#0f1013] text-zinc-100">
-			<header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 bg-[#111216] px-5 py-4">
+		<section className="grid h-[100dvh] max-h-[100dvh] min-w-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-background text-zinc-100">
+			<header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-inset px-5 py-4">
 				<div className="flex min-w-0 items-center gap-2">
 					<h1 className="m-0 truncate text-xl font-semibold">Projects</h1>
-					<span className="text-sm text-zinc-500">{projects.length}</span>
+					<span className="text-sm text-muted-foreground">
+						{projects.length}
+					</span>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<Button
@@ -172,13 +174,13 @@ function ProjectToolbar({
 	onSearchChange: (value: string) => void;
 }): ReactElement {
 	return (
-		<div className="flex flex-wrap items-center gap-3 border-b border-zinc-900 px-5 py-3">
+		<div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
 			<label
 				className="relative min-w-60 flex-1 sm:max-w-sm"
 				htmlFor="projects-search"
 			>
 				<Search
-					className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+					className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
 					size={16}
 				/>
 				<Input
@@ -191,10 +193,10 @@ function ProjectToolbar({
 				/>
 			</label>
 			<div className="ml-auto flex flex-wrap items-center gap-3">
-				<span className="whitespace-nowrap text-sm text-zinc-500">
+				<span className="whitespace-nowrap text-sm text-muted-foreground">
 					{filteredCount} / {totalCount}
 				</span>
-				<div className="inline-flex rounded-lg border border-zinc-800 bg-[#18191d] p-1">
+				<div className="inline-flex rounded-lg border border-border bg-card p-1">
 					<DensityButton
 						density="compact"
 						icon={<List size={15} />}
@@ -233,8 +235,8 @@ function DensityButton({
 			className={cn(
 				"h-8 gap-2 px-2.5",
 				isActive
-					? "bg-zinc-800 text-zinc-100"
-					: "text-zinc-500 hover:text-zinc-200",
+					? "bg-surface-active text-zinc-100"
+					: "text-muted-foreground hover:text-zinc-200",
 			)}
 			onClick={() => onSelect(density)}
 			size="sm"

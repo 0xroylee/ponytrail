@@ -16,15 +16,18 @@ export const STATUS_ORDER = [
 ] as const;
 
 export const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
-	backlog: { label: "Backlog", tone: "border-slate-700/70 bg-[#17181c]" },
-	plan: { label: "Plan", tone: "border-slate-700/70 bg-[#17181c]" },
+	backlog: { label: "Backlog", tone: "border-slate-700/70 bg-surface-panel" },
+	plan: { label: "Plan", tone: "border-slate-700/70 bg-surface-panel" },
 	implementing: {
 		label: "In Progress",
-		tone: "border-yellow-900/50 bg-[#19160f]",
+		tone: "border-yellow-900/50 bg-yellow-950/35",
 	},
-	reviewing: { label: "In Review", tone: "border-emerald-900/50 bg-[#101714]" },
-	testing: { label: "Testing", tone: "border-cyan-900/50 bg-[#10181a]" },
-	done: { label: "Done", tone: "border-indigo-900/50 bg-[#101421]" },
+	reviewing: {
+		label: "In Review",
+		tone: "border-emerald-900/50 bg-emerald-950/35",
+	},
+	testing: { label: "Testing", tone: "border-cyan-900/50 bg-cyan-950/35" },
+	done: { label: "Done", tone: "border-indigo-900/50 bg-indigo-950/35" },
 };
 
 export const PRIORITY_OPTIONS: readonly PriorityOption[] = [

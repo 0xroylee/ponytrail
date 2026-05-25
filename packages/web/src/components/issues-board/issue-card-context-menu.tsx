@@ -99,7 +99,7 @@ export function IssueCardContextMenu({
 			type="button"
 		>
 			<div
-				className="fixed z-50 grid w-64 gap-3 rounded-lg border border-zinc-700 bg-[#18191d] p-3 text-zinc-100 shadow-2xl"
+				className="fixed z-50 grid w-64 gap-3 rounded-lg border border-zinc-700 bg-card p-3 text-zinc-100 shadow-2xl"
 				onClick={(event) => event.stopPropagation()}
 				onContextMenu={(event) => event.preventDefault()}
 				onKeyDown={(event) => event.stopPropagation()}
@@ -107,8 +107,10 @@ export function IssueCardContextMenu({
 				style={{ left: x, top: y }}
 				tabIndex={-1}
 			>
-				<div className="min-w-0 border-b border-zinc-800 pb-2">
-					<p className="m-0 truncate text-xs text-zinc-500">{task.taskKey}</p>
+				<div className="min-w-0 border-b border-border pb-2">
+					<p className="m-0 truncate text-xs text-muted-foreground">
+						{task.taskKey}
+					</p>
 					<p className="m-0 truncate text-sm font-medium">{task.title}</p>
 				</div>
 				<MenuField label="Status">
@@ -168,7 +170,7 @@ export function IssueCardContextMenu({
 						</Button>
 					</div>
 				</MenuField>
-				<div className="grid gap-1 border-t border-zinc-800 pt-2">
+				<div className="grid gap-1 border-t border-border pt-2">
 					<MenuButton
 						icon={<PlayCircle size={14} />}
 						label="Run workflow"

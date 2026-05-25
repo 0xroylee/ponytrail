@@ -67,6 +67,7 @@ Output shape:
 Usage notes:
 
 - `onboard` runs the interactive wizard.
+- Default onboarding enables per-issue isolated git worktrees for local runs.
 - `onboard --check` performs validation only.
 
 ### projects

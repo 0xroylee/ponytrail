@@ -28,7 +28,7 @@ export interface ChatMissionExecution {
 
 export interface ChatMissionResult {
 	label: string;
-	tone: "success" | "error" | "running" | "neutral";
+	tone: "success" | "error" | "running" | "warning" | "neutral";
 }
 
 export interface ChatMissionProgressViewModel {

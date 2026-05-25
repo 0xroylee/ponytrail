@@ -56,6 +56,7 @@ export interface ChatTranscriptProps {
 	session: ChatSessionRecord | null;
 	streamLines: ChatStreamLine[];
 	workingStartedAt: string | null;
+	onDraftCommand: (draft: string) => void;
 }
 
 export interface ChatTaskDetailSheetProps {

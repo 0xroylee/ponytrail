@@ -48,13 +48,13 @@ export function RuntimesPanel(): ReactElement {
 					>
 						Configured runtimes
 					</h2>
-					<p className="m-0 text-sm text-zinc-500">
+					<p className="m-0 text-sm text-muted-foreground">
 						{runtimes.length} runtime{runtimes.length === 1 ? "" : "s"} across{" "}
 						{agentsQuery.data?.length ?? 0} agent
 						{agentsQuery.data?.length === 1 ? "" : "s"}
 					</p>
 				</div>
-				<div className="inline-flex items-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-300">
+				<div className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-zinc-300">
 					<Server size={15} />
 					Capacity {totalCapacity(runtimes)}
 				</div>
@@ -74,17 +74,17 @@ function RuntimeCard({
 	runtime: RuntimeSummary;
 }): ReactElement {
 	return (
-		<li className="grid gap-3 rounded-lg border border-zinc-800 bg-[#18191d] p-4">
+		<li className="grid gap-3 rounded-lg border border-border bg-card p-4">
 			<header className="flex flex-wrap items-start justify-between gap-3">
 				<div className="flex min-w-0 items-start gap-3">
-					<span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200">
+					<span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-zinc-700 bg-surface-hover text-zinc-200">
 						<Cpu size={17} />
 					</span>
 					<div className="min-w-0">
 						<h3 className="m-0 break-words text-sm font-semibold text-zinc-100">
 							{runtime.label}
 						</h3>
-						<p className="m-0 break-words text-xs text-zinc-500">
+						<p className="m-0 break-words text-xs text-muted-foreground">
 							{runtime.id}
 						</p>
 					</div>
@@ -112,8 +112,8 @@ function RuntimeMetric({
 	value: number;
 }): ReactElement {
 	return (
-		<span className="inline-flex items-center gap-1 rounded-md border border-zinc-800 px-2 py-1">
-			<span className="text-zinc-500">{label}</span>
+		<span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1">
+			<span className="text-muted-foreground">{label}</span>
 			<strong className="font-semibold text-zinc-100">{value}</strong>
 		</span>
 	);
@@ -128,11 +128,13 @@ function RuntimeChips({
 }): ReactElement {
 	return (
 		<div className="grid content-start gap-2">
-			<p className="m-0 text-xs font-medium uppercase text-zinc-500">{label}</p>
+			<p className="m-0 text-xs font-medium uppercase text-muted-foreground">
+				{label}
+			</p>
 			<div className="flex flex-wrap gap-2">
 				{values.map((value) => (
 					<span
-						className="rounded-md border border-zinc-800 px-2 py-1 text-xs text-zinc-300"
+						className="rounded-md border border-border px-2 py-1 text-xs text-zinc-300"
 						key={value}
 					>
 						{value}
@@ -150,11 +152,13 @@ function RuntimeAgents({
 }): ReactElement {
 	return (
 		<div className="grid gap-2">
-			<p className="m-0 text-xs font-medium uppercase text-zinc-500">Agents</p>
+			<p className="m-0 text-xs font-medium uppercase text-muted-foreground">
+				Agents
+			</p>
 			<ul className="m-0 grid list-none gap-2 p-0">
 				{runtime.agents.map((agent) => (
 					<li
-						className="grid gap-1 rounded-md border border-zinc-800 bg-[#141519] p-3 sm:grid-cols-[1fr_auto]"
+						className="grid gap-1 rounded-md border border-border bg-surface-input p-3 sm:grid-cols-[1fr_auto]"
 						key={agent.id}
 					>
 						<div className="min-w-0">
@@ -162,7 +166,7 @@ function RuntimeAgents({
 								<Bot className="shrink-0" size={15} />
 								<span className="break-words">{agent.name}</span>
 							</p>
-							<p className="m-0 break-words text-xs text-zinc-500">
+							<p className="m-0 break-words text-xs text-muted-foreground">
 								{agent.id}
 							</p>
 						</div>
@@ -190,12 +194,12 @@ function RuntimeStatePanel({
 	const className =
 		tone === "error"
 			? "grid gap-3 rounded-lg border border-red-900/50 bg-red-950/20 p-4"
-			: "grid gap-3 rounded-lg border border-zinc-800 bg-[#18191d] p-4";
+			: "grid gap-3 rounded-lg border border-border bg-card p-4";
 
 	return (
 		<section className={className}>
 			<h2 className="m-0 text-base font-semibold text-zinc-200">{title}</h2>
-			<p className="m-0 text-sm text-zinc-500">{message}</p>
+			<p className="m-0 text-sm text-muted-foreground">{message}</p>
 		</section>
 	);
 }

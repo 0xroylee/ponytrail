@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 
-import { Button } from "@/components/ui/button";
+import { ClarificationOptionButton } from "@/components/clarification/clarification-option-button";
 import { Input } from "@/components/ui/input";
 import type { TaskClarificationQuestion } from "@/lib/api";
 
@@ -28,15 +28,12 @@ export function TaskCreateClarificationStep({
 			{question.options?.length ? (
 				<div className="flex flex-wrap gap-2">
 					{question.options.map((option) => (
-						<Button
+						<ClarificationOptionButton
 							key={option.value}
-							onClick={() => onAnswerChange(currentIndex, option.value)}
-							size="sm"
-							type="button"
-							variant={answer === option.value ? "default" : "secondary"}
-						>
-							{option.label}
-						</Button>
+							onSelect={(value) => onAnswerChange(currentIndex, value)}
+							option={option}
+							selected={answer === option.value}
+						/>
 					))}
 				</div>
 			) : null}

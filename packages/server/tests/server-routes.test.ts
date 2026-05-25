@@ -45,6 +45,8 @@ describe("server routes", () => {
 			{
 				id: "tu-1",
 				runId: "run-1",
+				taskId: null,
+				taskExecutionLogId: null,
 				stage: "planning",
 				inputTokens: 10,
 				outputTokens: 5,

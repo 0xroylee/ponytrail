@@ -6,6 +6,8 @@ export const serverStateQueryKeys = {
 	agents: ["server-state", "agents"] as const,
 	skills: ["server-state", "skills"] as const,
 	currentWorkspace: ["server-state", "current-workspace"] as const,
+	workspaceEnvironment: (projectId: string | null) =>
+		["server-state", "workspace-environment", projectId ?? "local"] as const,
 	commandHistory: ["server-state", "command-history"] as const,
 	chatSessions: (workspaceId: string) =>
 		["server-state", "chat-sessions", workspaceId] as const,

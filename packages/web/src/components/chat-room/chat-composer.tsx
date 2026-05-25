@@ -94,12 +94,12 @@ export function ChatComposer({
 	}
 
 	return (
-		<div className="border-t border-zinc-900 bg-[#111216] px-4 py-3">
-			<div className="relative mx-auto max-w-4xl">
+		<div className="px-4 py-3">
+			<div className="relative mx-auto max-w-4xl xl:mr-[22rem]">
 				{showCommands ? (
 					<div
 						aria-label="Chat commands"
-						className="absolute bottom-full mb-2 grid max-h-72 w-full gap-1 overflow-y-auto rounded-md border border-zinc-800 bg-[#17181c] p-2 shadow-2xl"
+						className="absolute bottom-full mb-2 grid max-h-72 w-full gap-1 overflow-y-auto rounded-md border border-border bg-surface-panel p-2 shadow-2xl"
 						id={menuId}
 					>
 						{commandSuggestions.length > 0 ? (
@@ -110,8 +110,8 @@ export function ChatComposer({
 									<Button
 										aria-selected={isSelected}
 										className={cn(
-											"flex min-h-10 items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-sm text-zinc-300 hover:bg-zinc-800",
-											isSelected && "bg-zinc-800 text-zinc-100",
+											"flex min-h-10 items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-sm text-zinc-300 hover:bg-surface-active",
+											isSelected && "bg-surface-active text-zinc-100",
 										)}
 										id={optionId}
 										key={item.command}
@@ -123,18 +123,20 @@ export function ChatComposer({
 										<span className="font-mono text-zinc-100">
 											{item.command}
 										</span>
-										<span className="min-w-0 truncate text-xs text-zinc-500">
+										<span className="min-w-0 truncate text-xs text-muted-foreground">
 											{item.hint}
 										</span>
 									</Button>
 								);
 							})
 						) : (
-							<p className="m-0 px-2 py-3 text-sm text-zinc-500">No commands</p>
+							<p className="m-0 px-2 py-3 text-sm text-muted-foreground">
+								No commands
+							</p>
 						)}
 					</div>
 				) : null}
-				<div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 rounded-md border border-zinc-800 bg-[#17181c] p-2">
+				<div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 rounded-md border border-border bg-surface-panel p-2">
 					<Button
 						aria-label="Add"
 						disabled={disabled}

@@ -19,9 +19,11 @@ export function AgentsPanel(): ReactElement {
 
 	if (agentsQuery.isPending) {
 		return (
-			<section className="grid gap-3 rounded-lg border border-zinc-800 bg-[#18191d] p-4">
+			<section className="grid gap-3 rounded-lg border border-border bg-card p-4">
 				<h2 className="m-0 text-base font-semibold text-zinc-200">Agents</h2>
-				<p className="m-0 text-sm text-zinc-500">Loading available agents...</p>
+				<p className="m-0 text-sm text-muted-foreground">
+					Loading available agents...
+				</p>
 			</section>
 		);
 	}
@@ -39,18 +41,20 @@ export function AgentsPanel(): ReactElement {
 
 	if (!agentsQuery.data || agentsQuery.data.length === 0) {
 		return (
-			<section className="grid gap-3 rounded-lg border border-zinc-800 bg-[#18191d] p-4">
+			<section className="grid gap-3 rounded-lg border border-border bg-card p-4">
 				<h2 className="m-0 text-base font-semibold text-zinc-200">Agents</h2>
-				<p className="m-0 text-sm text-zinc-500">No agents are available.</p>
+				<p className="m-0 text-sm text-muted-foreground">
+					No agents are available.
+				</p>
 			</section>
 		);
 	}
 
 	return (
-		<section className="grid gap-3 rounded-lg border border-zinc-800 bg-[#18191d] p-4">
+		<section className="grid gap-3 rounded-lg border border-border bg-card p-4">
 			<header className="grid gap-1">
 				<h2 className="m-0 text-base font-semibold text-zinc-200">Agents</h2>
-				<p className="m-0 text-sm text-zinc-500">
+				<p className="m-0 text-sm text-muted-foreground">
 					Select an agent to view and update runtime details.
 				</p>
 			</header>
@@ -83,7 +87,7 @@ function AgentRow({
 	return (
 		<li>
 			<Button
-				className="grid h-auto w-full justify-stretch gap-2 rounded-md border-zinc-800 bg-[#141519] p-3 text-left hover:border-zinc-700 hover:bg-zinc-900"
+				className="grid h-auto w-full justify-stretch gap-2 rounded-md border-border bg-surface-input p-3 text-left hover:border-zinc-700 hover:bg-surface-hover"
 				onClick={onOpen}
 				type="button"
 				variant="outline"
@@ -93,7 +97,7 @@ function AgentRow({
 						<Bot size={15} />
 						{agent.name}
 					</span>
-					<span className="text-xs text-zinc-500">{agent.id}</span>
+					<span className="text-xs text-muted-foreground">{agent.id}</span>
 				</div>
 				<div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-400">
 					<span>{agent.runtime}</span>
@@ -102,7 +106,9 @@ function AgentRow({
 					<span>Owner {agent.owner}</span>
 				</div>
 				{agent.description ? (
-					<p className="m-0 text-xs text-zinc-500">{agent.description}</p>
+					<p className="m-0 text-xs text-muted-foreground">
+						{agent.description}
+					</p>
 				) : null}
 			</Button>
 		</li>

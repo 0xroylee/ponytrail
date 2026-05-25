@@ -15,31 +15,49 @@ import type {
 	ChatMissionResult,
 } from "./types/chat-mission-progress.types";
 
+const ACTIVE_MISSION_STATUSES = new Set([
+	"implementing",
+	"reviewing",
+	"testing",
+]);
+
 export function useChatMissionProgress(
 	taskId: string | null,
 ): ChatMissionProgressViewModel | null {
 	const taskQuery = useBoardTaskQuery(taskId ?? "", {
 		enabled: Boolean(taskId),
 	});
+	const shouldLoadActivity =
+		Boolean(taskId) &&
+		Boolean(taskQuery.data && isActiveMissionStatus(taskQuery.data.status));
 	const activityQuery = useTaskActivityQuery(taskId ?? "", {
-		enabled: Boolean(taskId),
+		enabled: shouldLoadActivity,
 	});
 	if (!taskId) return null;
-	if (taskQuery.error || activityQuery.error) {
+	if (taskQuery.error) {
 		return createMissionState(taskId, "error", {
-			errorMessage:
-				taskQuery.error?.message ??
-				activityQuery.error?.message ??
-				"Mission progress unavailable.",
+			errorMessage: taskQuery.error?.message ?? "Mission progress unavailable.",
 		});
 	}
-	if (taskQuery.isLoading || activityQuery.isLoading || !taskQuery.data) {
+	if (taskQuery.isLoading || !taskQuery.data) return null;
+	if (!isActiveMissionStatus(taskQuery.data.status)) return null;
+	if (activityQuery.error) {
+		return createMissionState(taskId, "error", {
+			errorMessage:
+				activityQuery.error?.message ?? "Mission progress unavailable.",
+		});
+	}
+	if (activityQuery.isLoading) {
 		return createMissionState(taskId, "loading");
 	}
 	return createChatMissionProgressModel({
 		activity: activityQuery.data,
 		task: taskQuery.data,
 	});
+}
+
+export function isActiveMissionStatus(status: string): boolean {
+	return ACTIVE_MISSION_STATUSES.has(status.toLowerCase());
 }
 
 export function createChatMissionProgressModel({
@@ -147,6 +165,9 @@ function createLatestResult(
 	}
 	if (["failed", "failure", "error", "rejected"].includes(status)) {
 		return { label: latest.status, tone: "error" };
+	}
+	if (["blocked", "canceled", "cancelled"].includes(status)) {
+		return { label: latest.status, tone: "warning" };
 	}
 	if (["running", "started", "queued"].includes(status)) {
 		return { label: latest.status, tone: "running" };
