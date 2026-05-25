@@ -70,6 +70,38 @@ describe("chat thinking indicator", () => {
 		expect(html).toContain("Loading");
 		expect(html).toContain("text-shimmer");
 	});
+
+	it("renders one pending clarification question at a time", () => {
+		const html = renderToStaticMarkup(
+			createElement(ChatTranscript, {
+				error: null,
+				isLoading: false,
+				isThinking: false,
+				messages: [],
+				pendingAnswers: ["codex"],
+				pendingQuestionIndex: 1,
+				session: chatSession({
+					pendingQuestions: [
+						{
+							question: "Which agent?",
+							options: [
+								{ label: "Codex", value: "codex" },
+								{ label: "Claude", value: "claude" },
+							],
+						},
+						{ question: "What scope?" },
+					],
+				}),
+				streamLines: [],
+				onAnswerChange: () => undefined,
+				onSubmitAnswers: () => undefined,
+			}),
+		);
+
+		expect(html).toContain("What scope?");
+		expect(html).not.toContain("Which agent?");
+		expect(html).toContain("Type a custom answer");
+	});
 });
 
 function renderTranscript({
@@ -90,6 +122,7 @@ function renderTranscript({
 			isThinking,
 			messages: [],
 			pendingAnswers: [],
+			pendingQuestionIndex: 0,
 			session: chatSession(),
 			streamLines,
 			onAnswerChange: () => undefined,
@@ -98,7 +131,9 @@ function renderTranscript({
 	);
 }
 
-function chatSession(): ChatSessionRecord {
+function chatSession(
+	overrides: Partial<ChatSessionRecord> = {},
+): ChatSessionRecord {
 	return {
 		id: "session-1",
 		workspaceId: "owner-1",
@@ -109,5 +144,6 @@ function chatSession(): ChatSessionRecord {
 		pendingQuestions: [],
 		createdAt: "2026-05-20T00:00:00.000Z",
 		updatedAt: "2026-05-20T00:00:00.000Z",
+		...overrides,
 	};
 }

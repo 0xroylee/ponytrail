@@ -112,6 +112,9 @@ describe("buildTaskIntakePrompt", () => {
 			expect(prompt).toContain("Q: Which app?");
 			expect(prompt).toContain("A: CLI");
 			expect(prompt).toContain("RESULT: CLEAR or NEEDS_INFO");
+			expect(prompt).toContain("return exactly one concise question");
+			expect(prompt).toContain("optional options array");
+			expect(prompt).toContain("custom free-form answer");
 		} finally {
 			await rm(tmpDir, { recursive: true, force: true });
 		}

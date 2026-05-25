@@ -14,14 +14,13 @@ import { useCurrentWorkspaceQuery } from "@/lib/api/queries";
 import { useWorkspaceProjectsQuery } from "@/lib/api/realtime-queries";
 import { useRealtimeStore } from "@/lib/realtime";
 
+import { useChatClarificationState } from "./chat-clarification-state";
 import { parseChatCommand } from "./chat-command-utils";
 import { executeCommandInput } from "./chat-room-command-actions";
 import { ChatRoomPanelView } from "./chat-room-panel-view";
-import { replaceAt } from "./chat-room-state-utils";
 import { chatStreamLinesForSession } from "./chat-room-stream-utils";
 import { shouldShowChatThinkingIndicator } from "./chat-thinking-state";
 import type {
-	ChatAnswerPayload,
 	ChatRoomPanelProps,
 	ChatStreamLine,
 } from "./types/chat-room.types";
@@ -35,13 +34,11 @@ export function ChatRoomPanel({
 }: ChatRoomPanelProps): ReactElement {
 	const [activeSessionId, setActiveSessionId] = useState("");
 	const [draft, setDraft] = useState("");
-	const [answerDrafts, setAnswerDrafts] = useState<Record<string, string[]>>(
-		{},
-	);
 	const [commandStreamLines, setCommandStreamLines] = useState<
 		ChatStreamLine[]
 	>([]);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const clarificationState = useChatClarificationState();
 	const handledNewSessionRequest = useRef(0);
 	const sidebarToggleRef = useRef<HTMLInputElement>(null);
 
@@ -65,8 +62,11 @@ export function ChatRoomPanel({
 		refetchIntervalMs: false,
 	});
 	const pendingAnswers = selectedSessionId
-		? (answerDrafts[selectedSessionId] ?? [])
+		? (clarificationState.answerDrafts[selectedSessionId] ?? [])
 		: [];
+	const pendingQuestionIndex = selectedSessionId
+		? (clarificationState.answerStepBySession[selectedSessionId] ?? 0)
+		: 0;
 	const chatStreamsByRunId = useRealtimeStore(
 		(state) => state.chatStreamsByRunId,
 	);
@@ -172,26 +172,17 @@ export function ChatRoomPanel({
 	}
 
 	async function submitAnswers(): Promise<void> {
-		if (!selectedSession?.pendingQuestions.length) {
-			return;
-		}
-		const answers: ChatAnswerPayload = selectedSession.pendingQuestions.map(
-			(question, index) => ({
-				question: question.question,
-				answer: pendingAnswers[index]?.trim() ?? "",
-			}),
-		);
-		if (answers.some((answer) => !answer.answer)) {
-			return;
-		}
-		await sendMessage.mutateAsync({
-			sessionId: selectedSession.id,
-			message: {
-				content: answers.map((answer) => answer.answer).join("\n"),
-				answers,
+		await clarificationState.submitAnswers({
+			pendingAnswers,
+			pendingQuestionIndex,
+			selectedSession,
+			sendAnswers: async ({ sessionId, content, answers }) => {
+				await sendMessage.mutateAsync({
+					sessionId,
+					message: { content, answers },
+				});
 			},
 		});
-		setAnswerDrafts((current) => ({ ...current, [selectedSession.id]: [] }));
 	}
 
 	return (
@@ -207,6 +198,7 @@ export function ChatRoomPanel({
 			messages={messagesQuery.data ?? []}
 			messagesError={messagesQuery.error}
 			pendingAnswers={pendingAnswers}
+			pendingQuestionIndex={pendingQuestionIndex}
 			projects={projectsQuery.data ?? []}
 			selectedSession={selectedSession}
 			sidebarControlId={SIDEBAR_CONTROL_ID}
@@ -214,10 +206,7 @@ export function ChatRoomPanel({
 			sessions={sessions}
 			streamLines={streamLines}
 			onAnswerChange={(index, value) =>
-				setAnswerDrafts((current) => ({
-					...current,
-					[selectedSessionId]: replaceAt(pendingAnswers, index, value),
-				}))
+				clarificationState.updateAnswerDraft(selectedSessionId, index, value)
 			}
 			onCloseSidebar={closeMobileSidebar}
 			onDraftChange={setDraft}

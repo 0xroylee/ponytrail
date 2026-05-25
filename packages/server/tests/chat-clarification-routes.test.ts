@@ -15,6 +15,47 @@ afterEach(async () => {
 });
 
 describe("chat clarification routes", () => {
+	it("renders only the current clarification question in assistant text", async () => {
+		testDatabase = await createDrizzleServerTestDatabase();
+		const app = createServerTestApp(testDatabase.db, {
+			cliExecutor: {
+				execute: async (request) => ({
+					status: "succeeded",
+					request,
+					commandResult: {
+						code: 0,
+						stdout:
+							'{"status":"needs_info","questions":["Which agent?","What scope?"]}\n',
+						stderr: "",
+					},
+				}),
+				executeStream: async (request) => ({ status: "succeeded", request }),
+				getHistory: () => [],
+			},
+			workspacePath: testDatabase.path,
+		});
+		const created = await app(
+			createJsonRequest("POST", "/api/chat/sessions", {}),
+		);
+		const session = (await created.json()) as { id: string };
+		const unclear = await app(
+			createJsonRequest("POST", `/api/chat/sessions/${session.id}/send`, {
+				content: "Route agent choice",
+			}),
+		);
+		const body = (await unclear.json()) as {
+			messages: Array<{ content: string; kind: string }>;
+			session: { pendingQuestions: Array<{ question: string }> };
+		};
+
+		expect(body.session.pendingQuestions).toEqual([
+			{ question: "Which agent?" },
+			{ question: "What scope?" },
+		]);
+		expect(body.messages[1]?.content).toContain("Which agent?");
+		expect(body.messages[1]?.content).not.toContain("What scope?");
+	});
+
 	it("keeps unclear tasks in backlog and moves answered tasks to plan", async () => {
 		testDatabase = await createDrizzleServerTestDatabase();
 		const cliCalls: unknown[] = [];

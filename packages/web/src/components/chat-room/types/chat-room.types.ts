@@ -45,6 +45,7 @@ export interface ChatTranscriptProps {
 	isThinking: boolean;
 	messages: ChatMessageRecord[];
 	pendingAnswers: string[];
+	pendingQuestionIndex: number;
 	session: ChatSessionRecord | null;
 	streamLines: ChatStreamLine[];
 	onAnswerChange: (index: number, value: string) => void;

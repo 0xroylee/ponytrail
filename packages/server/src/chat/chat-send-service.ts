@@ -195,9 +195,13 @@ async function applyRequirementResult(
 }
 
 function clarificationText(questions: ChatClarificationQuestion[]): string {
+	const currentQuestion = questions[0];
+	if (!currentQuestion) {
+		return "I need a bit more detail before this is ready for planning.";
+	}
 	return [
 		"I need a bit more detail before this is ready for planning:",
-		...questions.map(formatClarificationQuestion),
+		formatClarificationQuestion(currentQuestion),
 	].join("\n");
 }
 

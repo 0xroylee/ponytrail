@@ -1,21 +1,24 @@
 "use client";
 
-import { CheckCircle2, RotateCcw, Send, X } from "lucide-react";
 import { type ReactElement, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+	buildClarificationAnswers,
+	hasClarificationAnswer,
+	resolveClarificationStep,
+	updateClarificationAnswer,
+} from "@/components/clarification/clarification-queue-utils";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 import { formatTaskCreateError } from "./task-create-chat-errors";
 import { getTaskCreateStatusText } from "./task-create-chat-status";
+import { TaskCreateClarificationStep } from "./task-create-clarification-step";
+import {
+	TaskCreateDialogFields,
+	TaskCreateDialogFooter,
+	TaskCreateDialogHeader,
+	TaskCreateDialogResult,
+} from "./task-create-dialog-parts";
 import { TaskCreateLogPanel, createLogLine } from "./task-create-log-panel";
 import { createInitialState } from "./task-create-state";
 import { streamTaskCreate } from "./task-create-stream";
@@ -33,9 +36,16 @@ export function TaskCreateChatDialog({
 	);
 	const [isStreaming, setIsStreaming] = useState(false);
 	const canSubmitRequest = state.request.trim().length > 0 && !isStreaming;
+	const clarificationStep = resolveClarificationStep(
+		state.questions,
+		state.clarificationIndex,
+	);
 	const canSubmitAnswers =
-		state.answers.length > 0 &&
-		state.answers.every((answer) => answer.answer.trim().length > 0) &&
+		clarificationStep.currentQuestion !== null &&
+		hasClarificationAnswer(
+			state.answers.map((answer) => answer.answer),
+			clarificationStep.currentIndex,
+		) &&
 		!isStreaming;
 
 	const statusText = getTaskCreateStatusText({
@@ -73,7 +83,9 @@ export function TaskCreateChatDialog({
 						question: question.question,
 						answer: "",
 					})),
+					clarificationIndex: 0,
 					questions: response.questions,
+					submittedAnswers: nextAnswers,
 					step: "clarifying",
 				}));
 				return;
@@ -82,8 +94,10 @@ export function TaskCreateChatDialog({
 				setState((current) => ({
 					...current,
 					answers: [],
+					clarificationIndex: 0,
 					questions: [],
 					result: response,
+					submittedAnswers: [],
 					step: "created",
 				}));
 				return;
@@ -106,10 +120,34 @@ export function TaskCreateChatDialog({
 	function updateAnswer(index: number, value: string): void {
 		setState((current) => ({
 			...current,
-			answers: current.answers.map((answer, answerIndex) =>
-				answerIndex === index ? { ...answer, answer: value } : answer,
-			),
+			answers: updateClarificationAnswer(
+				current.answers.map((answer) => answer.answer),
+				index,
+				value,
+			).map((answer, answerIndex) => ({
+				question: current.questions[answerIndex]?.question ?? "",
+				answer,
+			})),
 		}));
+	}
+
+	async function submitClarificationAnswer(): Promise<void> {
+		if (!clarificationStep.currentQuestion || !canSubmitAnswers) {
+			return;
+		}
+		const answerValues = state.answers.map((answer) => answer.answer);
+		const queuedAnswers = buildClarificationAnswers(
+			state.questions,
+			answerValues,
+		);
+		if (!clarificationStep.isFinalStep) {
+			setState((current) => ({
+				...current,
+				clarificationIndex: clarificationStep.currentIndex + 1,
+			}));
+			return;
+		}
+		await submitTask([...state.submittedAnswers, ...queuedAnswers]);
 	}
 
 	return (
@@ -118,143 +156,45 @@ export function TaskCreateChatDialog({
 				className="max-h-[100dvh] max-w-2xl overflow-auto p-5"
 				showCloseButton={false}
 			>
-				<DialogHeader className="flex-row items-start justify-between gap-4 space-y-0 text-left">
-					<div>
-						<p className="mb-1 text-xs font-medium uppercase text-zinc-500">
-							New Issue
-						</p>
-						<DialogTitle>Chat to create a task</DialogTitle>
-						<p className="mb-0 mt-2 text-sm text-zinc-400">{statusText}</p>
-					</div>
-					<Button
-						aria-label="Close dialog"
-						onClick={onClose}
-						size="iconLg"
-						type="button"
-						variant="secondary"
-					>
-						<X size={17} />
-					</Button>
-				</DialogHeader>
-				<div className="grid gap-3">
-					<label
-						className="grid gap-1.5 text-sm text-zinc-400"
-						htmlFor="task-create-chat-request"
-					>
-						<span>Request</span>
-						<Textarea
-							className="min-h-32 resize-y"
-							disabled={state.step === "created" || isStreaming}
-							id="task-create-chat-request"
-							onChange={(event) =>
-								setState({ ...state, request: event.target.value })
-							}
-							placeholder="Describe the issue or task you want created"
-							value={state.request}
-						/>
-					</label>
-					<label
-						className="grid gap-1.5 text-sm text-zinc-400"
-						htmlFor="task-create-chat-project-id"
-					>
-						<span>Project ID</span>
-						<Input
-							disabled={state.step === "created" || isStreaming}
-							id="task-create-chat-project-id"
-							onChange={(event) =>
-								setState({ ...state, projectId: event.target.value })
-							}
-							placeholder="default"
-							value={state.projectId}
-						/>
-					</label>
-				</div>
+				<TaskCreateDialogHeader statusText={statusText} onClose={onClose} />
+				<TaskCreateDialogFields
+					isStreaming={isStreaming}
+					state={state}
+					onStateChange={setState}
+				/>
 				{state.step === "clarifying" ? (
 					<div className="grid gap-3 rounded-lg border border-zinc-800 bg-[#141519] p-3">
-						{state.questions.map((question, index) => (
-							<label
-								className="grid gap-1.5 text-sm text-zinc-400"
-								htmlFor={`task-create-chat-answer-${index}`}
-								key={question.question}
-							>
-								<span>{question.question}</span>
-								{question.options?.length ? (
-									<div className="flex flex-wrap gap-2">
-										{question.options.map((option) => (
-											<Button
-												key={option.value}
-												onClick={() => updateAnswer(index, option.value)}
-												size="sm"
-												type="button"
-												variant={
-													state.answers[index]?.answer === option.value
-														? "default"
-														: "secondary"
-												}
-											>
-												{option.label}
-											</Button>
-										))}
-									</div>
-								) : null}
-								<Input
-									id={`task-create-chat-answer-${index}`}
-									onChange={(event) => updateAnswer(index, event.target.value)}
-									placeholder="Type your answer"
-									value={state.answers[index]?.answer ?? ""}
-								/>
-							</label>
-						))}
+						{clarificationStep.currentQuestion ? (
+							<TaskCreateClarificationStep
+								answer={
+									state.answers[clarificationStep.currentIndex]?.answer ?? ""
+								}
+								currentIndex={clarificationStep.currentIndex}
+								question={clarificationStep.currentQuestion}
+								onAnswerChange={updateAnswer}
+							/>
+						) : null}
 					</div>
 				) : null}
-				{state.result ? (
-					<div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-100">
-						<CheckCircle2 size={16} />
-						<a
-							className="font-medium underline-offset-4 hover:underline"
-							href={`#${state.result.task.id}`}
-							rel="noreferrer"
-						>
-							{state.result.task.taskKey}
-						</a>
-						<span className="text-emerald-200/80">
-							Board task {state.result.task.id}
-						</span>
-					</div>
-				) : null}
+				<TaskCreateDialogResult state={state} />
 				<TaskCreateLogPanel logs={state.logs} />
 				{state.errorMessage ? (
 					<p className="m-0 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
 						{state.errorMessage}
 					</p>
 				) : null}
-				<footer className="flex flex-wrap items-center justify-between gap-3">
-					<div />
-					<div className="flex items-center gap-2">
-						<Button onClick={onClose} type="button" variant="secondary">
-							Close
-						</Button>
-						{state.step !== "created" ? (
-							<Button
-								className={cn(
-									(state.step === "clarifying"
-										? !canSubmitAnswers
-										: !canSubmitRequest) && "opacity-50",
-								)}
-								disabled={
-									state.step === "clarifying"
-										? !canSubmitAnswers
-										: !canSubmitRequest
-								}
-								onClick={() => submitTask()}
-								type="button"
-							>
-								<Send size={15} />
-								{state.step === "clarifying" ? "Submit Answers" : "Create"}
-							</Button>
-						) : null}
-					</div>
-				</footer>
+				<TaskCreateDialogFooter
+					canSubmitAnswers={canSubmitAnswers}
+					canSubmitRequest={canSubmitRequest}
+					isFinalClarificationStep={clarificationStep.isFinalStep}
+					step={state.step}
+					onClose={onClose}
+					onPrimary={() =>
+						state.step === "clarifying"
+							? void submitClarificationAnswer()
+							: void submitTask()
+					}
+				/>
 			</DialogContent>
 		</Dialog>
 	);

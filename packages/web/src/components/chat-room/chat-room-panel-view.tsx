@@ -24,6 +24,7 @@ export interface ChatRoomPanelViewProps {
 	messages: ChatMessageRecord[];
 	messagesError: Error | null;
 	pendingAnswers: string[];
+	pendingQuestionIndex: number;
 	projects: WorkspaceProjectRecord[];
 	selectedSession: ChatSessionRecord | null;
 	sidebarControlId: string;
@@ -53,6 +54,7 @@ export function ChatRoomPanelView({
 	messages,
 	messagesError,
 	pendingAnswers,
+	pendingQuestionIndex,
 	projects,
 	selectedSession,
 	sidebarControlId,
@@ -107,6 +109,7 @@ export function ChatRoomPanelView({
 					isThinking={isThinking}
 					messages={messages}
 					pendingAnswers={pendingAnswers}
+					pendingQuestionIndex={pendingQuestionIndex}
 					session={selectedSession}
 					streamLines={streamLines}
 					onAnswerChange={onAnswerChange}

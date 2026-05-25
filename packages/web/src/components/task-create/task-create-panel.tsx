@@ -3,33 +3,44 @@
 import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
 
+import {
+	buildClarificationAnswers,
+	hasClarificationAnswer,
+	resolveClarificationStep,
+	updateClarificationAnswer,
+} from "@/components/clarification/clarification-queue-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { TaskClarificationQuestion } from "@/lib/api";
+import type { TaskClarificationQuestion, TaskCreateAnswer } from "@/lib/api";
 import { useCreateTaskMutation } from "@/lib/api/queries";
 import { formatTaskCreateError } from "./task-create-chat-errors";
-
-interface ClarificationAnswer {
-	question: string;
-	answer: string;
-}
 
 export function TaskCreatePanel(): ReactElement {
 	const createTask = useCreateTaskMutation();
 	const [request, setRequest] = useState<string>("");
 	const [projectId, setProjectId] = useState<string>("default");
-	const [answers, setAnswers] = useState<ClarificationAnswer[]>([]);
+	const [answers, setAnswers] = useState<TaskCreateAnswer[]>([]);
 	const [activeQuestions, setActiveQuestions] = useState<
 		TaskClarificationQuestion[]
 	>([]);
+	const [clarificationIndex, setClarificationIndex] = useState(0);
+	const [submittedAnswers, setSubmittedAnswers] = useState<TaskCreateAnswer[]>(
+		[],
+	);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	const canSubmitInitial = request.trim().length > 0 && !createTask.isPending;
+	const clarificationStep = resolveClarificationStep(
+		activeQuestions,
+		clarificationIndex,
+	);
 	const canSubmitClarifications =
-		activeQuestions.length > 0 &&
-		answers.length === activeQuestions.length &&
-		answers.every((answer) => answer.answer.trim().length > 0) &&
+		clarificationStep.currentQuestion !== null &&
+		hasClarificationAnswer(
+			answers.map((answer) => answer.answer),
+			clarificationStep.currentIndex,
+		) &&
 		!createTask.isPending;
 
 	const statusText = useMemo(() => {
@@ -50,7 +61,7 @@ export function TaskCreatePanel(): ReactElement {
 
 	async function submitRequest(
 		nextRequest: string,
-		nextAnswers?: ClarificationAnswer[],
+		nextAnswers?: TaskCreateAnswer[],
 	): Promise<void> {
 		setErrorMessage(null);
 		try {
@@ -61,6 +72,8 @@ export function TaskCreatePanel(): ReactElement {
 			});
 			if (response.status === "needs_info") {
 				setActiveQuestions(response.questions);
+				setClarificationIndex(0);
+				setSubmittedAnswers(nextAnswers ?? []);
 				setAnswers(
 					response.questions.map((question) => ({
 						question: question.question,
@@ -72,6 +85,8 @@ export function TaskCreatePanel(): ReactElement {
 			if (response.status === "created") {
 				setActiveQuestions([]);
 				setAnswers([]);
+				setClarificationIndex(0);
+				setSubmittedAnswers([]);
 				return;
 			}
 			setErrorMessage(formatTaskCreateError(response));
@@ -84,18 +99,38 @@ export function TaskCreatePanel(): ReactElement {
 
 	function updateAnswer(index: number, value: string): void {
 		setAnswers((current) =>
-			current.map((answer, answerIndex) =>
-				answerIndex === index ? { ...answer, answer: value } : answer,
-			),
+			updateClarificationAnswer(
+				current.map((answer) => answer.answer),
+				index,
+				value,
+			).map((answer, answerIndex) => ({
+				question: activeQuestions[answerIndex]?.question ?? "",
+				answer,
+			})),
 		);
 	}
 
 	async function handleInitialSubmit(): Promise<void> {
-		await submitRequest(request.trim());
+		setSubmittedAnswers([]);
+		await submitRequest(request.trim(), []);
 	}
 
 	async function handleClarificationSubmit(): Promise<void> {
-		await submitRequest(request.trim(), answers);
+		if (!clarificationStep.currentQuestion || !canSubmitClarifications) {
+			return;
+		}
+		const queuedAnswers = buildClarificationAnswers(
+			activeQuestions,
+			answers.map((answer) => answer.answer),
+		);
+		if (!clarificationStep.isFinalStep) {
+			setClarificationIndex(clarificationStep.currentIndex + 1);
+			return;
+		}
+		await submitRequest(request.trim(), [
+			...submittedAnswers,
+			...queuedAnswers,
+		]);
 	}
 
 	return (
@@ -148,22 +183,31 @@ export function TaskCreatePanel(): ReactElement {
 			</Button>
 			{activeQuestions.length > 0 ? (
 				<div style={{ marginTop: "1rem" }}>
-					<h3 style={{ marginTop: 0 }}>Clarification Questions</h3>
-					{activeQuestions.map((question, index) => (
-						<div key={question.question} style={{ marginBottom: "0.75rem" }}>
+					<h3 style={{ marginTop: 0 }}>Clarification Question</h3>
+					{clarificationStep.currentQuestion ? (
+						<div
+							key={clarificationStep.currentQuestion.question}
+							style={{ marginBottom: "0.75rem" }}
+						>
 							<p style={{ marginTop: 0, marginBottom: "0.5rem" }}>
-								{question.question}
+								{clarificationStep.currentQuestion.question}
 							</p>
-							{question.options?.length ? (
+							{clarificationStep.currentQuestion.options?.length ? (
 								<div className="mb-2 flex flex-wrap gap-2">
-									{question.options.map((option) => (
+									{clarificationStep.currentQuestion.options.map((option) => (
 										<Button
 											key={option.value}
-											onClick={() => updateAnswer(index, option.value)}
+											onClick={() =>
+												updateAnswer(
+													clarificationStep.currentIndex,
+													option.value,
+												)
+											}
 											size="sm"
 											type="button"
 											variant={
-												answers[index]?.answer === option.value
+												answers[clarificationStep.currentIndex]?.answer ===
+												option.value
 													? "default"
 													: "secondary"
 											}
@@ -175,18 +219,23 @@ export function TaskCreatePanel(): ReactElement {
 							) : null}
 							<Input
 								type="text"
-								value={answers[index]?.answer ?? ""}
-								onChange={(event) => updateAnswer(index, event.target.value)}
-								placeholder="Type your answer"
+								value={answers[clarificationStep.currentIndex]?.answer ?? ""}
+								onChange={(event) =>
+									updateAnswer(
+										clarificationStep.currentIndex,
+										event.target.value,
+									)
+								}
+								placeholder="Type a custom answer"
 							/>
 						</div>
-					))}
+					) : null}
 					<Button
 						type="button"
 						onClick={handleClarificationSubmit}
 						disabled={!canSubmitClarifications}
 					>
-						Submit Answers
+						{clarificationStep.isFinalStep ? "Submit Answer" : "Next"}
 					</Button>
 				</div>
 			) : null}
