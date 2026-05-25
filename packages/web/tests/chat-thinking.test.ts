@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { shouldShowChatThinkingIndicator } from "../src/components/chat-room/chat-thinking-state";
 import { ChatTranscript } from "../src/components/chat-room/chat-transcript";
 import { TextShimmer } from "../src/components/loading/text-shimmer";
-import type { ChatSessionRecord } from "../src/lib/api";
+import type { ChatMessageRecord, ChatSessionRecord } from "../src/lib/api";
 
 describe("chat thinking indicator", () => {
 	it("shows only for a pending send on the active session without output", () => {
@@ -70,13 +70,103 @@ describe("chat thinking indicator", () => {
 		expect(html).toContain("Loading");
 		expect(html).toContain("text-shimmer");
 	});
+
+	it("renders one pending clarification question at a time", () => {
+		const html = renderToStaticMarkup(
+			createElement(ChatTranscript, {
+				error: null,
+				isLoading: false,
+				isThinking: false,
+				messages: [],
+				pendingAnswers: ["codex"],
+				pendingQuestionIndex: 1,
+				session: chatSession({
+					pendingQuestions: [
+						{
+							question: "Which agent?",
+							options: [
+								{ label: "Codex", value: "codex" },
+								{ label: "Claude", value: "claude" },
+							],
+						},
+						{ question: "What scope?" },
+					],
+				}),
+				streamLines: [],
+				onAnswerChange: () => undefined,
+				onSubmitAnswers: () => undefined,
+			}),
+		);
+
+		expect(html).toContain("What scope?");
+		expect(html).not.toContain("Which agent?");
+		expect(html).toContain("Type a custom answer");
+	});
+
+	it("renders assistant notes plainly and plan-shaped content in a box", () => {
+		const noteHtml = renderTranscript({
+			isThinking: false,
+			messages: [
+				chatMessage({
+					content: "I need a bit more detail before planning.",
+					role: "assistant",
+				}),
+			],
+			streamLines: [],
+		});
+		expect(noteHtml).toContain('data-chat-message-display="assistant-note"');
+		expect(noteHtml).not.toContain("border-zinc-800 bg-[#17181c]");
+
+		const planHtml = renderTranscript({
+			isThinking: false,
+			messages: [
+				chatMessage({
+					content: [
+						"Title",
+						"Ship the workflow",
+						"Summary",
+						"Make the behavior clear.",
+						"Test plan",
+						"Run the focused tests.",
+					].join("\n"),
+					role: "assistant",
+				}),
+			],
+			streamLines: [],
+		});
+		expect(planHtml).toContain('data-chat-message-display="plan"');
+		expect(planHtml).toContain("Plan");
+		expect(planHtml).toContain("border-blue-900");
+	});
+
+	it("keeps user and error messages boxed", () => {
+		const html = renderTranscript({
+			isThinking: false,
+			messages: [
+				chatMessage({ content: "Please do the thing", role: "user" }),
+				chatMessage({
+					content: "Something failed",
+					kind: "error",
+					role: "system",
+				}),
+			],
+			streamLines: [],
+		});
+
+		expect(html).toContain('data-chat-message-display="standard"');
+		expect(html).toContain('data-chat-message-display="error"');
+		expect(html).toContain("justify-self-end border-zinc-700 bg-zinc-800");
+		expect(html).toContain("border-red-900");
+	});
 });
 
 function renderTranscript({
 	isThinking,
+	messages = [],
 	streamLines,
 }: {
 	isThinking: boolean;
+	messages?: ChatMessageRecord[];
 	streamLines: Array<{
 		id: string;
 		stream: "stdout" | "stderr" | "system";
@@ -88,8 +178,9 @@ function renderTranscript({
 			error: null,
 			isLoading: false,
 			isThinking,
-			messages: [],
+			messages,
 			pendingAnswers: [],
+			pendingQuestionIndex: 0,
 			session: chatSession(),
 			streamLines,
 			onAnswerChange: () => undefined,
@@ -98,7 +189,26 @@ function renderTranscript({
 	);
 }
 
-function chatSession(): ChatSessionRecord {
+function chatMessage(
+	overrides: Partial<ChatMessageRecord> = {},
+): ChatMessageRecord {
+	return {
+		id: "message-1",
+		sessionId: "session-1",
+		role: "assistant",
+		kind: "message",
+		content: "Message",
+		taskId: null,
+		commandAction: null,
+		metadata: null,
+		createdAt: "2026-05-20T00:00:00.000Z",
+		...overrides,
+	};
+}
+
+function chatSession(
+	overrides: Partial<ChatSessionRecord> = {},
+): ChatSessionRecord {
 	return {
 		id: "session-1",
 		workspaceId: "owner-1",
@@ -109,5 +219,6 @@ function chatSession(): ChatSessionRecord {
 		pendingQuestions: [],
 		createdAt: "2026-05-20T00:00:00.000Z",
 		updatedAt: "2026-05-20T00:00:00.000Z",
+		...overrides,
 	};
 }

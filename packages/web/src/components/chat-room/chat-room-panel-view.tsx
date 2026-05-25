@@ -1,58 +1,28 @@
 "use client";
 
-import type {
-	ChatMessageRecord,
-	ChatSessionRecord,
-	WorkspaceProjectRecord,
-} from "@/lib/api";
-import type { ReactElement, RefObject } from "react";
+import type { ReactElement } from "react";
 import { ChatComposer } from "./chat-composer";
 import { ChatRoomHeader } from "./chat-room-header";
 import { ChatRoomSidebar } from "./chat-room-sidebar";
+import { ChatTaskDetailSheet } from "./chat-task-detail-sheet";
 import { ChatTranscript } from "./chat-transcript";
-import type { ChatStreamLine } from "./types/chat-room.types";
-
-export interface ChatRoomPanelViewProps {
-	activeSessionId: string;
-	draft: string;
-	errorMessage: string | null;
-	isBusy: boolean;
-	isCreatingSession: boolean;
-	isMessagesLoading: boolean;
-	isSending: boolean;
-	isThinking: boolean;
-	messages: ChatMessageRecord[];
-	messagesError: Error | null;
-	pendingAnswers: string[];
-	projects: WorkspaceProjectRecord[];
-	selectedSession: ChatSessionRecord | null;
-	sidebarControlId: string;
-	sidebarToggleRef: RefObject<HTMLInputElement | null>;
-	sessions: ChatSessionRecord[];
-	streamLines: ChatStreamLine[];
-	onAnswerChange: (index: number, value: string) => void;
-	onCloseSidebar: () => void;
-	onDraftChange: (value: string) => void;
-	onNewSession: () => void;
-	onSearch: () => void;
-	onSelectCommand: (value: string) => void;
-	onSelectSession: (sessionId: string) => void;
-	onSubmit: () => void;
-	onSubmitAnswers: () => void;
-}
+import type { ChatRoomPanelViewProps } from "./types/chat-room.types";
 
 export function ChatRoomPanelView({
 	activeSessionId,
+	activeTaskId,
 	draft,
 	errorMessage,
 	isBusy,
 	isCreatingSession,
 	isMessagesLoading,
 	isSending,
+	isTaskDetailSheetOpen,
 	isThinking,
 	messages,
 	messagesError,
 	pendingAnswers,
+	pendingQuestionIndex,
 	projects,
 	selectedSession,
 	sidebarControlId,
@@ -61,8 +31,10 @@ export function ChatRoomPanelView({
 	streamLines,
 	onAnswerChange,
 	onCloseSidebar,
+	onCloseTaskDetails,
 	onDraftChange,
 	onNewSession,
+	onOpenTaskDetails,
 	onSearch,
 	onSelectCommand,
 	onSelectSession,
@@ -97,9 +69,11 @@ export function ChatRoomPanelView({
 			/>
 			<div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
 				<ChatRoomHeader
+					activeTaskId={activeTaskId}
 					projectId={selectedSession?.projectId ?? "default"}
 					sidebarControlId={sidebarControlId}
 					title={selectedSession?.title ?? "Untitled"}
+					onOpenTaskDetails={onOpenTaskDetails}
 				/>
 				<ChatTranscript
 					error={messagesError}
@@ -107,6 +81,7 @@ export function ChatRoomPanelView({
 					isThinking={isThinking}
 					messages={messages}
 					pendingAnswers={pendingAnswers}
+					pendingQuestionIndex={pendingQuestionIndex}
 					session={selectedSession}
 					streamLines={streamLines}
 					onAnswerChange={onAnswerChange}
@@ -126,6 +101,11 @@ export function ChatRoomPanelView({
 					onSubmit={onSubmit}
 				/>
 			</div>
+			<ChatTaskDetailSheet
+				isOpen={isTaskDetailSheetOpen}
+				taskId={activeTaskId}
+				onClose={onCloseTaskDetails}
+			/>
 		</section>
 	);
 }

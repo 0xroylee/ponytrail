@@ -4,7 +4,9 @@ import type {
 	CliCommandStreamEvent,
 	CliCommandStreamRequest,
 	TaskCreateAnswer,
+	WorkspaceProjectRecord,
 } from "@/lib/api";
+import type { RefObject } from "react";
 
 export interface ChatRoomPanelProps {
 	newSessionRequest: number;
@@ -12,9 +14,11 @@ export interface ChatRoomPanelProps {
 }
 
 export interface ChatRoomHeaderProps {
+	activeTaskId: string | null;
 	projectId: string;
 	sidebarControlId: string;
 	title: string;
+	onOpenTaskDetails: () => void;
 }
 
 export interface ChatCommandContext {
@@ -45,9 +49,50 @@ export interface ChatTranscriptProps {
 	isThinking: boolean;
 	messages: ChatMessageRecord[];
 	pendingAnswers: string[];
+	pendingQuestionIndex: number;
 	session: ChatSessionRecord | null;
 	streamLines: ChatStreamLine[];
 	onAnswerChange: (index: number, value: string) => void;
+	onSubmitAnswers: () => void;
+}
+
+export interface ChatTaskDetailSheetProps {
+	isOpen: boolean;
+	taskId: string | null;
+	onClose: () => void;
+}
+
+export interface ChatRoomPanelViewProps {
+	activeSessionId: string;
+	activeTaskId: string | null;
+	draft: string;
+	errorMessage: string | null;
+	isBusy: boolean;
+	isCreatingSession: boolean;
+	isMessagesLoading: boolean;
+	isSending: boolean;
+	isTaskDetailSheetOpen: boolean;
+	isThinking: boolean;
+	messages: ChatMessageRecord[];
+	messagesError: Error | null;
+	pendingAnswers: string[];
+	pendingQuestionIndex: number;
+	projects: WorkspaceProjectRecord[];
+	selectedSession: ChatSessionRecord | null;
+	sidebarControlId: string;
+	sidebarToggleRef: RefObject<HTMLInputElement | null>;
+	sessions: ChatSessionRecord[];
+	streamLines: ChatStreamLine[];
+	onAnswerChange: (index: number, value: string) => void;
+	onCloseSidebar: () => void;
+	onCloseTaskDetails: () => void;
+	onDraftChange: (value: string) => void;
+	onNewSession: () => void;
+	onOpenTaskDetails: () => void;
+	onSearch: () => void;
+	onSelectCommand: (value: string) => void;
+	onSelectSession: (sessionId: string) => void;
+	onSubmit: () => void;
 	onSubmitAnswers: () => void;
 }
 
