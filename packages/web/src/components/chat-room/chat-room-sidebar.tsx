@@ -21,25 +21,6 @@ interface ChatRoomSidebarProps {
 	onSelectSession: (sessionId: string) => void;
 }
 
-const WORKSPACE_MENU_ID = "chat-workspace-menu";
-
-const iconByKey: Record<
-	SidebarNavItem["key"],
-	ComponentType<{ size?: number }>
-> = {
-	agents: Bot,
-	autopilot: Sparkles,
-	chat: MessageSquare,
-	inbox: Inbox,
-	issues: ListChecks,
-	projects: SquareKanban,
-	runtimes: Computer,
-	settings: Settings,
-	skills: BookOpen,
-	squads: UsersRound,
-	usage: ChartColumn,
-};
-
 export function ChatRoomSidebar({
 	activeSessionId,
 	isCreating,
