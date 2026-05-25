@@ -50,6 +50,7 @@ const SERVER_DB_TESTS = [
 const FAST_TEST_TARGETS = [
 	"packages/agent-adapters/tests",
 	"packages/create-devos-plugin/tests",
+	"packages/workflow/tests",
 	"packages/cli/tests",
 	"packages/web/tests",
 	...SERVER_FAST_TESTS,
