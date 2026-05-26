@@ -2,21 +2,20 @@ import { describe, expect, it } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-	createChatMissionProgressModel,
-	isActiveMissionStatus,
-} from "../src/components/chat-room/chat-mission-progress-state";
+import { isActiveMissionStatus } from "../src/components/chat-room/chat-mission-progress-state";
 import { ChatTranscript } from "../src/components/chat-room/chat-transcript";
 import type { ChatMissionProgressViewModel } from "../src/components/chat-room/types/chat-mission-progress.types";
-import type {
-	ChatMessageRecord,
-	ChatSessionRecord,
-	ProjectBoardTaskRecord,
-	TaskActivityRecord,
-} from "../src/lib/api";
+import type { ChatStreamLine } from "../src/components/chat-room/types/chat-room.types";
+import type { ChatMessageRecord } from "../src/lib/api";
+import {
+	chatMessage,
+	chatSession,
+	missionModel,
+	textContent,
+} from "./chat-mission-progress-fixtures";
 
 describe("chat mission progress", () => {
-	it("renders mission progress after chat history", () => {
+	it("renders sticky mission progress before chat history", () => {
 		const mission = missionModel();
 		const html = renderTranscript({
 			messages: [chatMessage({ content: "Chat before mission" })],
@@ -24,10 +23,11 @@ describe("chat mission progress", () => {
 		});
 
 		expect(html).toContain('data-chat-mission-progress="true"');
+		expect(html).toContain('data-chat-mission-progress-sticky="true"');
 		expect(textContent(html)).toContain("Mission");
 		expect(textContent(html)).toContain("TASK-42");
-		expect(html.indexOf("Chat before mission")).toBeLessThan(
-			html.indexOf('data-chat-mission-progress="true"'),
+		expect(html.indexOf('data-chat-mission-progress="true"')).toBeLessThan(
+			html.indexOf("Chat before mission"),
 		);
 
 		const emptyHtml = renderTranscript({ missionProgress: null });
@@ -57,55 +57,84 @@ describe("chat mission progress", () => {
 
 		expect(mission.statusLabel).toBe("In Progress");
 		expect(mission.notes[0]?.body).toContain("changed status");
-		expect(mission.executions[0]?.logLines).toEqual([
-			expect.objectContaining({ stream: "stdout", text: "Planning complete" }),
+		expect(mission.latestLogLines.at(-1)).toEqual(
 			expect.objectContaining({ stream: "stderr", text: "Needs retry" }),
-		]);
+		);
 		expect(mission.latestResult).toEqual({
 			label: "succeeded",
 			tone: "success",
 		});
+		expect(mission.phases.map((phase) => phase.id)).toEqual([
+			"plan",
+			"implement",
+			"testing",
+			"qa",
+		]);
+		expect(mission.phases.map((phase) => phase.status)).toEqual([
+			"success",
+			"success",
+			"success",
+			"success",
+		]);
 
 		const html = renderTranscript({ missionProgress: mission });
 		const text = textContent(html);
 		expect(text).toContain("In Progress");
-		expect(html).toContain('data-mission-section="status"');
-		expect(html).toContain('data-mission-section="plan-updates"');
-		expect(html).toContain('data-mission-section="progress-steps"');
-		expect(html).toContain('data-mission-section="execution-logs"');
-		expect(html).toContain('data-mission-section="result"');
-		expect(html).toContain("Plan &amp; updates");
-		expect(text).toContain("Progress steps");
-		expect(text).toContain("Execution logs");
-		expect(text).not.toContain("Progress logs");
-		expect(text).toContain("changed status from `plan` to `in_progress`");
-		expect(text).toContain("implementation succeeded");
+		expect(html).toContain('data-mission-log-panel="true"');
+		expect(html).toContain('data-mission-workflow="true"');
+		expect(html.indexOf('data-mission-log-panel="true"')).toBeLessThan(
+			html.indexOf('data-mission-workflow="true"'),
+		);
+		expect(html).toContain('data-mission-phase="plan"');
+		expect(html).toContain('data-mission-phase="implement"');
+		expect(html).toContain('data-mission-phase="testing"');
+		expect(html).toContain('data-mission-phase="qa"');
 		expect(text).toContain("Planning complete");
 		expect(text).toContain("Needs retry");
-		expect(text).toContain("Result: succeeded");
+		expect(text).not.toContain("Progress steps");
 	});
 
-	it("renders canceled mission results as warning instead of success", () => {
-		const mission = missionModel("canceled");
+	it("uses live stream lines above the workflow when present", () => {
+		const html = renderTranscript({
+			missionProgress: missionModel(),
+			streamLines: [
+				{ id: "live-1", stream: "stdout", text: "Live output" },
+				{ id: "live-2", stream: "stderr", text: "Live failure" },
+			],
+		});
+		const text = textContent(html);
+
+		expect(text).toContain("Live output");
+		expect(text).toContain("Live failure");
+		expect(text).not.toContain("Planning complete");
+	});
+
+	it("derives QA status from the latest result without QA events", () => {
+		const mission = missionModel("failed");
 
 		expect(mission.latestResult).toEqual({
-			label: "canceled",
-			tone: "warning",
+			label: "failed",
+			tone: "error",
 		});
+		expect(mission.phases.find((phase) => phase.id === "qa")?.status).toBe(
+			"failed",
+		);
 
 		const html = renderTranscript({ missionProgress: mission });
-		expect(html).toContain('data-mission-section="result"');
-		expect(html).toContain("text-amber-300");
-		expect(html).not.toContain("text-emerald-300");
+		expect(html).toContain('data-mission-phase="qa"');
+		expect(html).toContain('data-mission-phase-status="failed"');
+		expect(html).toContain("text-red-300");
 	});
 });
 
 function renderTranscript({
 	messages = [],
 	missionProgress,
+	streamLines = [],
 }: {
 	messages?: ChatMessageRecord[];
 	missionProgress: ChatMissionProgressViewModel | null;
+	streamLines?: ChatStreamLine[];
 }): string {
 	const queryClient = new QueryClient();
 	return renderToStaticMarkup(
@@ -119,116 +148,10 @@ function renderTranscript({
 				missionProgress,
 				messages,
 				session: chatSession(),
-				streamLines: [],
+				streamLines,
 				workingStartedAt: null,
 				onDraftCommand: () => undefined,
 			}),
 		),
 	);
-}
-
-function missionModel(status = "succeeded"): ChatMissionProgressViewModel {
-	return createChatMissionProgressModel({
-		task: boardTask(),
-		activity: {
-			taskId: "task-42",
-			activities: [statusComment(), executionActivity(status)],
-		},
-	});
-}
-
-function statusComment(): TaskActivityRecord {
-	return {
-		id: "comment-1",
-		kind: "comment",
-		actorId: "system",
-		actorType: "system",
-		title: "updated this issue",
-		body: "changed status from `plan` to `in_progress`",
-		status: null,
-		createdAt: "2026-05-20T00:01:00.000Z",
-	};
-}
-
-function executionActivity(status: string): TaskActivityRecord {
-	return {
-		id: "exec-1",
-		kind: "execution",
-		actorId: "devos",
-		actorType: "agent",
-		title: "recorded execution output",
-		body: [
-			"[2026-05-20T00:02:00.000Z stdout] Planning complete",
-			"[2026-05-20T00:02:01.000Z stderr] Needs retry",
-		].join("\n"),
-		status,
-		createdAt: "2026-05-20T00:02:00.000Z",
-		steps: [
-			{
-				id: "step-1",
-				stepNumber: 1,
-				action: "implementation",
-				status: "succeeded",
-				detail: JSON.stringify({ message: "implementation succeeded" }),
-				recordedAt: "2026-05-20T00:02:30.000Z",
-			},
-		],
-	};
-}
-
-function boardTask(): ProjectBoardTaskRecord {
-	return {
-		id: "task-42",
-		taskKey: "TASK-42",
-		projectId: "project-1",
-		title: "Show mission progress",
-		content: "Display progress in the chat transcript.",
-		priority: 2,
-		status: "in_progress",
-		dueDate: null,
-		creatorId: "owner-1",
-		assigneeId: null,
-		linkedPr: null,
-		linearIssueId: null,
-		linearIdentifier: null,
-		linearUrl: null,
-		createdAt: "2026-05-20T00:00:00.000Z",
-		updatedAt: "2026-05-20T00:03:00.000Z",
-	};
-}
-
-function chatMessage(
-	overrides: Partial<ChatMessageRecord> = {},
-): ChatMessageRecord {
-	return {
-		id: "message-1",
-		sessionId: "session-1",
-		role: "user",
-		kind: "message",
-		content: "Message",
-		taskId: "task-42",
-		commandAction: null,
-		metadata: null,
-		createdAt: "2026-05-20T00:00:00.000Z",
-		...overrides,
-	};
-}
-
-function chatSession(): ChatSessionRecord {
-	return {
-		id: "session-1",
-		workspaceId: "owner-1",
-		projectId: "default",
-		taskId: "task-42",
-		title: "Untitled",
-		pendingRequest: null,
-		pendingQuestions: [],
-		archived: false,
-		createdAt: "2026-05-20T00:00:00.000Z",
-		updatedAt: "2026-05-20T00:00:00.000Z",
-	};
-}
-
-function textContent(html: string): string {
-	return html.replace(/<[^>]*>/g, "");
 }

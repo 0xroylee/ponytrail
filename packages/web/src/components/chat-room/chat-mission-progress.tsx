@@ -1,52 +1,40 @@
-"use client";
-
-import { Radio } from "lucide-react";
 import type { ReactElement } from "react";
 
-import { Typography } from "@/components/ui/typography";
 import { MissionBody } from "./chat-mission-progress-sections";
-import type { ChatMissionProgressViewModel } from "./types/chat-mission-progress.types";
+import type {
+	ChatMissionLogLine,
+	ChatMissionProgressViewModel,
+} from "./types/chat-mission-progress.types";
 
 export function ChatMissionProgress({
+	liveLogLines = [],
 	mission,
 }: {
+	liveLogLines?: ChatMissionLogLine[];
 	mission: ChatMissionProgressViewModel | null;
 }): ReactElement | null {
 	if (!mission) return null;
 	const isLoading = mission.state === "loading";
 	const isError = mission.state === "error";
-	const title = mission.title.trim();
 	return (
 		<section
-			className="grid gap-4 justify-self-stretch rounded-md border border-border bg-surface-input px-3 py-3 text-sm text-zinc-300"
+			className="sticky top-0 z-20 grid gap-3 justify-self-stretch rounded-md border border-border bg-surface-input/95 px-3 py-3 text-sm text-zinc-300 backdrop-blur"
 			data-chat-mission-progress="true"
+			data-chat-mission-progress-sticky="true"
 		>
-			<header className="flex flex-wrap items-start justify-between gap-3">
-				<div className="min-w-0">
-					<div className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-						<Radio size={14} />
-						<Typography as="span" variant="eyebrow">
-							Mission
-						</Typography>
-					</div>
-					{title ? (
-						<Typography className="mt-1 truncate" variant="sectionTitle">
-							{title}
-						</Typography>
-					) : null}
-				</div>
-			</header>
 			{isLoading ? <MissionState label="Loading mission progress..." /> : null}
 			{isError ? (
 				<MissionState
 					label={mission.errorMessage ?? "Mission progress unavailable."}
 				/>
 			) : null}
-			{mission.state === "ready" ? <MissionBody mission={mission} /> : null}
+			{mission.state === "ready" ? (
+				<MissionBody liveLogLines={liveLogLines} mission={mission} />
+			) : null}
 		</section>
 	);
 }
 
 function MissionState({ label }: { label: string }): ReactElement {
-	return <Typography variant="description">{label}</Typography>;
+	return <p className="m-0 text-sm text-muted-foreground">{label}</p>;
 }

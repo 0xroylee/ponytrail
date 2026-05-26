@@ -16,6 +16,21 @@ export interface ChatMissionLogLine {
 	text: string;
 }
 
+export type ChatMissionPhaseId = "plan" | "implement" | "testing" | "qa";
+
+export type ChatMissionPhaseStatus =
+	| "pending"
+	| "running"
+	| "success"
+	| "failed"
+	| "warning";
+
+export interface ChatMissionPhase {
+	id: ChatMissionPhaseId;
+	label: string;
+	status: ChatMissionPhaseStatus;
+}
+
 export interface ChatMissionExecution {
 	id: string;
 	body: string;
@@ -41,6 +56,8 @@ export interface ChatMissionProgressViewModel {
 	updatedAt: string;
 	notes: ChatMissionNote[];
 	executions: ChatMissionExecution[];
+	latestLogLines: ChatMissionLogLine[];
 	latestResult: ChatMissionResult | null;
+	phases: ChatMissionPhase[];
 	errorMessage?: string;
 }

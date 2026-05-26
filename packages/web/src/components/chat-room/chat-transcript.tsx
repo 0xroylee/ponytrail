@@ -38,11 +38,13 @@ export function ChatTranscript({
 		missionProgress?.updatedAt ?? "",
 		missionProgress?.notes.length ?? 0,
 		missionProgress?.executions.length ?? 0,
+		missionProgress?.latestLogLines.length ?? 0,
 		streamLines.length,
 	].join(":");
 	const showThinking = isThinking && streamLines.length === 0;
 	const showWorkingHeader =
 		Boolean(workingStartedAt) && (showThinking || streamLines.length > 0);
+	const showStandaloneStream = streamLines.length > 0 && !missionProgress;
 	const hasSessionActivity =
 		messages.length > 0 ||
 		streamLines.length > 0 ||
@@ -71,21 +73,24 @@ export function ChatTranscript({
 			className="relative min-h-0 min-w-0 overflow-auto px-4 py-6"
 			ref={scrollContainerRef}
 		>
-			<div className="mx-auto grid min-w-0 max-w-4xl gap-4 xl:mr-[22rem]">
+			<div className="mx-auto grid min-w-0 max-w-4xl gap-4">
 				{isLoading ? <ChatTranscriptSkeleton /> : null}
 				{error ? <ErrorLine text={error.message} /> : null}
-				{!isLoading && messages.length === 0 ? (
+				<ChatMissionProgress
+					liveLogLines={streamLines}
+					mission={missionProgress}
+				/>
+				{!isLoading && messages.length === 0 && !missionProgress ? (
 					<ChatSelectedSessionWelcome />
 				) : null}
 				{messages.map((message) => (
 					<ChatMessageBubble key={message.id} message={message} />
 				))}
-				<ChatMissionProgress mission={missionProgress} />
 				{showWorkingHeader ? (
 					<WorkingSectionHeader startedAt={workingStartedAt ?? ""} />
 				) : null}
 				{showThinking ? <ThinkingLine /> : null}
-				{streamLines.length > 0 ? (
+				{showStandaloneStream ? (
 					<div className="justify-self-start whitespace-pre-wrap rounded-md border border-border bg-surface-panel px-3 py-2 font-mono text-xs text-zinc-300">
 						{streamLines.map((line) => (
 							<div

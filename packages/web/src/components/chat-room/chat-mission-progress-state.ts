@@ -8,6 +8,7 @@ import type {
 import { useBoardTaskQuery } from "@/lib/api/queries";
 import { useTaskActivityQuery } from "@/lib/api/task-activity-query";
 
+import { createMissionPhases } from "./chat-mission-progress-phases";
 import type {
 	ChatMissionExecution,
 	ChatMissionLogLine,
@@ -16,6 +17,7 @@ import type {
 } from "./types/chat-mission-progress.types";
 
 const ACTIVE_MISSION_STATUSES = new Set(["in_progress", "in_review"]);
+const MAX_LATEST_LOG_LINES = 8;
 
 export function useChatMissionProgress(
 	taskId: string | null,
@@ -76,6 +78,7 @@ export function createChatMissionProgressModel({
 	const executions = activities
 		.filter((item) => item.kind === "execution")
 		.map(createMissionExecution);
+	const latestResult = createLatestResult(executions);
 	return {
 		state: "ready",
 		taskId: task.id,
@@ -86,7 +89,13 @@ export function createChatMissionProgressModel({
 		updatedAt: task.updatedAt,
 		notes,
 		executions,
-		latestResult: createLatestResult(executions),
+		latestLogLines: createLatestLogLines(executions),
+		latestResult,
+		phases: createMissionPhases({
+			executions,
+			latestResult,
+			taskStatus: task.status,
+		}),
 	};
 }
 
@@ -105,7 +114,13 @@ function createMissionState(
 		updatedAt: "",
 		notes: [],
 		executions: [],
+		latestLogLines: [],
 		latestResult: null,
+		phases: createMissionPhases({
+			executions: [],
+			latestResult: null,
+			taskStatus: "",
+		}),
 		...overrides,
 	};
 }
@@ -169,6 +184,14 @@ function createLatestResult(
 		return { label: latest.status, tone: "running" };
 	}
 	return { label: latest.status, tone: "neutral" };
+}
+
+function createLatestLogLines(
+	executions: ChatMissionExecution[],
+): ChatMissionLogLine[] {
+	return executions
+		.flatMap((execution) => execution.logLines)
+		.slice(-MAX_LATEST_LOG_LINES);
 }
 
 function formatStatusLabel(status: string): string {
