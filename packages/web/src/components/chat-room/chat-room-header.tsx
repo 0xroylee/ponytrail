@@ -15,7 +15,7 @@ export function ChatRoomHeader({
 	onToggleTaskDetails,
 }: ChatRoomHeaderProps): ReactElement {
 	return (
-		<header className="flex items-center justify-between gap-3 border-b border-border bg-surface-inset px-4 py-3">
+		<header className="flex items-center justify-between gap-3 bg-surface-inset px-4 py-3">
 			<div className="flex min-w-0 flex-1 items-center gap-3">
 				<Button
 					asChild
@@ -28,7 +28,9 @@ export function ChatRoomHeader({
 					</label>
 				</Button>
 				<div className="min-w-0">
-					<h1 className="m-0 truncate text-base font-semibold">{title}</h1>
+					<h1 className="m-0 truncate text-base font-medium text-zinc-300">
+						{title}
+					</h1>
 					<p className="m-0 mt-1 truncate text-xs text-muted-foreground">
 						{projectId}
 					</p>

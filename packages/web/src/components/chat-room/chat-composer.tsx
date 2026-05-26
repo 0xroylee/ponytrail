@@ -10,19 +10,22 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+import { ChatCommandMenu, commandOptionId } from "./chat-command-menu";
 import {
 	getChatCommandSuggestions,
 	isChatCommandMenuDraft,
 } from "./chat-command-utils";
+import { ChatComposerTextarea } from "./chat-composer-textarea";
 import type { ChatComposerProps } from "./types/chat-room.types";
 
 export function ChatComposer({
 	disabled,
 	draft,
 	isSending,
+	placeholder = "Message or /command",
+	presentation = "compact",
 	onDraftChange,
 	onSelectCommand,
 	onSubmit,
@@ -39,6 +42,10 @@ export function ChatComposer({
 			? Math.min(selectedIndex, commandSuggestions.length - 1)
 			: 0;
 	const activeCommand = commandSuggestions[activeIndex] ?? null;
+	const isHero = presentation === "hero";
+	const activeCommandId = activeCommand
+		? commandOptionId(menuId, activeCommand.command)
+		: undefined;
 
 	function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
 		if (showCommands && event.key === "Escape") {
@@ -94,95 +101,116 @@ export function ChatComposer({
 	}
 
 	return (
-		<div className="px-4 py-3">
-			<div className="relative mx-auto max-w-4xl xl:mr-[22rem]">
+		<div className={cn(isHero ? "px-0 py-0" : "px-4 py-3")}>
+			<div
+				className={cn(
+					"relative mx-auto",
+					isHero ? "max-w-5xl" : "max-w-4xl xl:mr-[22rem]",
+				)}
+			>
 				{showCommands ? (
-					<div
-						aria-label="Chat commands"
-						className="absolute bottom-full mb-2 grid max-h-72 w-full gap-1 overflow-y-auto rounded-md border border-border bg-surface-panel p-2 shadow-2xl"
-						id={menuId}
-					>
-						{commandSuggestions.length > 0 ? (
-							commandSuggestions.map((item, index) => {
-								const isSelected = index === activeIndex;
-								const optionId = commandOptionId(menuId, item.command);
-								return (
+					<ChatCommandMenu
+						activeIndex={activeIndex}
+						menuId={menuId}
+						suggestions={commandSuggestions}
+						onPointerDown={handleCommandPointerDown}
+						onSelectCommand={selectCommand}
+					/>
+				) : null}
+				<div
+					className={cn(
+						"border border-border bg-surface-input",
+						isHero
+							? "grid gap-7 rounded-[1.65rem] px-5 py-4"
+							: "grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 rounded-md p-2",
+					)}
+				>
+					{isHero ? (
+						<>
+							<ChatComposerTextarea
+								activeCommandId={activeCommandId}
+								className="max-h-40 min-h-16 resize-none border-0 bg-transparent px-1 py-1 text-base leading-7 focus-visible:border-transparent focus-visible:ring-0"
+								disabled={disabled}
+								draft={draft}
+								menuId={menuId}
+								onBlur={() => setIsFocused(false)}
+								onChange={handleDraftChange}
+								onFocus={() => setIsFocused(true)}
+								onKeyDown={handleKeyDown}
+								placeholder={placeholder}
+								showCommands={showCommands}
+							/>
+							<div className="flex min-w-0 items-center justify-between gap-3">
+								<Button
+									aria-label="Add"
+									disabled={disabled}
+									size="iconLg"
+									type="button"
+									variant="ghost"
+								>
+									<Plus size={18} />
+								</Button>
+								<div className="flex min-w-0 items-center gap-2">
+									<span className="hidden truncate text-sm text-muted-foreground sm:inline">
+										devos agent
+									</span>
 									<Button
-										aria-selected={isSelected}
-										className={cn(
-											"flex min-h-10 items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left text-sm text-zinc-300 hover:bg-surface-active",
-											isSelected && "bg-surface-active text-zinc-100",
-										)}
-										id={optionId}
-										key={item.command}
-										onClick={() => selectCommand(item.command)}
-										onMouseDown={handleCommandPointerDown}
+										aria-label="Send"
+										className="text-zinc-300"
+										disabled={
+											disabled || isSending || draft.trim().length === 0
+										}
+										onClick={onSubmit}
+										size="iconLg"
 										type="button"
 										variant="ghost"
 									>
-										<span className="font-mono text-zinc-100">
-											{item.command}
-										</span>
-										<span className="min-w-0 truncate text-xs text-muted-foreground">
-											{item.hint}
-										</span>
+										<Send size={17} />
 									</Button>
-								);
-							})
-						) : (
-							<p className="m-0 px-2 py-3 text-sm text-muted-foreground">
-								No commands
-							</p>
-						)}
-					</div>
-				) : null}
-				<div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 rounded-md border border-border bg-surface-panel p-2">
-					<Button
-						aria-label="Add"
-						disabled={disabled}
-						size="iconLg"
-						type="button"
-						variant="ghost"
-					>
-						<Plus size={16} />
-					</Button>
-					<Textarea
-						aria-activedescendant={
-							showCommands && activeCommand
-								? commandOptionId(menuId, activeCommand.command)
-								: undefined
-						}
-						aria-controls={showCommands ? menuId : undefined}
-						aria-expanded={showCommands}
-						aria-haspopup="menu"
-						className="max-h-36 min-h-10 resize-none border-0 bg-transparent px-1 py-2 focus-visible:border-transparent focus-visible:ring-0"
-						disabled={disabled}
-						onBlur={() => setIsFocused(false)}
-						onChange={(event) => handleDraftChange(event.target.value)}
-						onFocus={() => setIsFocused(true)}
-						onKeyDown={handleKeyDown}
-						placeholder="Message or /command"
-						value={draft}
-					/>
-					<Button
-						aria-label="Send"
-						className="text-zinc-300"
-						disabled={disabled || isSending || draft.trim().length === 0}
-						onClick={onSubmit}
-						size="iconLg"
-						type="button"
-						variant="ghost"
-					>
-						<Send size={16} />
-					</Button>
+								</div>
+							</div>
+						</>
+					) : (
+						<>
+							<Button
+								aria-label="Add"
+								disabled={disabled}
+								size="iconLg"
+								type="button"
+								variant="ghost"
+							>
+								<Plus size={16} />
+							</Button>
+							<ChatComposerTextarea
+								activeCommandId={activeCommandId}
+								className="max-h-36 min-h-10 resize-none border-0 bg-transparent px-1 py-2 focus-visible:border-transparent focus-visible:ring-0"
+								disabled={disabled}
+								draft={draft}
+								menuId={menuId}
+								onBlur={() => setIsFocused(false)}
+								onChange={handleDraftChange}
+								onFocus={() => setIsFocused(true)}
+								onKeyDown={handleKeyDown}
+								placeholder={placeholder}
+								showCommands={showCommands}
+							/>
+							<Button
+								aria-label="Send"
+								className="text-zinc-300"
+								disabled={disabled || isSending || draft.trim().length === 0}
+								onClick={onSubmit}
+								size="iconLg"
+								type="button"
+								variant="ghost"
+							>
+								<Send size={16} />
+							</Button>
+						</>
+					)}
 				</div>
 			</div>
 		</div>
 	);
-}
-
-function commandOptionId(menuId: string, command: string): string {
-	return `${menuId}-${command.slice(1)}`;
 }
 
 function wrapIndex(index: number, length: number): number {

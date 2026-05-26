@@ -86,7 +86,7 @@ export function ChatRoomSidebar({
 	return (
 		<aside
 			aria-label="Projects and sessions"
-			className="fixed inset-y-0 left-0 z-40 grid min-h-0 w-[18rem] max-w-[calc(100vw-2rem)] -translate-x-full border-r border-border bg-surface-panel shadow-2xl transition-transform peer-checked:translate-x-0 md:static md:z-auto md:max-w-none md:translate-x-0 md:shadow-none"
+			className="fixed inset-y-0 left-0 z-40 grid min-h-0 w-[18rem] max-w-[calc(100vw-2rem)] -translate-x-full border-r border-border bg-surface-panel transition-transform peer-checked:translate-x-0 md:static md:z-auto md:max-w-none md:translate-x-0"
 		>
 			<div className="relative h-full min-h-0 overflow-hidden">
 				<div
@@ -99,10 +99,10 @@ export function ChatRoomSidebar({
 					)}
 					inert={isSettingsView ? true : undefined}
 				>
-					<div className="grid gap-2 border-b border-border p-3">
+					<div className="grid gap-2 p-3">
 						<div className="flex min-w-0 gap-2">
 							<Button
-								className="min-w-0 flex-1 justify-start"
+								className="min-w-0 flex-1 justify-start border-transparent bg-transparent text-zinc-300 hover:bg-surface-active"
 								disabled={isCreating}
 								onClick={onNewSession}
 								size="sm"
@@ -124,7 +124,7 @@ export function ChatRoomSidebar({
 							</Button>
 						</div>
 						<Button
-							className="w-full justify-start"
+							className="w-full justify-start border-transparent bg-transparent text-zinc-300 hover:bg-surface-active"
 							onClick={onSearch}
 							size="sm"
 							type="button"
@@ -135,7 +135,7 @@ export function ChatRoomSidebar({
 						</Button>
 					</div>
 					<div className="min-h-0 overflow-auto p-3">
-						<div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
+						<div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
 							<Folder size={14} />
 							Sessions
 						</div>
@@ -168,8 +168,8 @@ export function ChatRoomSidebar({
 											className={cn(
 												"h-9 min-w-0 justify-start gap-2 px-2 text-left text-sm",
 												group.isActive
-													? "bg-surface-hover text-zinc-100"
-													: "text-zinc-400 hover:bg-surface-hover hover:text-zinc-200",
+													? "bg-[#111110] text-zinc-100"
+													: "text-zinc-400 hover:bg-surface-active hover:text-zinc-200",
 											)}
 											onClick={() =>
 												toggleProjectGroup(

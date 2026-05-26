@@ -34,11 +34,11 @@ describe("chat mission progress", () => {
 		expect(emptyHtml).not.toContain('data-chat-mission-progress="true"');
 	});
 
-	it("shows the DEVOS.ING logo instead of an empty task prompt", () => {
+	it("shows the selected-session welcome instead of an empty task prompt", () => {
 		const html = renderTranscript({ missionProgress: null });
 		const text = textContent(html);
 
-		expect(text).toContain("DEVOS.ING");
+		expect(text).toContain("Welcome, roy. I am devos.ing.");
 		expect(text).not.toContain("Untitled");
 		expect(text).not.toContain("Ready for a task.");
 	});

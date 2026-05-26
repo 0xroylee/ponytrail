@@ -4,33 +4,34 @@
 
 :root {
 	color-scheme: dark;
-	--background: 225 10% 15%;
-	--foreground: 240 5% 96%;
-	--card: 225 9% 20%;
-	--card-foreground: 240 5% 96%;
-	--popover: 225 9% 19%;
-	--popover-foreground: 240 5% 96%;
-	--primary: 240 4% 30%;
-	--primary-foreground: 240 5% 96%;
-	--secondary: 225 8% 24%;
-	--secondary-foreground: 240 5% 90%;
-	--muted: 225 8% 24%;
-	--muted-foreground: 240 6% 74%;
-	--accent: 225 8% 27%;
-	--accent-foreground: 240 5% 96%;
+	--background: 40 3% 10%;
+	--foreground: 36 8% 91%;
+	--card: 40 3% 15%;
+	--card-foreground: 36 8% 91%;
+	--popover: 40 3% 14%;
+	--popover-foreground: 36 8% 91%;
+	--primary: 24 7% 30%;
+	--primary-foreground: 36 8% 92%;
+	--secondary: 36 3% 19%;
+	--secondary-foreground: 36 7% 86%;
+	--muted: 36 3% 19%;
+	--muted-foreground: 36 5% 62%;
+	--accent: 34 4% 23%;
+	--accent-foreground: 36 8% 91%;
 	--destructive: 0 73% 41%;
 	--destructive-foreground: 0 0% 98%;
-	--border: 225 7% 31%;
-	--input: 225 8% 24%;
-	--ring: 240 5% 64%;
-	--surface-base: 225 10% 15%;
-	--surface-panel: 225 9% 19%;
-	--surface-raised: 225 8% 23%;
-	--surface-inset: 225 9% 18%;
-	--surface-input: 225 8% 24%;
-	--surface-active: 225 7% 28%;
-	--surface-hover: 225 7% 25%;
-	--surface-plan: 221 24% 22%;
+	--border: 36 4% 20%;
+	--input: 36 3% 17%;
+	--ring: 28 42% 58%;
+	--surface-base: 40 3% 10%;
+	--surface-panel: 40 3% 13%;
+	--surface-raised: 36 3% 17%;
+	--surface-inset: 40 3% 11%;
+	--surface-input: 36 3% 17%;
+	--surface-active: 36 3% 18%;
+	--surface-hover: 36 4% 21%;
+	--surface-plan: 212 20% 20%;
+	--accent-warm: 18 63% 58%;
 	--radius: 0.5rem;
 }
 
@@ -45,5 +46,5 @@ body {
 	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 		"Segoe UI", sans-serif;
 	background: hsl(var(--background));
-	color: #f4f4f5;
+	color: hsl(var(--foreground));
 }

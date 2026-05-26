@@ -6,12 +6,11 @@ import { TextShimmer } from "@/components/loading/text-shimmer";
 import type { ChatMessageRecord } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-import { ChatEmptyTranscript } from "./chat-empty-transcript";
 import { ChatEnvironmentPanel } from "./chat-environment-panel";
 import { resolveChatMessageDisplay } from "./chat-message-display";
 import { ChatMissionProgress } from "./chat-mission-progress";
+import { ChatSelectedSessionWelcome } from "./chat-welcome-states";
 import type { ChatTranscriptProps } from "./types/chat-room.types";
-
 
 export function ChatTranscript({
 	error,
@@ -42,6 +41,11 @@ export function ChatTranscript({
 	const showThinking = isThinking && streamLines.length === 0;
 	const showWorkingHeader =
 		Boolean(workingStartedAt) && (showThinking || streamLines.length > 0);
+	const hasSessionActivity =
+		messages.length > 0 ||
+		streamLines.length > 0 ||
+		Boolean(missionProgress) ||
+		showWorkingHeader;
 
 	useEffect(() => {
 		if (!sessionId) {
@@ -68,7 +72,9 @@ export function ChatTranscript({
 			<div className="mx-auto grid min-w-0 max-w-4xl gap-4 xl:mr-[22rem]">
 				{isLoading ? <StatusLine text="Loading session..." /> : null}
 				{error ? <ErrorLine text={error.message} /> : null}
-				{!isLoading && messages.length === 0 ? <ChatEmptyTranscript /> : null}
+				{!isLoading && messages.length === 0 ? (
+					<ChatSelectedSessionWelcome />
+				) : null}
 				{messages.map((message) => (
 					<ChatMessageBubble key={message.id} message={message} />
 				))}
@@ -90,11 +96,13 @@ export function ChatTranscript({
 					</div>
 				) : null}
 			</div>
-			<ChatEnvironmentPanel
-				missionProgress={missionProgress}
-				projectId={session?.projectId ?? null}
-				onDraftCommand={onDraftCommand}
-			/>
+			{hasSessionActivity ? (
+				<ChatEnvironmentPanel
+					missionProgress={missionProgress}
+					projectId={session?.projectId ?? null}
+					onDraftCommand={onDraftCommand}
+				/>
+			) : null}
 		</div>
 	);
 }

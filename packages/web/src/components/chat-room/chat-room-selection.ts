@@ -7,13 +7,16 @@ export function selectChatSession(
 	selectedSession: ChatSessionRecord | null;
 	selectedSessionId: string;
 } {
-	const selectedSessionId =
-		sessions.find((session) => session.id === activeSessionId)?.id ??
-		sessions[0]?.id ??
-		"";
+	if (!activeSessionId) {
+		return {
+			selectedSession: null,
+			selectedSessionId: "",
+		};
+	}
+	const selectedSession =
+		sessions.find((session) => session.id === activeSessionId) ?? null;
 	return {
-		selectedSession:
-			sessions.find((session) => session.id === selectedSessionId) ?? null,
-		selectedSessionId,
+		selectedSession,
+		selectedSessionId: selectedSession?.id ?? "",
 	};
 }

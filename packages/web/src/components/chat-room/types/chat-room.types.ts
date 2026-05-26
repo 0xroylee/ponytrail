@@ -107,6 +107,8 @@ export interface ChatComposerProps {
 	disabled: boolean;
 	draft: string;
 	isSending: boolean;
+	placeholder?: string;
+	presentation?: "compact" | "hero";
 	onDraftChange: (value: string) => void;
 	onSelectCommand: (value: string) => void;
 	onSubmit: () => void;

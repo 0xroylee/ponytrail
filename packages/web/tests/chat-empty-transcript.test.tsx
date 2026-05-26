@@ -11,27 +11,27 @@ import type {
 import { serverStateQueryKeys } from "../src/lib/api/queries";
 
 describe("chat empty transcript daemon setup", () => {
-	it("shows daemon setup commands under the logo when no computer is online", () => {
+	it("shows daemon setup commands under the welcome when no computer is online", () => {
 		const text = textContent(
 			renderTranscript({
 				computers: [workflowComputer({ status: "offline" })],
 			}),
 		);
 
-		expect(text).toContain("DEVOS.ING");
+		expect(text).toContain("Welcome, roy. I am devos.ing.");
 		expect(text).toContain("npx devos onboard");
 		expect(text).toContain("npx devos onboard --check");
 		expect(text).toContain("devos daemon");
 	});
 
-	it("keeps the logo-only empty state when a computer is online", () => {
+	it("keeps the welcome-only empty state when a computer is online", () => {
 		const text = textContent(
 			renderTranscript({
 				computers: [workflowComputer({ status: "online" })],
 			}),
 		);
 
-		expect(text).toContain("DEVOS.ING");
+		expect(text).toContain("Welcome, roy. I am devos.ing.");
 		expect(text).not.toContain("npx devos onboard");
 		expect(text).not.toContain("devos daemon");
 	});

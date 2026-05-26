@@ -173,6 +173,104 @@ describe("chat clarification composer", () => {
 		expect(html).not.toContain("Message or /command");
 	});
 
+	it("renders the no-session welcome state until a session is selected", () => {
+		const session = chatSession();
+		const queryClient = new QueryClient();
+		const html = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: queryClient },
+				createElement(ChatRoomPanelView, {
+					activeSessionId: "",
+					activeTaskId: null,
+					draft: "",
+					isBusy: false,
+					isCreatingSession: false,
+					isMessagesLoading: false,
+					isSending: false,
+					isTaskDetailPanelOpen: false,
+					isThinking: false,
+					messages: [],
+					messagesError: null,
+					pendingAnswers: [],
+					pendingQuestionIndex: 0,
+					projects: [],
+					selectedSession: null,
+					sidebarControlId: "chat-sidebar-toggle-test",
+					sidebarToggleRef: createRef<HTMLInputElement>(),
+					sessions: [session],
+					streamLines: [],
+					onAnswerChange: () => undefined,
+					onArchiveSession: () => undefined,
+					onCloseSidebar: () => undefined,
+					onCloseTaskDetails: () => undefined,
+					onDraftChange: () => undefined,
+					onNewSession: () => undefined,
+					onToggleTaskDetails: () => undefined,
+					onSearch: () => undefined,
+					onSelectCommand: () => undefined,
+					onSelectOption: () => undefined,
+					onSelectSession: () => undefined,
+					onSubmit: () => undefined,
+					onSubmitAnswers: () => undefined,
+				}),
+			),
+		);
+
+		expect(html).toContain("Back at it, roy");
+		expect(html).toContain("Tell devos.ing what you are working on");
+		expect(html).not.toContain("Welcome, roy. I am devos.ing.");
+	});
+
+	it("renders the selected empty-session welcome state", () => {
+		const session = chatSession();
+		const queryClient = new QueryClient();
+		const html = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: queryClient },
+				createElement(ChatRoomPanelView, {
+					activeSessionId: session.id,
+					activeTaskId: null,
+					draft: "",
+					isBusy: false,
+					isCreatingSession: false,
+					isMessagesLoading: false,
+					isSending: false,
+					isTaskDetailPanelOpen: false,
+					isThinking: false,
+					messages: [],
+					messagesError: null,
+					pendingAnswers: [],
+					pendingQuestionIndex: 0,
+					projects: [],
+					selectedSession: session,
+					sidebarControlId: "chat-sidebar-toggle-test",
+					sidebarToggleRef: createRef<HTMLInputElement>(),
+					sessions: [session],
+					streamLines: [],
+					onAnswerChange: () => undefined,
+					onArchiveSession: () => undefined,
+					onCloseSidebar: () => undefined,
+					onCloseTaskDetails: () => undefined,
+					onDraftChange: () => undefined,
+					onNewSession: () => undefined,
+					onToggleTaskDetails: () => undefined,
+					onSearch: () => undefined,
+					onSelectCommand: () => undefined,
+					onSelectOption: () => undefined,
+					onSelectSession: () => undefined,
+					onSubmit: () => undefined,
+					onSubmitAnswers: () => undefined,
+				}),
+			),
+		);
+
+		expect(html).toContain("Welcome, roy. I am devos.ing.");
+		expect(html).toContain("Where do you want to start?");
+		expect(html).not.toContain("DEVOS.ING");
+	});
+
 	it("renders task details in the main chat layout when the panel is open", () => {
 		const session = chatSession();
 		const queryClient = new QueryClient();

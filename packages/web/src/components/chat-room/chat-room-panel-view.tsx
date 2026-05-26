@@ -7,6 +7,7 @@ import { ChatRoomHeader } from "./chat-room-header";
 import { ChatRoomSidebar } from "./chat-room-sidebar";
 import { ChatTaskDetailPanel } from "./chat-task-detail-sheet";
 import { ChatTranscript } from "./chat-transcript";
+import { ChatNoSessionHome } from "./chat-welcome-states";
 import type { ChatRoomPanelViewProps } from "./types/chat-room.types";
 
 export function ChatRoomPanelView({
@@ -79,47 +80,59 @@ export function ChatRoomPanelView({
 				onSearch={onSearch}
 				onSelectSession={onSelectSession}
 			/>
-			<div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto]">
-				<ChatRoomHeader
-					activeTaskId={activeTaskId}
-					isTaskDetailPanelOpen={hasOpenTaskDetails}
-					projectId={selectedSession?.projectId ?? "default"}
+			{selectedSession ? (
+				<div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto]">
+					<ChatRoomHeader
+						activeTaskId={activeTaskId}
+						isTaskDetailPanelOpen={hasOpenTaskDetails}
+						projectId={selectedSession.projectId ?? "default"}
+						sidebarControlId={sidebarControlId}
+						title={selectedSession.title}
+						onToggleTaskDetails={onToggleTaskDetails}
+					/>
+					<ChatTranscript
+						error={messagesError}
+						isLoading={isMessagesLoading}
+						isThinking={isThinking}
+						missionProgress={missionProgress}
+						messages={messages}
+						session={selectedSession}
+						streamLines={streamLines}
+						workingStartedAt={workingStartedAt}
+						onDraftCommand={onSelectCommand}
+					/>
+					{hasPendingQuestions ? (
+						<ChatClarificationComposer
+							answers={pendingAnswers}
+							disabled={isBusy || isSending}
+							pendingQuestionIndex={pendingQuestionIndex}
+							questions={pendingQuestions}
+							onAnswerChange={onAnswerChange}
+							onSelectOption={onSelectOption}
+							onSubmit={onSubmitAnswers}
+						/>
+					) : (
+						<ChatComposer
+							disabled={isBusy}
+							draft={draft}
+							isSending={isSending}
+							onDraftChange={onDraftChange}
+							onSelectCommand={onSelectCommand}
+							onSubmit={onSubmit}
+						/>
+					)}
+				</div>
+			) : (
+				<ChatNoSessionHome
+					disabled={isBusy}
+					draft={draft}
+					isSending={isSending}
 					sidebarControlId={sidebarControlId}
-					title={selectedSession?.title ?? "Untitled"}
-					onToggleTaskDetails={onToggleTaskDetails}
+					onDraftChange={onDraftChange}
+					onSelectCommand={onSelectCommand}
+					onSubmit={onSubmit}
 				/>
-				<ChatTranscript
-					error={messagesError}
-					isLoading={isMessagesLoading}
-					isThinking={isThinking}
-					missionProgress={missionProgress}
-					messages={messages}
-					session={selectedSession}
-					streamLines={streamLines}
-					workingStartedAt={workingStartedAt}
-					onDraftCommand={onSelectCommand}
-				/>
-				{hasPendingQuestions ? (
-					<ChatClarificationComposer
-						answers={pendingAnswers}
-						disabled={isBusy || isSending}
-						pendingQuestionIndex={pendingQuestionIndex}
-						questions={pendingQuestions}
-						onAnswerChange={onAnswerChange}
-						onSelectOption={onSelectOption}
-						onSubmit={onSubmitAnswers}
-					/>
-				) : (
-					<ChatComposer
-						disabled={isBusy}
-						draft={draft}
-						isSending={isSending}
-						onDraftChange={onDraftChange}
-						onSelectCommand={onSelectCommand}
-						onSubmit={onSubmit}
-					/>
-				)}
-			</div>
+			)}
 			<ChatTaskDetailPanel
 				isOpen={hasOpenTaskDetails}
 				taskId={activeTaskId}
