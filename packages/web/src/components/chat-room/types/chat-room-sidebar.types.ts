@@ -20,8 +20,28 @@ export interface ChatSessionProjectGroup {
 	sessions: ChatSessionRecord[];
 }
 
+export interface ChatSessionSidebarContent {
+	pinnedSessions: ChatSessionRecord[];
+	projectGroups: ChatSessionProjectGroup[];
+}
+
 export interface BuildChatSessionProjectGroupsInput {
 	activeSessionId: string;
 	projects: WorkspaceProjectRecord[];
 	sessions: ChatSessionRecord[];
+}
+
+export interface BuildChatSessionSidebarContentInput
+	extends BuildChatSessionProjectGroupsInput {
+	pinnedSessionIds: string[];
+}
+
+export interface ChatRoomSessionRowProps {
+	activeSessionId: string;
+	isPinned: boolean;
+	session: ChatSessionRecord;
+	onArchiveSession: (sessionId: string) => void;
+	onPinSession: (sessionId: string) => void;
+	onSelectSession: (sessionId: string) => void;
+	onUnpinSession: (sessionId: string) => void;
 }

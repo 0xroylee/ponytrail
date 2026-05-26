@@ -42,6 +42,7 @@ export interface UiStoreState {
 	viewFilters: UiViewFilters;
 	drafts: UiDraftState;
 	pinnedIssues: UiPinnedIssue[];
+	pinnedSessionIds: string[];
 	modal: UiModalState;
 }
 
@@ -53,6 +54,8 @@ export interface UiStoreActions {
 	clearDrafts(): void;
 	pinIssue(issue: UiPinnedIssue): void;
 	unpinIssue(issueId: string): void;
+	pinSession(sessionId: string): void;
+	unpinSession(sessionId: string): void;
 	openModal(kind: UiModalKind, contextId?: string | null): void;
 	closeModal(): void;
 	resetUiState(): void;

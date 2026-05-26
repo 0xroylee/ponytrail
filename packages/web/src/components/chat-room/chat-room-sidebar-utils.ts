@@ -1,10 +1,36 @@
 import type {
 	BuildChatSessionProjectGroupsInput,
+	BuildChatSessionSidebarContentInput,
 	ChatSessionProjectGroup,
+	ChatSessionSidebarContent,
 } from "./types/chat-room-sidebar.types";
 
 const UNASSIGNED_GROUP_ID = "unassigned";
 const UNASSIGNED_GROUP_LABEL = "Unassigned";
+
+export function buildChatSessionSidebarContent({
+	activeSessionId,
+	pinnedSessionIds,
+	projects,
+	sessions,
+}: BuildChatSessionSidebarContentInput): ChatSessionSidebarContent {
+	const pinnedIds = new Set(pinnedSessionIds);
+	const pinnedSessions = sessions.filter((session) =>
+		pinnedIds.has(session.id),
+	);
+	const unpinnedSessions = sessions.filter(
+		(session) => !pinnedIds.has(session.id),
+	);
+
+	return {
+		pinnedSessions,
+		projectGroups: buildChatSessionProjectGroups({
+			activeSessionId,
+			projects,
+			sessions: unpinnedSessions,
+		}),
+	};
+}
 
 export function buildChatSessionProjectGroups({
 	activeSessionId,

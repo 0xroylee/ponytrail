@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	Archive,
 	ChevronDown,
 	ChevronRight,
 	Folder,
@@ -13,9 +12,11 @@ import {
 import { type ReactElement, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useUiStore } from "@/lib/ui-store";
 import { cn } from "@/lib/utils";
+import { ChatRoomSessionRow } from "./chat-room-session-row";
 import { ChatRoomSettingsSidebar } from "./chat-room-settings-sidebar";
-import { buildChatSessionProjectGroups } from "./chat-room-sidebar-utils";
+import { buildChatSessionSidebarContent } from "./chat-room-sidebar-utils";
 import type { ChatRoomSidebarProps } from "./types/chat-room-sidebar.types";
 import type { ChatRoomSidebarView } from "./types/chat-room.types";
 
@@ -34,9 +35,13 @@ export function ChatRoomSidebar({
 	const [collapsedProjectIds, setCollapsedProjectIds] = useState<Set<string>>(
 		() => new Set(),
 	);
+	const pinnedSessionIds = useUiStore((state) => state.pinnedSessionIds);
+	const pinSession = useUiStore((state) => state.pinSession);
+	const unpinSession = useUiStore((state) => state.unpinSession);
 	const isSettingsView = sidebarView === "settings";
-	const sessionGroups = buildChatSessionProjectGroups({
+	const { pinnedSessions, projectGroups } = buildChatSessionSidebarContent({
 		activeSessionId,
+		pinnedSessionIds,
 		projects,
 		sessions,
 	});
@@ -135,7 +140,23 @@ export function ChatRoomSidebar({
 							Sessions
 						</div>
 						<div className="grid gap-1">
-							{sessionGroups.map((group) => {
+							{pinnedSessions.length > 0 ? (
+								<div className="mb-2 grid gap-1 border-b border-border pb-2">
+									{pinnedSessions.map((session) => (
+										<ChatRoomSessionRow
+											activeSessionId={activeSessionId}
+											isPinned={true}
+											key={session.id}
+											onArchiveSession={onArchiveSession}
+											onPinSession={pinSession}
+											onSelectSession={onSelectSession}
+											onUnpinSession={unpinSession}
+											session={session}
+										/>
+									))}
+								</div>
+							) : null}
+							{projectGroups.map((group) => {
 								const firstSessionId = group.sessions[0]?.id ?? "";
 								const isExpanded =
 									group.isActive && !collapsedProjectIds.has(group.id);
@@ -174,39 +195,16 @@ export function ChatRoomSidebar({
 										{isExpanded ? (
 											<div className="grid gap-1 pl-6">
 												{group.sessions.map((session) => (
-													<div
-														className={cn(
-															"rounded-md group grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] gap-1 hover:bg-surface-hover hover:text-zinc-200",
-															session.id === activeSessionId
-																? "bg-surface-active text-zinc-100"
-																: "text-zinc-400",
-														)}
+													<ChatRoomSessionRow
+														activeSessionId={activeSessionId}
+														isPinned={false}
 														key={session.id}
-													>
-														<Button
-															className="h-auto min-w-0 justify-start px-2 py-2 text-left text-sm"
-															onClick={() => onSelectSession(session.id)}
-															type="button"
-															variant="ghost"
-														>
-															<span className="min-w-0 flex-1">
-																<span className="block truncate">
-																	{session.title}
-																</span>
-															</span>
-														</Button>
-														<Button
-															aria-label={`Archive ${session.title}`}
-															className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-															onClick={() => onArchiveSession(session.id)}
-															size="icon"
-															title="Archive session"
-															type="button"
-															variant="ghost"
-														>
-															<Archive size={14} />
-														</Button>
-													</div>
+														onArchiveSession={onArchiveSession}
+														onPinSession={pinSession}
+														onSelectSession={onSelectSession}
+														onUnpinSession={unpinSession}
+														session={session}
+													/>
 												))}
 											</div>
 										) : null}

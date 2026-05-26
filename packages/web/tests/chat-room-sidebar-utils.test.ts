@@ -1,6 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
-import { buildChatSessionProjectGroups } from "../src/components/chat-room/chat-room-sidebar-utils";
+import {
+	buildChatSessionProjectGroups,
+	buildChatSessionSidebarContent,
+} from "../src/components/chat-room/chat-room-sidebar-utils";
 import type { ChatSessionRecord, WorkspaceProjectRecord } from "../src/lib/api";
 
 describe("chat room sidebar utilities", () => {
@@ -85,6 +88,42 @@ describe("chat room sidebar utilities", () => {
 		});
 
 		expect(groups).toEqual([]);
+	});
+
+	it("partitions pinned sessions above unpinned project groups", () => {
+		const projectA = buildProject({ id: "project-a", name: "Project A" });
+		const projectB = buildProject({ id: "project-b", name: "Project B" });
+
+		const content = buildChatSessionSidebarContent({
+			activeSessionId: "session-4",
+			pinnedSessionIds: ["missing-session", "session-3", "session-1"],
+			projects: [projectA, projectB],
+			sessions: [
+				buildSession({ id: "session-1", projectId: "project-a" }),
+				buildSession({ id: "session-2", projectId: "project-a" }),
+				buildSession({ id: "session-3", projectId: "project-b" }),
+				buildSession({ id: "session-4", projectId: "project-b" }),
+			],
+		});
+
+		expect(content.pinnedSessions.map((session) => session.id)).toEqual([
+			"session-1",
+			"session-3",
+		]);
+		expect(content.projectGroups.map((group) => group.label)).toEqual([
+			"Project A",
+			"Project B",
+		]);
+		expect(
+			content.projectGroups[0]?.sessions.map((session) => session.id),
+		).toEqual(["session-2"]);
+		expect(content.projectGroups[1]).toMatchObject({
+			id: "project-b",
+			isActive: true,
+		});
+		expect(
+			content.projectGroups[1]?.sessions.map((session) => session.id),
+		).toEqual(["session-4"]);
 	});
 });
 
