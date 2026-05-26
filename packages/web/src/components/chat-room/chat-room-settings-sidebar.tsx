@@ -21,6 +21,7 @@ import Link from "next/link";
 import type { ComponentType, ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import type { ChatRoomSettingsSidebarProps } from "./types/chat-room.types";
 
@@ -81,9 +82,9 @@ export function ChatRoomSettingsSidebar({
 				</div>
 			</header>
 			<nav className="min-h-0 overflow-auto p-3">
-				<div className="mb-2 px-2 text-xs font-medium uppercase text-muted-foreground">
+				<Typography className="mb-2 px-2" variant="eyebrow">
 					Workspace
-				</div>
+				</Typography>
 				<div className="grid gap-1">
 					{navItems.map((item) => {
 						const Icon = iconByKey[item.key];
@@ -102,7 +103,9 @@ export function ChatRoomSettingsSidebar({
 								onClick={onNavigate}
 							>
 								<Icon size={15} />
-								<span className="truncate">{item.label}</span>
+								<Typography as="span" className="truncate" variant="muted">
+									{item.label}
+								</Typography>
 							</Link>
 						);
 					})}

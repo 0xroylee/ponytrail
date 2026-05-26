@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 import type { IssueWorkflowRunState } from "./use-issue-workflow-run";
@@ -35,13 +36,13 @@ export function IssueWorkflowRunPanel({
 							)}
 							size={17}
 						/>
-						<h2 className="m-0 text-sm font-semibold">Workflow Run</h2>
+						<Typography variant="cardTitle">Workflow Run</Typography>
 					</div>
-					<p className="mt-1 mb-0 truncate text-xs text-muted-foreground">
+					<Typography className="mt-1 truncate" variant="muted">
 						{runState.task
 							? `${runState.task.taskKey} · ${runState.task.title}`
 							: "No issue selected"}
-					</p>
+					</Typography>
 				</div>
 				{isRunning ? null : (
 					<Button
@@ -57,17 +58,18 @@ export function IssueWorkflowRunPanel({
 			</header>
 			<div className="grid max-h-56 gap-1 overflow-auto rounded-md border border-border bg-surface-inset p-3 font-mono text-xs text-zinc-300">
 				{runState.logs.map((line) => (
-					<p
+					<Typography
 						className={cn(
-							"m-0 whitespace-pre-wrap break-words",
+							"whitespace-pre-wrap break-words",
 							line.stream === "stderr" && "text-amber-200",
 							line.stream === "system" && "text-muted-foreground",
 							line.stream === "progress" && "text-sky-200",
 						)}
 						key={line.id}
+						variant="mono"
 					>
 						{line.text}
-					</p>
+					</Typography>
 				))}
 			</div>
 		</section>

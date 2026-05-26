@@ -12,6 +12,7 @@ import {
 import { type ReactElement, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { useUiStore } from "@/lib/ui-store";
 import { cn } from "@/lib/utils";
 import { ChatRoomSessionRow } from "./chat-room-session-row";
@@ -137,7 +138,9 @@ export function ChatRoomSidebar({
 					<div className="min-h-0 overflow-auto p-3">
 						<div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
 							<Folder size={14} />
-							Sessions
+							<Typography as="span" variant="eyebrow">
+								Sessions
+							</Typography>
 						</div>
 						<div className="grid gap-1">
 							{pinnedSessions.length > 0 ? (
@@ -185,12 +188,15 @@ export function ChatRoomSidebar({
 										>
 											<GroupIcon className="shrink-0" size={14} />
 											<Folder className="shrink-0" size={14} />
-											<span className="min-w-0 flex-1 truncate">
+											<Typography as="span" className="min-w-0 flex-1 truncate">
 												{group.label}
-											</span>
-											<span className="shrink-0 rounded bg-surface-active px-1.5 py-0.5 text-[11px] leading-none text-muted-foreground">
+											</Typography>
+											<Typography
+												className="shrink-0 rounded bg-surface-active px-1.5 py-0.5 text-[11px] leading-none"
+												variant="muted"
+											>
 												{group.sessions.length}
-											</span>
+											</Typography>
 										</Button>
 										{isExpanded ? (
 											<div className="grid gap-1 pl-6">
@@ -213,7 +219,7 @@ export function ChatRoomSidebar({
 							})}
 							{sessions.length === 0 ? (
 								<div className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
-									No sessions yet
+									<Typography variant="description">No sessions yet</Typography>
 								</div>
 							) : null}
 						</div>
@@ -227,9 +233,12 @@ export function ChatRoomSidebar({
 							variant="ghost"
 						>
 							<Settings size={15} />
-							<span className="min-w-0 flex-1 truncate text-left">
+							<Typography
+								as="span"
+								className="min-w-0 flex-1 truncate text-left"
+							>
 								Settings
-							</span>
+							</Typography>
 						</Button>
 					</nav>
 				</div>

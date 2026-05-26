@@ -3,6 +3,7 @@
 import { Radio } from "lucide-react";
 import type { ReactElement } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import { MissionBody } from "./chat-mission-progress-sections";
 import type { ChatMissionProgressViewModel } from "./types/chat-mission-progress.types";
 
@@ -24,12 +25,14 @@ export function ChatMissionProgress({
 				<div className="min-w-0">
 					<div className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
 						<Radio size={14} />
-						<span>Mission</span>
+						<Typography as="span" variant="eyebrow">
+							Mission
+						</Typography>
 					</div>
 					{title ? (
-						<h2 className="m-0 mt-1 truncate text-base font-semibold text-zinc-100">
+						<Typography className="mt-1 truncate" variant="sectionTitle">
 							{title}
-						</h2>
+						</Typography>
 					) : null}
 				</div>
 			</header>
@@ -45,5 +48,5 @@ export function ChatMissionProgress({
 }
 
 function MissionState({ label }: { label: string }): ReactElement {
-	return <p className="m-0 text-sm text-muted-foreground">{label}</p>;
+	return <Typography variant="description">{label}</Typography>;
 }

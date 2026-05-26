@@ -11,6 +11,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Typography } from "@/components/ui/typography";
 import { PROJECT_FORM_FIELD_GROUPS } from "./projects-panel-utils";
 import type { ProjectFormState } from "./types/projects-panel.types";
 
@@ -67,17 +68,25 @@ export function ProjectCreateDialog({
 								className="grid gap-3 border-0 border-t border-border p-0 pt-4 first:border-t-0 first:pt-0"
 								key={group.title}
 							>
-								<legend className="mb-1 text-sm font-medium text-zinc-300">
+								<Typography as="legend" className="mb-1" variant="label">
 									{group.title}
-								</legend>
+								</Typography>
 								<div className="grid gap-3 sm:grid-cols-2">
 									{group.fields.map((field) => (
-										<label
-											className="grid gap-1 text-sm"
+										<Typography
+											as="label"
+											className="grid gap-1"
 											htmlFor={`project-create-${field.name}`}
 											key={field.name}
+											variant="label"
 										>
-											<span className="text-zinc-400">{field.label}</span>
+											<Typography
+												as="span"
+												className="text-zinc-400"
+												variant="label"
+											>
+												{field.label}
+											</Typography>
 											<Input
 												id={`project-create-${field.name}`}
 												name={field.name}
@@ -86,15 +95,18 @@ export function ProjectCreateDialog({
 												value={form[field.name]}
 												onChange={(event) => onUpdateField(field.name, event)}
 											/>
-										</label>
+										</Typography>
 									))}
 								</div>
 							</fieldset>
 						))}
 						{formError ? (
-							<p className="m-0 rounded-md border border-red-900/60 bg-red-950/30 px-3 py-2 text-sm text-red-200">
+							<Typography
+								className="rounded-md border border-red-900/60 bg-red-950/30 px-3 py-2"
+								variant="error"
+							>
 								{formError}
-							</p>
+							</Typography>
 						) : null}
 					</div>
 					<footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-4 py-3">

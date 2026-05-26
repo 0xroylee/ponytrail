@@ -11,6 +11,7 @@ import {
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { useWorkflowComputersQuery } from "@/lib/api/queries";
 
 import { ChatComposer } from "./chat-composer";
@@ -53,9 +54,12 @@ export function ChatNoSessionHome({
 			<div className="grid w-full max-w-5xl -translate-y-8 gap-8">
 				<div className="flex flex-wrap items-center justify-center gap-4 text-center">
 					<DevosMark size={44} />
-					<h1 className="m-0 font-serif text-4xl font-normal leading-tight text-zinc-300 sm:text-5xl">
+					<Typography
+						className="font-serif text-4xl font-normal leading-tight text-zinc-300 sm:text-5xl"
+						variant="pageTitle"
+					>
 						Back at it, roy
-					</h1>
+					</Typography>
 				</div>
 				<ChatComposer
 					{...composerProps}
@@ -94,16 +98,20 @@ export function ChatSelectedSessionWelcome(): ReactElement {
 	return (
 		<div className="mx-auto grid w-full max-w-3xl gap-8 pt-[9dvh] text-left">
 			<div className="grid gap-5">
-				<h2 className="m-0 font-serif text-3xl font-normal leading-tight text-zinc-200 sm:text-4xl">
+				<Typography
+					as="h2"
+					className="font-serif text-3xl font-normal leading-tight text-zinc-200 sm:text-4xl"
+					variant="sectionTitle"
+				>
 					Welcome, roy. I am devos.ing.
-				</h2>
-				<p className="m-0 max-w-3xl font-serif text-xl leading-8 text-zinc-200">
+				</Typography>
+				<Typography className="max-w-3xl font-serif text-xl leading-8 text-zinc-200">
 					Bring me a tricky workflow, a half-formed idea, or something you need
 					to ship. We will figure it out together.
-				</p>
-				<p className="m-0 font-serif text-2xl leading-8 text-zinc-200">
+				</Typography>
+				<Typography className="font-serif text-2xl leading-8 text-zinc-200">
 					Where do you want to start?
-				</p>
+				</Typography>
 			</div>
 			<DevosMark size={44} />
 			{showDaemonSetup ? (

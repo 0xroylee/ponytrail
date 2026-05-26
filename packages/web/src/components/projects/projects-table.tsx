@@ -3,6 +3,7 @@
 import { Folder } from "lucide-react";
 import type { ReactElement } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -63,12 +64,14 @@ export function ProjectsTable({
 					<tbody className="text-sm text-zinc-300">
 						{stateLabel ? (
 							<tr>
-								<td
-									className="h-72 px-4 text-center text-sm text-muted-foreground"
+								<Typography
+									as="td"
+									className="h-72 px-4 text-center"
 									colSpan={PROJECT_TABLE_COLUMN_COUNT}
+									variant="description"
 								>
 									{stateLabel}
-								</td>
+								</Typography>
 							</tr>
 						) : (
 							rows.map((row) => (
@@ -88,9 +91,13 @@ export function ProjectsTable({
 
 function TableHeaderCell({ label }: { label: string }): ReactElement {
 	return (
-		<th className="h-10 whitespace-nowrap px-4 align-middle font-medium">
+		<Typography
+			as="th"
+			className="h-10 whitespace-nowrap px-4 align-middle"
+			variant="tableHeader"
+		>
 			{label}
-		</th>
+		</Typography>
 	);
 }
 
@@ -109,12 +116,12 @@ function ProjectTableRow({
 						<Folder size={14} />
 					</span>
 					<div className="min-w-0">
-						<p className="m-0 truncate font-medium text-zinc-100">
+						<Typography className="truncate" variant="cardTitle">
 							{row.project.name}
-						</p>
-						<p className="m-0 truncate text-xs text-muted-foreground">
+						</Typography>
+						<Typography className="truncate" variant="muted">
 							{row.summaryLabel}
-						</p>
+						</Typography>
 					</div>
 				</div>
 			</td>
@@ -126,14 +133,19 @@ function ProjectTableRow({
 			<TableCell rowPadding={rowPadding} value={row.categoryLabel} />
 			<TableCell rowPadding={rowPadding} value={row.repositoryLabel} />
 			<TableCell rowPadding={rowPadding} value={row.leadLabel} />
-			<td
-				className={cn(
-					rowPadding,
-					"truncate align-middle text-muted-foreground",
-				)}
+			<Typography
+				as="td"
+				className={cn(rowPadding, "truncate align-middle")}
+				variant="description"
 			>
-				<time dateTime={row.project.createdAt}>{row.createdLabel}</time>
-			</td>
+				<Typography
+					as="time"
+					dateTime={row.project.createdAt}
+					variant="description"
+				>
+					{row.createdLabel}
+				</Typography>
+			</Typography>
 		</tr>
 	);
 }
@@ -148,15 +160,13 @@ function TableCell({
 	value: string;
 }): ReactElement {
 	return (
-		<td
-			className={cn(
-				rowPadding,
-				"truncate align-middle text-zinc-400",
-				className,
-			)}
+		<Typography
+			as="td"
+			className={cn(rowPadding, "truncate align-middle", className)}
+			variant="tableCell"
 		>
 			{value}
-		</td>
+		</Typography>
 	);
 }
 

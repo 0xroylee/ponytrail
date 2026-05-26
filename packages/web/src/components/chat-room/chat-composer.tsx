@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 import { ChatCommandMenu, commandOptionId } from "./chat-command-menu";
@@ -151,9 +152,12 @@ export function ChatComposer({
 									<Plus size={18} />
 								</Button>
 								<div className="flex min-w-0 items-center gap-2">
-									<span className="hidden truncate text-sm text-muted-foreground sm:inline">
+									<Typography
+										className="hidden truncate sm:inline"
+										variant="description"
+									>
 										devos agent
-									</span>
+									</Typography>
 									<Button
 										aria-label="Send"
 										className="text-zinc-300"

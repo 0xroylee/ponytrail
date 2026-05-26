@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { useBoardTaskQuery } from "@/lib/api/queries";
 
 import { IssueActivityPanel } from "./issue-activity";
@@ -24,10 +25,10 @@ export function IssueDetailPage(): ReactElement {
 		<section className="h-[100dvh] max-h-[100dvh] overflow-y-auto bg-background text-zinc-100">
 			<header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-inset px-5 py-4">
 				<div>
-					<p className="mb-1 text-sm text-muted-foreground">
+					<Typography className="mb-1" variant="description">
 						Roy Lee&apos;s Workspace / Issues /
-					</p>
-					<h1 className="m-0 text-xl font-semibold">Task details</h1>
+					</Typography>
+					<Typography variant="pageTitle">Task details</Typography>
 				</div>
 				<Button onClick={navigateBack} type="button" variant="secondary">
 					<ArrowLeft size={16} />
@@ -68,7 +69,7 @@ function renderDetailContent(
 function DetailState({ label }: { label: string }): ReactElement {
 	return (
 		<div className="grid min-h-[24rem] place-items-center rounded-lg border border-border bg-card text-sm text-muted-foreground">
-			{label}
+			<Typography variant="description">{label}</Typography>
 		</div>
 	);
 }

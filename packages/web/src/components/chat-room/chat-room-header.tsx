@@ -4,6 +4,7 @@ import { FileText, PanelLeft } from "lucide-react";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import type { ChatRoomHeaderProps } from "./types/chat-room.types";
 
 export function ChatRoomHeader({
@@ -28,12 +29,12 @@ export function ChatRoomHeader({
 					</label>
 				</Button>
 				<div className="min-w-0">
-					<h1 className="m-0 truncate text-base font-medium text-zinc-300">
+					<Typography className="truncate text-zinc-300" variant="sectionTitle">
 						{title}
-					</h1>
-					<p className="m-0 mt-1 truncate text-xs text-muted-foreground">
+					</Typography>
+					<Typography className="mt-1 truncate" variant="muted">
 						{projectId}
-					</p>
+					</Typography>
 				</div>
 			</div>
 			{activeTaskId ? (
@@ -45,8 +46,12 @@ export function ChatRoomHeader({
 					variant="secondary"
 				>
 					<FileText size={16} />
-					<span className="hidden sm:inline">Task details</span>
-					<span className="sm:hidden">Details</span>
+					<Typography as="span" className="hidden sm:inline">
+						Task details
+					</Typography>
+					<Typography as="span" className="sm:hidden">
+						Details
+					</Typography>
 				</Button>
 			) : null}
 		</header>

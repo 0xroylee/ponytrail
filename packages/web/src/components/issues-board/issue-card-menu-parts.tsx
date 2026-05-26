@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 
 export function MenuField({
 	children,
@@ -11,7 +12,7 @@ export function MenuField({
 }): ReactElement {
 	return (
 		<div className="grid gap-1 text-xs text-muted-foreground">
-			<span>{label}</span>
+			<Typography variant="muted">{label}</Typography>
 			{children}
 		</div>
 	);
@@ -41,7 +42,7 @@ export function MenuButton({
 			variant="ghost"
 		>
 			{icon}
-			<span>{label}</span>
+			<Typography as="span">{label}</Typography>
 		</Button>
 	);
 }

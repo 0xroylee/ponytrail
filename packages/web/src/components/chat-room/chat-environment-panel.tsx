@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import type {
 	SkillRecord,
 	TaskActivityStepRecord,
@@ -48,7 +49,9 @@ export function ChatEnvironmentPanel({
 	return (
 		<aside className="absolute right-6 top-6 hidden w-64 rounded-lg border border-zinc-700/80 bg-zinc-800/95 px-4 py-4 text-zinc-100 backdrop-blur xl:grid">
 			<header className="mb-4 flex items-center justify-between">
-				<h2 className="m-0 text-base font-medium text-zinc-400">Environment</h2>
+				<Typography className="text-zinc-400" variant="sectionTitle">
+					Environment
+				</Typography>
 				<SquareCode aria-hidden="true" className="text-zinc-400" size={18} />
 			</header>
 			<div className="grid gap-3">
@@ -56,14 +59,14 @@ export function ChatEnvironmentPanel({
 					<ChangeSummary environment={environment} />
 				</EnvironmentRow>
 				<EnvironmentRow icon={<Monitor size={16} />} label="Local">
-					<span className="max-w-36 truncate text-sm text-zinc-400">
+					<Typography className="max-w-36 truncate text-zinc-400">
 						{environment?.folder ?? "Loading..."}
-					</span>
+					</Typography>
 				</EnvironmentRow>
 				<EnvironmentRow icon={<GitBranch size={16} />} label="Branch">
-					<span className="max-w-36 truncate text-sm text-zinc-300">
+					<Typography className="max-w-36 truncate">
 						{branchLabel(environment?.git)}
-					</span>
+					</Typography>
 				</EnvironmentRow>
 				<ActionRow
 					icon={<GitCommitHorizontal size={16} />}
@@ -80,7 +83,9 @@ export function ChatEnvironmentPanel({
 			</div>
 			<div className="my-4 h-px bg-zinc-700/70" />
 			<div className="grid gap-3">
-				<p className="m-0 text-base font-medium text-zinc-400">Sources</p>
+				<Typography className="text-zinc-400" variant="sectionTitle">
+					Sources
+				</Typography>
 				{environment?.mcps.map((source) => (
 					<EnvironmentRow
 						icon={<Database size={16} />}
@@ -109,9 +114,9 @@ function EnvironmentRow({
 	return (
 		<div className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-3">
 			<span className="text-zinc-400">{icon}</span>
-			<span className="min-w-0 truncate text-sm font-medium text-zinc-100">
+			<Typography className="min-w-0 truncate" variant="cardTitle">
 				{label}
-			</span>
+			</Typography>
 			{children}
 		</div>
 	);
@@ -133,7 +138,9 @@ function ActionRow({
 			type="button"
 		>
 			<span className="text-zinc-400">{icon}</span>
-			<span className="min-w-0 truncate text-sm font-medium">{label}</span>
+			<Typography className="min-w-0 truncate" variant="cardTitle">
+				{label}
+			</Typography>
 		</button>
 	);
 }
@@ -145,14 +152,20 @@ function ChangeSummary({
 }): ReactElement {
 	const git = environment?.git;
 	if (!git?.available) {
-		return <span className="text-sm text-zinc-500">Unavailable</span>;
+		return <Typography className="text-zinc-500">Unavailable</Typography>;
 	}
 	return (
 		<span className="flex items-center gap-1 text-sm tabular-nums">
-			<span className="text-emerald-400">+{git.added}</span>
-			<span className="text-red-400">-{git.deleted}</span>
+			<Typography as="span" className="text-emerald-400">
+				+{git.added}
+			</Typography>
+			<Typography as="span" className="text-red-400">
+				-{git.deleted}
+			</Typography>
 			{git.untracked > 0 ? (
-				<span className="text-zinc-400">?{git.untracked}</span>
+				<Typography as="span" className="text-zinc-400">
+					?{git.untracked}
+				</Typography>
 			) : null}
 		</span>
 	);
@@ -173,7 +186,9 @@ function SkillsRows({
 	const label = skills ? `${skillNames}${overflow}` : "Loading";
 	return (
 		<EnvironmentRow icon={<BookOpen size={16} />} label="Skills">
-			<span className="max-w-40 truncate text-sm text-zinc-400">{label}</span>
+			<Typography className="max-w-40 truncate text-zinc-400">
+				{label}
+			</Typography>
 		</EnvironmentRow>
 	);
 }
@@ -189,7 +204,7 @@ function CheckpointRows({
 			: "None";
 	return (
 		<EnvironmentRow icon={<ListChecks size={16} />} label="Checkpoints">
-			<span className="text-sm text-zinc-400">{label}</span>
+			<Typography className="text-zinc-400">{label}</Typography>
 		</EnvironmentRow>
 	);
 }

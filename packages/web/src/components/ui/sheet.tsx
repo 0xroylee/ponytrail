@@ -4,6 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import * as React from "react";
 
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 const Sheet = DialogPrimitive.Root;
@@ -60,7 +61,7 @@ const SheetContent = React.forwardRef<
 				{showCloseButton ? (
 					<DialogPrimitive.Close className="absolute right-4 top-4 rounded-md text-muted-foreground transition hover:bg-surface-active hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none">
 						<X className="h-4 w-4" />
-						<span className="sr-only">Close</span>
+						<Typography variant="srOnly">Close</Typography>
 					</DialogPrimitive.Close>
 				) : null}
 			</DialogPrimitive.Content>
@@ -81,11 +82,13 @@ const SheetTitle = React.forwardRef<
 	React.ElementRef<typeof DialogPrimitive.Title>,
 	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-	<DialogPrimitive.Title
-		className={cn("text-lg font-semibold leading-none", className)}
-		ref={ref}
-		{...props}
-	/>
+	<Typography
+		asChild
+		className={cn("leading-none", className)}
+		variant="dialogTitle"
+	>
+		<DialogPrimitive.Title ref={ref} {...props} />
+	</Typography>
 ));
 SheetTitle.displayName = DialogPrimitive.Title.displayName;
 

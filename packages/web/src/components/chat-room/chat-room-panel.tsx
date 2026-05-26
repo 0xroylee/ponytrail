@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type ReactElement, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,15 +35,17 @@ const NO_REFETCH = { refetchIntervalMs: false } as const;
 
 export function ChatRoomPanel({
 	commandDraftRequest,
+	initialSessionId = "",
 	newSessionRequest,
 	onSearchRequest,
 }: CRT.ChatRoomPanelProps): ReactElement {
-	const [activeSessionId, setActiveSessionId] = useState("");
+	const [activeSessionId, setActiveSessionId] = useState(initialSessionId);
 	const [draft, setDraft] = useState("");
 	const [commandLines, setCommandLines] = useState<CRT.ChatStreamLine[]>([]);
 	const clarificationState = useChatClarificationState();
 	const handledNewSessionRequest = useRef(0);
 	const sidebarToggleRef = useRef<HTMLInputElement>(null);
+	const router = useRouter();
 	const { runWithWorkingLabel, workingStartedAt } = useWorkingSectionState();
 	const { handleDraftChange, markCommandDraftHandled } = useChatRoomDraftState({
 		commandDraftRequest,
@@ -124,6 +127,7 @@ export function ChatRoomPanel({
 		}
 		const session = await createSession.mutateAsync({ workspaceId });
 		setActiveSessionId(session.id);
+		router.push(`/session/${encodeURIComponent(session.id)}`);
 		setDraft("");
 		taskDetails.close();
 		if (closeSidebar) closeMobileSidebar();
@@ -145,7 +149,10 @@ export function ChatRoomPanel({
 				}
 				const session =
 					selectedSession ?? (await createSession.mutateAsync({ workspaceId }));
-				if (!selectedSession) setActiveSessionId(session.id);
+				if (!selectedSession) {
+					setActiveSessionId(session.id);
+					router.push(`/session/${encodeURIComponent(session.id)}`);
+				}
 				const command = parseChatCommand(content, {
 					projectId: session.projectId,
 				});
@@ -190,6 +197,7 @@ export function ChatRoomPanel({
 			});
 			if (sessionId === selectedSessionId) {
 				setActiveSessionId("");
+				router.push("/chat");
 				taskDetails.close();
 			}
 		} catch (error) {
@@ -239,6 +247,7 @@ export function ChatRoomPanel({
 			}
 			onSelectSession={(sessionId) => {
 				setActiveSessionId(sessionId);
+				router.push(`/session/${encodeURIComponent(sessionId)}`);
 				taskDetails.close();
 				closeMobileSidebar();
 			}}

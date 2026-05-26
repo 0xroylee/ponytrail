@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Typography } from "@/components/ui/typography";
 import type { AgentRecord } from "@/lib/api";
 import { useUpdateAgentMutation } from "@/lib/api/queries";
 
@@ -85,9 +86,9 @@ export function AgentDetailDialog({
 			>
 				<DialogHeader className="flex-row items-start justify-between gap-4 space-y-0 text-left">
 					<div>
-						<p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
+						<Typography className="mb-1" variant="eyebrow">
 							Agent Detail
-						</p>
+						</Typography>
 						<DialogTitle>{agent.id}</DialogTitle>
 					</div>
 					<Button
@@ -224,9 +225,12 @@ export function AgentDetailDialog({
 					/>
 				</Field>
 				{errorMessage ? (
-					<p className="m-0 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+					<Typography
+						className="rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2"
+						variant="error"
+					>
 						{errorMessage}
-					</p>
+					</Typography>
 				) : null}
 				<footer className="flex justify-end gap-2">
 					<Button onClick={onClose} type="button" variant="secondary">

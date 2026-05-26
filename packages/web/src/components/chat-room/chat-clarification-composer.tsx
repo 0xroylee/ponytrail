@@ -6,6 +6,7 @@ import { ClarificationOptionButton } from "@/components/clarification/clarificat
 import { resolveClarificationStep } from "@/components/clarification/clarification-queue-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Typography } from "@/components/ui/typography";
 
 import type { ChatClarificationComposerProps } from "./types/chat-room.types";
 
@@ -38,12 +39,12 @@ export function ChatClarificationComposer({
 		<div className="px-4 py-3">
 			<div className="mx-auto grid max-w-4xl gap-3 rounded-md border border-border bg-surface-panel p-3">
 				<div className="grid gap-2 text-sm">
-					<span
-						className="text-zinc-300"
+					<Typography
+						as="span"
 						id={`clarification-composer-question-${step.currentIndex}`}
 					>
 						{step.currentQuestion.question}
-					</span>
+					</Typography>
 					{step.currentQuestion.options?.length ? (
 						<div className="flex flex-wrap gap-2">
 							{step.currentQuestion.options.map((option) => (

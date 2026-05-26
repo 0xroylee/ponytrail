@@ -18,6 +18,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord, TokenUsageRecord } from "@/lib/api";
 import { useBoardTaskQuery, useTokenUsageQuery } from "@/lib/api/queries";
 
@@ -91,16 +92,14 @@ function renderPanelContent(
 function PanelHeader({ task }: { task: ProjectBoardTaskRecord }): ReactElement {
 	return (
 		<SheetHeader className="pr-8">
-			<p className="m-0 text-xs font-medium uppercase text-muted-foreground">
-				{task.taskKey}
-			</p>
+			<Typography variant="eyebrow">{task.taskKey}</Typography>
 			<SheetTitle className="break-words text-xl leading-7">
 				{task.title}
 			</SheetTitle>
 			{task.content.trim() ? (
-				<p className="m-0 whitespace-pre-wrap text-sm leading-6 text-zinc-400">
+				<Typography className="whitespace-pre-wrap leading-6 text-zinc-400">
 					{task.content}
-				</p>
+				</Typography>
 			) : null}
 		</SheetHeader>
 	);
@@ -169,9 +168,9 @@ function TokenUsageSection({
 	return (
 		<PanelSection title="Token usage">
 			{isLoading ? (
-				<p className="m-0 text-sm text-muted-foreground">Loading usage</p>
+				<Typography variant="description">Loading usage</Typography>
 			) : records.length === 0 ? (
-				<p className="m-0 text-sm text-muted-foreground">No token usage yet</p>
+				<Typography variant="description">No token usage yet</Typography>
 			) : (
 				<>
 					<MetricRow label="Input" value={summary.inputTokens} />
@@ -193,10 +192,16 @@ function PanelSection({
 }): ReactElement {
 	return (
 		<details className="group grid gap-3" open>
-			<summary className="flex cursor-pointer list-none items-center gap-2 text-base font-semibold text-zinc-100">
-				<span>{title}</span>
+			<Typography
+				as="summary"
+				className="flex cursor-pointer list-none items-center gap-2"
+				variant="sectionTitle"
+			>
+				<Typography as="span" variant="sectionTitle">
+					{title}
+				</Typography>
 				<ChevronDown className="transition group-open:rotate-180" size={16} />
-			</summary>
+			</Typography>
 			<div className="mt-3 grid gap-3">{children}</div>
 		</details>
 	);
@@ -213,13 +218,18 @@ function PropertyRow({
 }): ReactElement {
 	return (
 		<div className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 text-sm">
-			<span className="text-muted-foreground">{label}</span>
-			<span className="flex min-w-0 items-center gap-2 break-words text-zinc-200">
+			<Typography variant="description">{label}</Typography>
+			<Typography
+				as="span"
+				className="flex min-w-0 items-center gap-2 break-words text-zinc-200"
+			>
 				<span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-active text-zinc-400">
 					{icon}
 				</span>
-				<span className="min-w-0 break-words">{children}</span>
-			</span>
+				<Typography as="span" className="min-w-0 break-words">
+					{children}
+				</Typography>
+			</Typography>
 		</div>
 	);
 }
@@ -233,17 +243,17 @@ function MetricRow({
 }): ReactElement {
 	return (
 		<div className="grid grid-cols-[5rem_1fr] gap-3 text-sm">
-			<span className="text-muted-foreground">{label}</span>
-			<span className="font-medium text-zinc-200">
+			<Typography variant="description">{label}</Typography>
+			<Typography as="span" className="text-zinc-200" variant="cardTitle">
 				{formatTokenCount(value)}
-			</span>
+			</Typography>
 		</div>
 	);
 }
 function PanelState({ label }: { label: string }): ReactElement {
 	return (
 		<div className="grid min-h-[24rem] place-items-center px-6 text-sm text-muted-foreground">
-			{label}
+			<Typography variant="description">{label}</Typography>
 		</div>
 	);
 }

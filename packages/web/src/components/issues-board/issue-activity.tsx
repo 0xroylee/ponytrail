@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { ReactElement } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord, TaskActivityRecord } from "@/lib/api";
 import { isApiRequestError } from "@/lib/api";
 import { useTaskActivityQuery } from "@/lib/api/task-activity-query";
@@ -26,7 +27,7 @@ export function IssueActivityPanel({
 	return (
 		<section className="grid gap-4">
 			<header className="flex items-center justify-between gap-3">
-				<h2 className="m-0 text-xl font-semibold text-zinc-100">Activity</h2>
+				<Typography variant="pageTitle">Activity</Typography>
 			</header>
 			{renderActivityContent(activityQuery, task)}
 		</section>
@@ -65,7 +66,9 @@ function ActivityList({
 		<div className="grid gap-3">
 			<div className="flex h-8 items-center gap-2 rounded-md border border-zinc-700 bg-surface-inset px-2 text-sm text-zinc-400">
 				<ChevronDown size={16} />
-				<span>{formatCount(activities.length)}</span>
+				<Typography variant="metadata">
+					{formatCount(activities.length)}
+				</Typography>
 			</div>
 			<div className="grid gap-3">
 				{activities.map((activity) => (
@@ -88,13 +91,15 @@ function ActivityItem({
 	return (
 		<div className="grid grid-cols-[2rem_1fr_auto] items-center gap-2 text-sm text-zinc-400">
 			<ActivityIcon activity={activity} />
-			<p className="m-0 min-w-0">
-				<span className="font-medium text-zinc-300">{activity.actorId}</span>{" "}
+			<Typography className="min-w-0" variant="metadata">
+				<Typography as="span" className="text-zinc-300" variant="cardTitle">
+					{activity.actorId}
+				</Typography>{" "}
 				{activity.title}
-			</p>
-			<time className="whitespace-nowrap text-muted-foreground">
+			</Typography>
+			<Typography as="time" className="whitespace-nowrap" variant="description">
 				{formatRelativeTime(activity.createdAt)}
-			</time>
+			</Typography>
 		</div>
 	);
 }
@@ -110,17 +115,15 @@ function ActivityCard({
 				<div className="flex min-w-0 items-center gap-3">
 					<ActivityIcon activity={activity} isLarge />
 					<div className="min-w-0">
-						<p className="m-0 truncate text-sm">
-							<span className="font-semibold text-zinc-100">
+						<Typography className="truncate">
+							<Typography as="span" variant="cardTitle">
 								{activity.actorId}
-							</span>{" "}
-							<span className="text-muted-foreground">
+							</Typography>{" "}
+							<Typography as="span" variant="description">
 								{formatRelativeTime(activity.createdAt)}
-							</span>
-						</p>
-						<p className="m-0 text-xs text-muted-foreground">
-							{activity.title}
-						</p>
+							</Typography>
+						</Typography>
+						<Typography variant="muted">{activity.title}</Typography>
 					</div>
 				</div>
 				<MoreHorizontal className="text-muted-foreground" size={18} />
@@ -144,11 +147,13 @@ function ActivitySteps({
 					key={step.id}
 				>
 					<div className="flex items-center justify-between gap-3">
-						<span className="font-medium text-zinc-200">{step.action}</span>
-						<span className="text-xs text-muted-foreground">{step.status}</span>
+						<Typography as="span" className="text-zinc-200" variant="cardTitle">
+							{step.action}
+						</Typography>
+						<Typography variant="muted">{step.status}</Typography>
 					</div>
 					{step.detail ? (
-						<p className="m-0 text-muted-foreground">{step.detail}</p>
+						<Typography variant="description">{step.detail}</Typography>
 					) : null}
 				</div>
 			))}
@@ -183,7 +188,7 @@ function ActivityIcon({
 function ActivityState({ label }: { label: string }): ReactElement {
 	return (
 		<div className="grid min-h-32 place-items-center rounded-lg border border-border bg-card text-sm text-muted-foreground">
-			{label}
+			<Typography variant="description">{label}</Typography>
 		</div>
 	);
 }

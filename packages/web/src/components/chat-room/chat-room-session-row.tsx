@@ -4,6 +4,7 @@ import { Archive, Pin, PinOff } from "lucide-react";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import type { ChatRoomSessionRowProps } from "./types/chat-room-sidebar.types";
 
@@ -42,7 +43,9 @@ export function ChatRoomSessionRow({
 				variant="ghost"
 			>
 				<span className="min-w-0 flex-1">
-					<span className="block truncate">{session.title}</span>
+					<Typography as="span" className="block truncate">
+						{session.title}
+					</Typography>
 				</span>
 			</Button>
 			<Button

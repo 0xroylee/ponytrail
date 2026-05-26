@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import type { TaskCreateChatState } from "./types/task-create-chat-dialog.types";
 
@@ -22,11 +23,11 @@ export function TaskCreateDialogHeader({
 	return (
 		<DialogHeader className="flex-row items-start justify-between gap-4 space-y-0 text-left">
 			<div>
-				<p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
+				<Typography className="mb-1" variant="eyebrow">
 					New Issue
-				</p>
+				</Typography>
 				<DialogTitle>Chat to create a task</DialogTitle>
-				<p className="mb-0 mt-2 text-sm text-zinc-400">{statusText}</p>
+				<Typography className="mt-2 text-zinc-400">{statusText}</Typography>
 			</div>
 			<Button
 				aria-label="Close dialog"
@@ -55,11 +56,15 @@ export function TaskCreateDialogFields({
 	const disabled = state.step === "created" || isStreaming;
 	return (
 		<div className="grid gap-3">
-			<label
-				className="grid gap-1.5 text-sm text-zinc-400"
+			<Typography
+				as="label"
+				className="grid gap-1.5 text-zinc-400"
 				htmlFor="task-create-chat-request"
+				variant="label"
 			>
-				<span>Request</span>
+				<Typography as="span" className="text-zinc-400" variant="label">
+					Request
+				</Typography>
 				<Textarea
 					className="min-h-32 resize-y"
 					disabled={disabled}
@@ -70,12 +75,16 @@ export function TaskCreateDialogFields({
 					placeholder="Describe the issue or task you want created"
 					value={state.request}
 				/>
-			</label>
-			<label
-				className="grid gap-1.5 text-sm text-zinc-400"
+			</Typography>
+			<Typography
+				as="label"
+				className="grid gap-1.5 text-zinc-400"
 				htmlFor="task-create-chat-project-id"
+				variant="label"
 			>
-				<span>Project ID</span>
+				<Typography as="span" className="text-zinc-400" variant="label">
+					Project ID
+				</Typography>
 				<Input
 					disabled={disabled}
 					id="task-create-chat-project-id"
@@ -85,7 +94,7 @@ export function TaskCreateDialogFields({
 					placeholder="default"
 					value={state.projectId}
 				/>
-			</label>
+			</Typography>
 		</div>
 	);
 }
@@ -108,9 +117,9 @@ export function TaskCreateDialogResult({
 			>
 				{state.result.task.taskKey}
 			</a>
-			<span className="text-emerald-200/80">
+			<Typography as="span" variant="success">
 				Board task {state.result.task.id}
-			</span>
+			</Typography>
 		</div>
 	);
 }

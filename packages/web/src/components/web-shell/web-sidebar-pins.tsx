@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { useUiStore } from "@/lib/ui-store";
 
 export function SidebarPinnedIssues({
@@ -19,7 +20,9 @@ export function SidebarPinnedIssues({
 	}
 	return (
 		<div className="grid gap-1 border-t border-border pt-3">
-			<p className="px-2 text-xs font-semibold text-muted-foreground">Pinned</p>
+			<Typography className="px-2" variant="muted">
+				Pinned
+			</Typography>
 			{pinnedIssues.map((issue) => (
 				<div className="group flex items-center gap-1" key={issue.id}>
 					<Link
@@ -28,10 +31,15 @@ export function SidebarPinnedIssues({
 						title={issue.title}
 					>
 						<Pin className="shrink-0" size={13} />
-						<span className="truncate">{issue.taskKey}</span>
-						<span className="truncate text-muted-foreground/80">
+						<Typography as="span" className="truncate" variant="muted">
+							{issue.taskKey}
+						</Typography>
+						<Typography
+							className="truncate text-muted-foreground/80"
+							variant="muted"
+						>
 							{issue.title}
-						</span>
+						</Typography>
 					</Link>
 					<Button
 						aria-label={`Unpin ${issue.taskKey}`}

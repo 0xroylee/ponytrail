@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 
 import { ClarificationOptionButton } from "@/components/clarification/clarification-option-button";
 import { Input } from "@/components/ui/input";
+import { Typography } from "@/components/ui/typography";
 import type { TaskClarificationQuestion } from "@/lib/api";
 
 export interface TaskCreateClarificationStepProps {
@@ -20,11 +21,15 @@ export function TaskCreateClarificationStep({
 	onAnswerChange,
 }: TaskCreateClarificationStepProps): ReactElement {
 	return (
-		<label
-			className="grid gap-1.5 text-sm text-zinc-400"
+		<Typography
+			as="label"
+			className="grid gap-1.5 text-zinc-400"
 			htmlFor={`task-create-chat-answer-${currentIndex}`}
+			variant="label"
 		>
-			<span>{question.question}</span>
+			<Typography as="span" className="text-zinc-400" variant="label">
+				{question.question}
+			</Typography>
 			{question.options?.length ? (
 				<div className="flex flex-wrap gap-2">
 					{question.options.map((option) => (
@@ -43,6 +48,6 @@ export function TaskCreateClarificationStep({
 				placeholder="Type a custom answer"
 				value={answer}
 			/>
-		</label>
+		</Typography>
 	);
 }

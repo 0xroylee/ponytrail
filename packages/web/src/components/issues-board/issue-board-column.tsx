@@ -4,6 +4,7 @@ import { Circle, MoreHorizontal, Plus } from "lucide-react";
 import type { DragEvent, ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import type {
 	ProjectBoardStatusColumn,
 	ProjectBoardTaskRecord,
@@ -102,12 +103,10 @@ export function IssueColumn({
 			<header className="mb-4 flex items-center justify-between gap-3">
 				<div className="flex items-center gap-2">
 					<Circle className="text-muted-foreground" size={15} />
-					<h2 className="m-0 text-sm font-semibold">
+					<Typography variant="cardTitle">
 						{getStatusLabel(column.status)}
-					</h2>
-					<span className="text-sm text-muted-foreground">
-						{column.tasks.length}
-					</span>
+					</Typography>
+					<Typography variant="description">{column.tasks.length}</Typography>
 				</div>
 				<div className="flex items-center gap-1">
 					<Button size="icon" type="button" variant="ghost">
@@ -126,9 +125,9 @@ export function IssueColumn({
 			</header>
 			<div className="grid content-start gap-3 overflow-y-auto pr-1">
 				{column.tasks.length === 0 ? (
-					<p className="mt-16 text-center text-sm text-muted-foreground">
+					<Typography className="mt-16 text-center" variant="description">
 						No issues
-					</p>
+					</Typography>
 				) : (
 					column.tasks.map((task) => (
 						<IssueCard

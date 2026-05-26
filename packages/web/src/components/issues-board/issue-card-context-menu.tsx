@@ -14,6 +14,7 @@ import {
 	NativeSelect,
 	NativeSelectOption,
 } from "@/components/ui/native-select";
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord } from "@/lib/api";
 
 import { MenuButton, MenuField } from "./issue-card-menu-parts";
@@ -108,10 +109,12 @@ export function IssueCardContextMenu({
 				tabIndex={-1}
 			>
 				<div className="min-w-0 border-b border-border pb-2">
-					<p className="m-0 truncate text-xs text-muted-foreground">
+					<Typography className="truncate" variant="muted">
 						{task.taskKey}
-					</p>
-					<p className="m-0 truncate text-sm font-medium">{task.title}</p>
+					</Typography>
+					<Typography className="truncate" variant="cardTitle">
+						{task.title}
+					</Typography>
 				</div>
 				<MenuField label="Status">
 					<NativeSelect

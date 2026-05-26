@@ -3,6 +3,7 @@
 import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -42,13 +43,9 @@ export function ExecutionHeader({
 }): ReactElement {
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-2">
-			<p className="m-0 text-xs font-medium uppercase text-muted-foreground">
-				{execution.title}
-			</p>
+			<Typography variant="eyebrow">{execution.title}</Typography>
 			{execution.status ? (
-				<span className="text-xs text-muted-foreground">
-					{execution.status}
-				</span>
+				<Typography variant="muted">{execution.status}</Typography>
 			) : null}
 		</div>
 	);
@@ -63,11 +60,15 @@ export function MissionStep({
 	return (
 		<div className="grid gap-1 bg-surface-inset px-2 py-1.5">
 			<div className="flex flex-wrap justify-between gap-2">
-				<span className="font-medium text-zinc-200">{step.action}</span>
-				<span className="text-xs text-muted-foreground">{step.status}</span>
+				<Typography as="span" className="text-zinc-200" variant="cardTitle">
+					{step.action}
+				</Typography>
+				<Typography variant="muted">{step.status}</Typography>
 			</div>
 			{detail ? (
-				<p className="m-0 text-xs leading-5 text-muted-foreground">{detail}</p>
+				<Typography className="leading-5" variant="muted">
+					{detail}
+				</Typography>
 			) : null}
 		</div>
 	);
@@ -79,15 +80,16 @@ export function MissionLogLine({
 	line: ChatMissionLogLine;
 }): ReactElement {
 	return (
-		<p
+		<Typography
 			className={cn(
-				"m-0 whitespace-pre-wrap break-words",
+				"whitespace-pre-wrap break-words",
 				line.stream === "stderr" && "text-red-200",
 				line.stream === "system" && "text-muted-foreground",
 			)}
+			variant="mono"
 		>
 			{line.text}
-		</p>
+		</Typography>
 	);
 }
 
@@ -119,10 +121,12 @@ function SectionTitle({
 	title: string;
 }): ReactElement {
 	return (
-		<h3 className="m-0 flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
+		<Typography className="flex items-center gap-2" variant="eyebrow">
 			{icon}
-			<span>{title}</span>
-		</h3>
+			<Typography as="span" variant="eyebrow">
+				{title}
+			</Typography>
+		</Typography>
 	);
 }
 

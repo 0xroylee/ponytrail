@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 
 import { AgentMonitorShell } from "@/components/agent-monitor/agent-monitor-shell";
 import { TaskCreatePanel } from "@/components/task-create/task-create-panel";
+import { Typography } from "@/components/ui/typography";
 
 import type { SidebarNavKey } from "./types/web-shell.types";
 import { sectionContentByKey } from "./web-shell.constants";
@@ -35,10 +36,10 @@ export function OperatorSectionPanel({
 					padding: "1rem",
 				}}
 			>
-				<h1 style={{ margin: "0 0 0.45rem" }}>{content.heading}</h1>
-				<p style={{ margin: 0, color: "hsl(var(--muted-foreground))" }}>
-					{content.description}
-				</p>
+				<Typography className="mb-[0.45rem]" variant="pageTitle">
+					{content.heading}
+				</Typography>
+				<Typography variant="description">{content.description}</Typography>
 			</header>
 			<div
 				style={{

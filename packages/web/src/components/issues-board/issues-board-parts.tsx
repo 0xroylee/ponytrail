@@ -5,6 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Typography } from "@/components/ui/typography";
 import type {
 	ProjectBoardStatusColumn,
 	ProjectBoardTaskRecord,
@@ -29,10 +30,10 @@ export function BoardHeader({
 	return (
 		<header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-inset px-5 py-4">
 			<div>
-				<p className="mb-1 text-sm text-muted-foreground">
+				<Typography className="mb-1" variant="description">
 					Roy Lee&apos;s Workspace /
-				</p>
-				<h1 className="m-0 text-xl font-semibold">Issues</h1>
+				</Typography>
+				<Typography variant="pageTitle">Issues</Typography>
 			</div>
 			<div className="flex flex-wrap items-center gap-2">
 				{/* {(["all", "members", "agents"] as const).map((tab) => (
@@ -71,7 +72,7 @@ export function ToolButton({
 	return (
 		<Button onClick={onClick} size="sm" type="button" variant="outline">
 			{icon}
-			<span>{label}</span>
+			<Typography as="span">{label}</Typography>
 		</Button>
 	);
 }
@@ -199,9 +200,12 @@ export function BoardContent({
 	return (
 		<div className="flex h-[calc(100dvh-10.5rem)] flex-col">
 			{dragError ? (
-				<p className="mx-5 mt-3 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+				<Typography
+					className="mx-5 mt-3 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2"
+					variant="error"
+				>
 					{dragError}
-				</p>
+				</Typography>
 			) : null}
 			<div className="flex min-h-0 flex-1 gap-4 overflow-x-auto px-5 py-4">
 				{columns.map((column) => (
@@ -229,7 +233,7 @@ export function BoardContent({
 function BoardState({ label }: { label: string }): ReactElement {
 	return (
 		<div className="grid min-h-[24rem] place-items-center text-sm text-muted-foreground">
-			{label}
+			<Typography variant="description">{label}</Typography>
 		</div>
 	);
 }

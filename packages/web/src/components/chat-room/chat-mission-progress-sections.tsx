@@ -3,6 +3,7 @@
 import { ListChecks, Radio, ScrollText, Terminal } from "lucide-react";
 import type { ReactElement } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import {
 	ExecutionHeader,
 	MissionLogLine,
@@ -42,13 +43,14 @@ function StatusSection({
 	return (
 		<MissionSection icon={<Radio size={14} />} name="status" title="Status">
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="rounded-sm border border-zinc-700 bg-surface-inset px-2 py-1 text-xs font-medium text-zinc-200">
+				<Typography
+					className="rounded-sm border border-zinc-700 bg-surface-inset px-2 py-1 text-zinc-200"
+					variant="metadata"
+				>
 					{mission.statusLabel}
-				</span>
+				</Typography>
 				{mission.taskKey ? (
-					<span className="text-xs text-muted-foreground">
-						{mission.taskKey}
-					</span>
+					<Typography variant="muted">{mission.taskKey}</Typography>
 				) : null}
 			</div>
 		</MissionSection>
@@ -70,12 +72,12 @@ function NotesSection({
 			<div className="grid gap-3">
 				{notes.map((note) => (
 					<article className="grid gap-1" key={note.id}>
-						<p className="m-0 text-xs text-muted-foreground">
+						<Typography variant="muted">
 							{note.actorId} · {note.title}
-						</p>
-						<p className="m-0 whitespace-pre-wrap leading-6 text-zinc-300">
+						</Typography>
+						<Typography className="whitespace-pre-wrap leading-6">
 							{note.body}
-						</p>
+						</Typography>
 					</article>
 				))}
 			</div>
@@ -157,10 +159,12 @@ function ResultSection({
 			name="result"
 			title="Result"
 		>
-			<p className="m-0 text-sm text-zinc-300">
+			<Typography>
 				Result:{" "}
-				<span className="font-medium text-zinc-100">{result.label}</span>
-			</p>
+				<Typography as="span" variant="cardTitle">
+					{result.label}
+				</Typography>
+			</Typography>
 		</MissionSection>
 	);
 }

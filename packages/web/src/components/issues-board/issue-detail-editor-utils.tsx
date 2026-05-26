@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord, TaskMutationRequest } from "@/lib/api";
 
 import { normalizeDueDate } from "./issues-board-utils";
@@ -15,12 +16,10 @@ export function DetailField({
 }): ReactElement {
 	return (
 		<div className="grid gap-1 rounded-md border border-border/70 bg-surface-input px-3 py-2">
-			<span className="text-xs font-medium uppercase text-muted-foreground">
-				{label}
-			</span>
-			<span className="min-w-0 break-words text-sm text-zinc-200">
+			<Typography variant="eyebrow">{label}</Typography>
+			<Typography as="span" className="min-w-0 break-words text-zinc-200">
 				{children}
-			</span>
+			</Typography>
 		</div>
 	);
 }
@@ -39,7 +38,9 @@ export function ExternalLinkValue({
 			rel="noreferrer"
 			target="_blank"
 		>
-			<span className="truncate">{label}</span>
+			<Typography as="span" className="truncate">
+				{label}
+			</Typography>
 			<ExternalLink className="shrink-0" size={14} />
 		</a>
 	);

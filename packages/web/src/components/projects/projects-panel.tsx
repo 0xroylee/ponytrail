@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Typography } from "@/components/ui/typography";
 import {
 	useCreateProjectMutation,
 	useCurrentWorkspaceQuery,
@@ -100,10 +101,10 @@ export function ProjectsPanel(): ReactElement {
 		<section className="grid h-[100dvh] max-h-[100dvh] min-w-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden bg-background text-zinc-100">
 			<header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-inset px-5 py-4">
 				<div className="flex min-w-0 items-center gap-2">
-					<h1 className="m-0 truncate text-xl font-semibold">Projects</h1>
-					<span className="text-sm text-muted-foreground">
-						{projects.length}
-					</span>
+					<Typography className="truncate" variant="pageTitle">
+						Projects
+					</Typography>
+					<Typography variant="description">{projects.length}</Typography>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<Button
@@ -193,9 +194,9 @@ function ProjectToolbar({
 				/>
 			</label>
 			<div className="ml-auto flex flex-wrap items-center gap-3">
-				<span className="whitespace-nowrap text-sm text-muted-foreground">
+				<Typography className="whitespace-nowrap" variant="description">
 					{filteredCount} / {totalCount}
-				</span>
+				</Typography>
 				<div className="inline-flex rounded-lg border border-border bg-card p-1">
 					<DensityButton
 						density="compact"
@@ -244,7 +245,7 @@ function DensityButton({
 			variant="ghost"
 		>
 			{icon}
-			<span>{label}</span>
+			<Typography as="span">{label}</Typography>
 		</Button>
 	);
 }

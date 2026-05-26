@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import type {
 	AgentHealthViewModel,
 	AgentRuntimeTabViewModel,
@@ -40,8 +41,10 @@ export function AgentMonitorPanel({
 
 	return (
 		<section style={{ maxWidth: "44rem", width: "100%" }}>
-			<h1 style={{ margin: "0 0 0.75rem" }}>ADHD.ai Agent Monitor</h1>
-			<p style={{ margin: "0 0 1rem", color: "#a1a1aa" }}>{health.summary}</p>
+			<Typography className="mb-3" variant="pageTitle">
+				ADHD.ai Agent Monitor
+			</Typography>
+			<Typography className="mb-4 text-zinc-400">{health.summary}</Typography>
 			<div style={tabListStyle}>
 				{renderRuntimeTabs(
 					runtimes,
@@ -55,8 +58,10 @@ export function AgentMonitorPanel({
 				</Button>
 			</div>
 			<div style={{ color: "#e4e4e7" }}>
-				<p style={{ margin: "0 0 0.5rem" }}>Server status: {health.status}</p>
-				<p style={{ margin: "0 0 0.5rem" }}>Runtime tabs: {runtimes.summary}</p>
+				<Typography className="mb-2">Server status: {health.status}</Typography>
+				<Typography className="mb-2">
+					Runtime tabs: {runtimes.summary}
+				</Typography>
 				{showDetails ? (
 					<RuntimeDetails activeRuntimeTab={activeRuntimeTab} />
 				) : null}
@@ -78,7 +83,9 @@ function renderRuntimeTabs(
 				disabled
 				variant="outline"
 			>
-				<span style={tabLabelStyle}>{runtimes.summary}</span>
+				<Typography className="break-words text-[0.95rem] font-bold leading-[1.2]">
+					{runtimes.summary}
+				</Typography>
 			</Button>
 		);
 	}
@@ -98,8 +105,12 @@ function renderRuntimeTabs(
 						}`}
 						variant="outline"
 					>
-						<span style={tabNameStyle}>{tab.name}</span>
-						<span style={tabLabelStyle}>{tab.runtimeLabel}</span>
+						<Typography className="break-words text-[0.78rem] leading-[1.2] text-zinc-400">
+							{tab.name}
+						</Typography>
+						<Typography className="break-words text-[0.95rem] font-bold leading-[1.2]">
+							{tab.runtimeLabel}
+						</Typography>
 					</Button>
 				);
 			})}
@@ -113,15 +124,21 @@ function RuntimeDetails({
 	activeRuntimeTab: AgentRuntimeTabViewModel | null;
 }): ReactElement {
 	if (!activeRuntimeTab) {
-		return <p style={{ margin: 0 }}>Active runtime: none</p>;
+		return <Typography>Active runtime: none</Typography>;
 	}
 
 	return (
-		<p style={{ margin: 0 }}>
-			Active runtime: <strong>{activeRuntimeTab.runtimeLabel}</strong>
+		<Typography>
+			Active runtime:{" "}
+			<Typography as="strong" variant="cardTitle">
+				{activeRuntimeTab.runtimeLabel}
+			</Typography>
 			{" · "}
-			Model: <strong>{activeRuntimeTab.model}</strong>
-		</p>
+			Model:{" "}
+			<Typography as="strong" variant="cardTitle">
+				{activeRuntimeTab.model}
+			</Typography>
+		</Typography>
 	);
 }
 
@@ -130,18 +147,4 @@ const tabListStyle = {
 	flexWrap: "wrap",
 	gap: "0.5rem",
 	marginBottom: "1rem",
-} as const;
-
-const tabNameStyle = {
-	fontSize: "0.78rem",
-	lineHeight: 1.2,
-	color: "#a1a1aa",
-	overflowWrap: "anywhere",
-} as const;
-
-const tabLabelStyle = {
-	fontSize: "0.95rem",
-	fontWeight: 700,
-	lineHeight: 1.2,
-	overflowWrap: "anywhere",
 } as const;

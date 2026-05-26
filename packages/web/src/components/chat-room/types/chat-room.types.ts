@@ -13,6 +13,7 @@ import type { ChatMissionProgressViewModel } from "./chat-mission-progress.types
 
 export interface ChatRoomPanelProps {
 	commandDraftRequest: CommandDraftRequest | null;
+	initialSessionId?: string;
 	newSessionRequest: number;
 	onSearchRequest: () => void;
 }

@@ -10,6 +10,7 @@ import {
 	useRef,
 } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -111,7 +112,9 @@ export function IssueCard({
 			type="button"
 		>
 			<div className="mb-2 flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
-				<span className="truncate">{task.taskKey}</span>
+				<Typography className="truncate" variant="muted">
+					{task.taskKey}
+				</Typography>
 				<span
 					aria-label={`Drag ${task.taskKey}`}
 					className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground transition hover:bg-surface-active hover:text-zinc-200"
@@ -123,21 +126,30 @@ export function IssueCard({
 					<GripVertical aria-hidden="true" size={14} />
 				</span>
 			</div>
-			<h3 className="m-0 line-clamp-2 text-sm font-semibold text-zinc-100">
+			<Typography className="line-clamp-2" variant="cardTitle">
 				{task.title}
-			</h3>
+			</Typography>
 			{task.content.trim() ? (
-				<p className="mb-2 mt-1.5 line-clamp-2 text-xs leading-5 text-muted-foreground">
+				<Typography
+					className="mb-2 mt-1.5 line-clamp-2 leading-5"
+					variant="muted"
+				>
 					{task.content}
-				</p>
+				</Typography>
 			) : null}
 			<div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-				<span className="rounded-md bg-surface-active px-2 py-1">
+				<Typography
+					className="rounded-md bg-surface-active px-2 py-1"
+					variant="metadata"
+				>
 					{getPriorityLabel(task.priority)}
-				</span>
-				<span className="rounded-md bg-surface-active px-2 py-1">
+				</Typography>
+				<Typography
+					className="rounded-md bg-surface-active px-2 py-1"
+					variant="metadata"
+				>
 					{task.assigneeId ?? task.creatorId}
-				</span>
+				</Typography>
 				{isAgentTask(task) ? <Bot size={14} /> : <CheckCircle2 size={14} />}
 			</div>
 		</button>

@@ -4,6 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import * as React from "react";
 
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 const Dialog = DialogPrimitive.Root;
@@ -63,7 +64,7 @@ const DialogContent = React.forwardRef<
 				{showCloseButton ? (
 					<DialogPrimitive.Close className="absolute right-4 top-4 rounded-md text-muted-foreground transition hover:bg-surface-active hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none">
 						<X className="h-4 w-4" />
-						<span className="sr-only">Close</span>
+						<Typography variant="srOnly">Close</Typography>
 					</DialogPrimitive.Close>
 				) : null}
 			</DialogPrimitive.Content>
@@ -104,14 +105,9 @@ const DialogTitle = React.forwardRef<
 	React.ElementRef<typeof DialogPrimitive.Title>,
 	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-	<DialogPrimitive.Title
-		ref={ref}
-		className={cn(
-			"text-lg font-semibold leading-none tracking-tight",
-			className,
-		)}
-		{...props}
-	/>
+	<Typography asChild className={className} variant="dialogTitle">
+		<DialogPrimitive.Title ref={ref} {...props} />
+	</Typography>
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
@@ -119,11 +115,9 @@ const DialogDescription = React.forwardRef<
 	React.ElementRef<typeof DialogPrimitive.Description>,
 	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
-	<DialogPrimitive.Description
-		ref={ref}
-		className={cn("text-sm text-muted-foreground", className)}
-		{...props}
-	/>
+	<Typography asChild className={className} variant="description">
+		<DialogPrimitive.Description ref={ref} {...props} />
+	</Typography>
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 

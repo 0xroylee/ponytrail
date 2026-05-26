@@ -20,6 +20,7 @@ import {
 	CommandList,
 } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 import {
@@ -170,21 +171,22 @@ function ResultItem({
 	return (
 		<CommandItem onSelect={onSelect} value={result.id}>
 			<Icon className="shrink-0 text-muted-foreground" size={17} />
-			<span className="min-w-0 flex-1">
-				<span
+			<Typography as="span" className="min-w-0 flex-1">
+				<Typography
+					as="span"
 					className={cn(
 						"block truncate font-medium",
 						result.kind === "chatCommand" && "font-mono",
 					)}
 				>
 					{result.label}
-				</span>
-				<span className="block truncate text-xs text-muted-foreground">
+				</Typography>
+				<Typography className="block truncate" variant="muted">
 					{isCopied ? "Copied" : result.detail}
-				</span>
-			</span>
+				</Typography>
+			</Typography>
 			{result.kind === "navigation" && result.navKey === activeKey ? (
-				<span className="text-xs text-muted-foreground">Current</span>
+				<Typography variant="muted">Current</Typography>
 			) : null}
 		</CommandItem>
 	);
@@ -192,9 +194,9 @@ function ResultItem({
 
 function DialogState({ label }: { label: string }): ReactElement {
 	return (
-		<p className="px-3 py-10 text-center text-sm text-muted-foreground">
+		<Typography className="px-3 py-10 text-center" variant="description">
 			{label}
-		</p>
+		</Typography>
 	);
 }
 

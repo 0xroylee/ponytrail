@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Typography } from "@/components/ui/typography";
 import type { TaskClarificationQuestion, TaskCreateAnswer } from "@/lib/api";
 import { useCreateTaskMutation } from "@/lib/api/queries";
 import { formatTaskCreateError } from "./task-create-chat-errors";
@@ -141,16 +142,18 @@ export function TaskCreatePanel(): ReactElement {
 				width: "100%",
 			}}
 		>
-			<h2 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Create Task</h2>
-			<p style={{ marginTop: 0, color: "hsl(var(--muted-foreground))" }}>
-				{statusText}
-			</p>
-			<label
+			<Typography className="mb-2" variant="sectionTitle">
+				Create Task
+			</Typography>
+			<Typography variant="description">{statusText}</Typography>
+			<Typography
+				as="label"
+				className="mb-2 block"
 				htmlFor="task-create-requirement"
-				style={{ display: "block", marginBottom: "0.5rem" }}
+				variant="label"
 			>
 				Requirement
-			</label>
+			</Typography>
 			<Textarea
 				className="mb-3 min-h-32 resize-y"
 				id="task-create-requirement"
@@ -159,12 +162,14 @@ export function TaskCreatePanel(): ReactElement {
 				placeholder="Describe the task requirement"
 				rows={5}
 			/>
-			<label
+			<Typography
+				as="label"
+				className="mb-2 block"
 				htmlFor="task-create-project-id"
-				style={{ display: "block", marginBottom: "0.5rem" }}
+				variant="label"
 			>
 				Project ID
-			</label>
+			</Typography>
 			<Input
 				className="mb-3"
 				id="task-create-project-id"
@@ -182,15 +187,15 @@ export function TaskCreatePanel(): ReactElement {
 			</Button>
 			{activeQuestions.length > 0 ? (
 				<div style={{ marginTop: "1rem" }}>
-					<h3 style={{ marginTop: 0 }}>Clarification Question</h3>
+					<Typography variant="cardTitle">Clarification Question</Typography>
 					{clarificationStep.currentQuestion ? (
 						<div
 							key={clarificationStep.currentQuestion.question}
 							style={{ marginBottom: "0.75rem" }}
 						>
-							<p style={{ marginTop: 0, marginBottom: "0.5rem" }}>
+							<Typography className="mb-2">
 								{clarificationStep.currentQuestion.question}
-							</p>
+							</Typography>
 							{clarificationStep.currentQuestion.options?.length ? (
 								<div className="mb-2 flex flex-wrap gap-2">
 									{clarificationStep.currentQuestion.options.map((option) => (
@@ -231,9 +236,7 @@ export function TaskCreatePanel(): ReactElement {
 				</div>
 			) : null}
 			{createTask.data?.status === "created" ? (
-				<p style={{ marginBottom: 0 }}>
-					Task key: {createTask.data.task.taskKey}
-				</p>
+				<Typography>Task key: {createTask.data.task.taskKey}</Typography>
 			) : null}
 		</section>
 	);

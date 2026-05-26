@@ -1,5 +1,6 @@
 "use client";
 
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import type { ReactElement } from "react";
 import type {
@@ -18,16 +19,17 @@ export function TaskCreateLogPanel({
 	return (
 		<div className="grid max-h-52 gap-1 overflow-auto rounded-lg border border-border bg-surface-inset p-3 font-mono text-xs text-zinc-300">
 			{logs.map((line) => (
-				<p
+				<Typography
 					className={cn(
-						"m-0 whitespace-pre-wrap break-words",
+						"whitespace-pre-wrap break-words",
 						line.stream === "stderr" && "text-amber-200",
 						line.stream === "system" && "text-muted-foreground",
 					)}
 					key={line.id}
+					variant="mono"
 				>
 					{line.text}
-				</p>
+				</Typography>
 			))}
 		</div>
 	);

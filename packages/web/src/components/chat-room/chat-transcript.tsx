@@ -3,6 +3,7 @@
 import { type ReactElement, useEffect, useRef, useState } from "react";
 
 import { TextShimmer } from "@/components/loading/text-shimmer";
+import { Typography } from "@/components/ui/typography";
 import type { ChatMessageRecord } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -121,9 +122,9 @@ function WorkingSectionHeader({
 
 	return (
 		<div className="grid gap-4 pt-2">
-			<p className="m-0 text-lg font-medium text-muted-foreground">
+			<Typography className="text-lg font-medium" variant="description">
 				Working for {formatElapsedSeconds(startedAt, now)}s
-			</p>
+			</Typography>
 			<div className="h-px bg-surface-active" />
 		</div>
 	);
@@ -166,9 +167,9 @@ function ChatMessageBubble({
 				isError && "border-red-900/60 bg-red-950/30 text-red-100",
 			)}
 		>
-			<p className="m-0 whitespace-pre-wrap break-words leading-6">
+			<Typography className="whitespace-pre-wrap break-words leading-6">
 				{message.content}
-			</p>
+			</Typography>
 		</article>
 	);
 }
@@ -183,9 +184,9 @@ function AssistantNote({
 			className="grid max-w-[min(42rem,90%)] justify-self-start gap-2 px-1 py-1 text-sm text-zinc-300"
 			data-chat-message-display="assistant-note"
 		>
-			<p className="m-0 whitespace-pre-wrap break-words leading-6">
+			<Typography className="whitespace-pre-wrap break-words leading-6">
 				{message.content}
-			</p>
+			</Typography>
 		</article>
 	);
 }
@@ -200,22 +201,27 @@ function PlanMessage({
 			className="grid max-w-[min(46rem,94%)] justify-self-start gap-2 rounded-md border border-blue-900/50 bg-surface-plan px-3 py-2 text-sm text-zinc-200"
 			data-chat-message-display="plan"
 		>
-			<div className="text-xs font-medium uppercase text-blue-300">Plan</div>
-			<p className="m-0 whitespace-pre-wrap break-words leading-6">
+			<Typography className="text-blue-300" variant="eyebrow">
+				Plan
+			</Typography>
+			<Typography className="whitespace-pre-wrap break-words leading-6">
 				{message.content}
-			</p>
+			</Typography>
 		</article>
 	);
 }
 
 function StatusLine({ text }: { text: string }): ReactElement {
-	return <p className="m-0 text-sm text-muted-foreground">{text}</p>;
+	return <Typography variant="description">{text}</Typography>;
 }
 
 function ErrorLine({ text }: { text: string }): ReactElement {
 	return (
-		<p className="m-0 rounded-md border border-red-900/60 bg-red-950/30 px-3 py-2 text-sm text-red-100">
+		<Typography
+			className="rounded-md border border-red-900/60 bg-red-950/30 px-3 py-2 text-red-100"
+			variant="error"
+		>
 			{text}
-		</p>
+		</Typography>
 	);
 }

@@ -14,6 +14,7 @@ import {
 	NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord, TaskMutationRequest } from "@/lib/api";
 import { useUpdateBoardTaskMutation } from "@/lib/api/queries";
 
@@ -116,16 +117,18 @@ export function IssueDetailEditor({
 			<section className="rounded-lg border border-border bg-card p-5">
 				<div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
 					<div className="flex min-w-0 flex-wrap items-center gap-2">
-						<span>{task.taskKey}</span>
-						<span>/</span>
-						<span className="break-all">{task.id}</span>
+						<Typography variant="description">{task.taskKey}</Typography>
+						<Typography variant="description">/</Typography>
+						<Typography className="break-all" variant="description">
+							{task.id}
+						</Typography>
 					</div>
 					<SaveStatus errorMessage={errorMessage} saveState={saveState} />
 				</div>
 				<EditableField label="Title">
 					<Input
 						aria-label="Title"
-						className="text-lg font-semibold"
+						className="text-lg font-medium"
 						onChange={(event) => updateField("title", event)}
 						value={draft.title}
 					/>
@@ -220,7 +223,7 @@ function SaveStatus({
 				: saveState === "error"
 					? (errorMessage ?? "Save failed")
 					: "Autosave ready";
-	return <span className="text-xs text-muted-foreground">{label}</span>;
+	return <Typography variant="muted">{label}</Typography>;
 }
 
 function EditableField({
@@ -231,8 +234,10 @@ function EditableField({
 	label: string;
 }): ReactElement {
 	return (
-		<div className="grid gap-1.5 text-sm text-zinc-400">
-			<span>{label}</span>
+		<div className="grid gap-1.5">
+			<Typography className="text-zinc-400" variant="label">
+				{label}
+			</Typography>
 			{children}
 		</div>
 	);

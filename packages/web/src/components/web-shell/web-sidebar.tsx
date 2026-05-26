@@ -21,6 +21,7 @@ import Link from "next/link";
 import type { ComponentType, ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import type {
 	SidebarDisplayMode,
 	SidebarNavItem,
@@ -88,13 +89,16 @@ export function WebSidebar({
 			}}
 		>
 			<header className="flex items-center gap-3 p-4">
-				<span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-zinc-700 bg-surface-active text-sm font-semibold text-zinc-200">
+				<Typography
+					className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-zinc-700 bg-surface-active text-zinc-200"
+					variant="label"
+				>
 					R
-				</span>
+				</Typography>
 				{isExpanded ? (
-					<strong className="truncate text-xs font-medium text-zinc-100">
+					<Typography as="strong" className="truncate" variant="cardTitle">
 						Roy Lee&apos;s Workspace
-					</strong>
+					</Typography>
 				) : null}
 				<Button
 					aria-label={nextSidebarLabel(mode)}
@@ -138,9 +142,7 @@ export function WebSidebar({
 				/>
 			</nav>
 			<footer className="flex items-center justify-between p-4">
-				{isExpanded ? (
-					<span className="text-xs text-muted-foreground">devos.ing</span>
-				) : null}
+				{isExpanded ? <Typography variant="muted">devos.ing</Typography> : null}
 				<CircleHelp size={16} />
 			</footer>
 		</aside>
@@ -161,9 +163,9 @@ function NavGroup({
 	return (
 		<div className="grid gap-1">
 			{isExpanded ? (
-				<p className="mb-1 px-2 text-[0.6875rem] font-medium text-muted-foreground">
+				<Typography className="mb-1 px-2 text-[0.6875rem]" variant="muted">
 					{title}
-				</p>
+				</Typography>
 			) : null}
 			{items.map((item) => {
 				const Icon = iconByKey[item.key];
@@ -183,7 +185,11 @@ function NavGroup({
 						title={item.label}
 					>
 						<Icon size={18} />
-						{isExpanded ? <span>{item.label}</span> : null}
+						{isExpanded ? (
+							<Typography as="span" variant="muted">
+								{item.label}
+							</Typography>
+						) : null}
 					</Link>
 				);
 			})}
@@ -214,7 +220,11 @@ function SidebarAction({
 			variant="ghost"
 		>
 			<Icon size={18} />
-			{isExpanded ? <span>{label}</span> : null}
+			{isExpanded ? (
+				<Typography as="span" variant="muted">
+					{label}
+				</Typography>
+			) : null}
 		</Button>
 	);
 }

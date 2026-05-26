@@ -16,6 +16,7 @@ import {
 	NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord, TaskMutationRequest } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -110,9 +111,9 @@ export function IssueDialog({
 			>
 				<DialogHeader className="flex-row items-center justify-between gap-4 space-y-0 text-left">
 					<div>
-						<p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
+						<Typography className="mb-1" variant="eyebrow">
 							{mode === "create" ? getStatusLabel(defaultStatus) : "Details"}
-						</p>
+						</Typography>
 						<DialogTitle>{title}</DialogTitle>
 					</div>
 					<Button
@@ -193,9 +194,12 @@ export function IssueDialog({
 					</Field>
 				</div>
 				{localError || errorMessage ? (
-					<p className="m-0 rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2 text-sm text-red-200">
+					<Typography
+						className="rounded-md border border-red-900/60 bg-red-950/40 px-3 py-2"
+						variant="error"
+					>
 						{localError ?? errorMessage}
-					</p>
+					</Typography>
 				) : null}
 				<footer className="flex flex-wrap items-center justify-between gap-3">
 					{onDelete ? (
@@ -209,7 +213,7 @@ export function IssueDialog({
 							{isDeleting ? "Deleting..." : "Delete"}
 						</Button>
 					) : (
-						<span />
+						<Typography aria-hidden="true" />
 					)}
 					<div className="flex items-center gap-2">
 						<Button onClick={onClose} type="button" variant="secondary">
@@ -238,8 +242,10 @@ function Field({
 	children: ReactElement;
 }): ReactElement {
 	return (
-		<div className="grid gap-1.5 text-sm text-zinc-400">
-			<span>{label}</span>
+		<div className="grid gap-1.5">
+			<Typography className="text-zinc-400" variant="label">
+				{label}
+			</Typography>
 			{children}
 		</div>
 	);

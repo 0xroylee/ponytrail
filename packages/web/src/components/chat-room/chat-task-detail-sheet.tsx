@@ -10,6 +10,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord } from "@/lib/api";
 import { useBoardTaskQuery } from "@/lib/api/queries";
 
@@ -54,7 +55,7 @@ export function ChatTaskDetailPanel({
 				className="grid min-h-0 w-[26rem] min-w-0 shrink-0 grid-rows-[auto_minmax(0,1fr)] overflow-x-hidden border-l border-border bg-surface-inset text-zinc-100"
 			>
 				<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-					<h2 className="m-0 text-lg font-semibold">Task details</h2>
+					<Typography variant="dialogTitle">Task details</Typography>
 					<Button
 						aria-label="Close task details"
 						onClick={onClose}
@@ -125,17 +126,19 @@ function ReadOnlyTaskDetails({
 		<article className="grid min-w-0 gap-5">
 			<section className="grid min-w-0 gap-4 rounded-lg border border-border bg-card p-5">
 				<div className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">
-					<span>{task.taskKey}</span>
-					<span>/</span>
-					<span className="break-all">{task.id}</span>
+					<Typography variant="description">{task.taskKey}</Typography>
+					<Typography variant="description">/</Typography>
+					<Typography className="break-all" variant="description">
+						{task.id}
+					</Typography>
 				</div>
 				<div className="grid min-w-0 gap-3">
-					<h3 className="m-0 break-words text-lg font-semibold text-zinc-100">
+					<Typography className="break-words text-lg" variant="sectionTitle">
 						{task.title}
-					</h3>
-					<p className="m-0 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-300">
+					</Typography>
+					<Typography className="whitespace-pre-wrap break-words leading-6">
 						{task.content || "No description"}
-					</p>
+					</Typography>
 				</div>
 			</section>
 			<section className="grid min-w-0 gap-3 rounded-lg border border-border bg-card p-5">
@@ -183,7 +186,7 @@ function ReadOnlyTaskDetails({
 function DetailState({ label }: { label: string }): ReactElement {
 	return (
 		<div className="grid min-h-64 place-items-center rounded-lg border border-border bg-card text-sm text-muted-foreground">
-			{label}
+			<Typography variant="description">{label}</Typography>
 		</div>
 	);
 }

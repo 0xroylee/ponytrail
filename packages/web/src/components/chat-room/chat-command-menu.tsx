@@ -3,6 +3,7 @@
 import type { MouseEvent, ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 
 import type { getChatCommandSuggestions } from "./chat-command-utils";
@@ -49,17 +50,19 @@ export function ChatCommandMenu({
 							type="button"
 							variant="ghost"
 						>
-							<span className="font-mono text-zinc-100">{item.command}</span>
-							<span className="min-w-0 truncate text-xs text-muted-foreground">
+							<Typography as="span" className="text-zinc-100" variant="mono">
+								{item.command}
+							</Typography>
+							<Typography className="min-w-0 truncate" variant="muted">
 								{item.hint}
-							</span>
+							</Typography>
 						</Button>
 					);
 				})
 			) : (
-				<p className="m-0 px-2 py-3 text-sm text-muted-foreground">
+				<Typography className="px-2 py-3" variant="description">
 					No commands
-				</p>
+				</Typography>
 			)}
 		</div>
 	);

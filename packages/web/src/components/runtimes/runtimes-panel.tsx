@@ -3,6 +3,7 @@
 import { Bot, Cpu, Server } from "lucide-react";
 import { type ReactElement, useMemo } from "react";
 
+import { Typography } from "@/components/ui/typography";
 import { useAgentsQuery } from "@/lib/api/queries";
 
 import { deriveRuntimeSummaries } from "./runtimes-panel-utils";
@@ -42,22 +43,19 @@ export function RuntimesPanel(): ReactElement {
 		<section className="grid gap-4" aria-labelledby="runtimes-title">
 			<header className="flex flex-wrap items-end justify-between gap-3">
 				<div className="grid gap-1">
-					<h2
-						className="m-0 text-base font-semibold text-zinc-100"
-						id="runtimes-title"
-					>
+					<Typography as="h2" id="runtimes-title" variant="sectionTitle">
 						Configured runtimes
-					</h2>
-					<p className="m-0 text-sm text-muted-foreground">
+					</Typography>
+					<Typography variant="description">
 						{runtimes.length} runtime{runtimes.length === 1 ? "" : "s"} across{" "}
 						{agentsQuery.data?.length ?? 0} agent
 						{agentsQuery.data?.length === 1 ? "" : "s"}
-					</p>
+					</Typography>
 				</div>
-				<div className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-zinc-300">
+				<Typography className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2">
 					<Server size={15} />
 					Capacity {totalCapacity(runtimes)}
-				</div>
+				</Typography>
 			</header>
 			<ul className="m-0 grid list-none gap-3 p-0">
 				{runtimes.map((runtime) => (
@@ -81,12 +79,12 @@ function RuntimeCard({
 						<Cpu size={17} />
 					</span>
 					<div className="min-w-0">
-						<h3 className="m-0 break-words text-sm font-semibold text-zinc-100">
+						<Typography className="break-words" variant="cardTitle">
 							{runtime.label}
-						</h3>
-						<p className="m-0 break-words text-xs text-muted-foreground">
+						</Typography>
+						<Typography className="break-words" variant="muted">
 							{runtime.id}
-						</p>
+						</Typography>
 					</div>
 				</div>
 				<div className="flex flex-wrap gap-2 text-xs text-zinc-300">
@@ -113,8 +111,10 @@ function RuntimeMetric({
 }): ReactElement {
 	return (
 		<span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1">
-			<span className="text-muted-foreground">{label}</span>
-			<strong className="font-semibold text-zinc-100">{value}</strong>
+			<Typography variant="muted">{label}</Typography>
+			<Typography as="strong" variant="cardTitle">
+				{value}
+			</Typography>
 		</span>
 	);
 }
@@ -128,17 +128,16 @@ function RuntimeChips({
 }): ReactElement {
 	return (
 		<div className="grid content-start gap-2">
-			<p className="m-0 text-xs font-medium uppercase text-muted-foreground">
-				{label}
-			</p>
+			<Typography variant="eyebrow">{label}</Typography>
 			<div className="flex flex-wrap gap-2">
 				{values.map((value) => (
-					<span
-						className="rounded-md border border-border px-2 py-1 text-xs text-zinc-300"
+					<Typography
+						className="rounded-md border border-border px-2 py-1"
 						key={value}
+						variant="metadata"
 					>
 						{value}
-					</span>
+					</Typography>
 				))}
 			</div>
 		</div>
@@ -152,9 +151,7 @@ function RuntimeAgents({
 }): ReactElement {
 	return (
 		<div className="grid gap-2">
-			<p className="m-0 text-xs font-medium uppercase text-muted-foreground">
-				Agents
-			</p>
+			<Typography variant="eyebrow">Agents</Typography>
 			<ul className="m-0 grid list-none gap-2 p-0">
 				{runtime.agents.map((agent) => (
 					<li
@@ -162,18 +159,22 @@ function RuntimeAgents({
 						key={agent.id}
 					>
 						<div className="min-w-0">
-							<p className="m-0 flex min-w-0 items-center gap-2 text-sm text-zinc-100">
+							<Typography className="flex min-w-0 items-center gap-2 text-zinc-100">
 								<Bot className="shrink-0" size={15} />
-								<span className="break-words">{agent.name}</span>
-							</p>
-							<p className="m-0 break-words text-xs text-muted-foreground">
+								<Typography as="span" className="break-words">
+									{agent.name}
+								</Typography>
+							</Typography>
+							<Typography className="break-words" variant="muted">
 								{agent.id}
-							</p>
+							</Typography>
 						</div>
 						<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400 sm:justify-end">
-							<span>{agent.model}</span>
-							<span>Owner {agent.owner}</span>
-							<span>Concurrency {agent.concurrency}</span>
+							<Typography variant="metadata">{agent.model}</Typography>
+							<Typography variant="metadata">Owner {agent.owner}</Typography>
+							<Typography variant="metadata">
+								Concurrency {agent.concurrency}
+							</Typography>
 						</div>
 					</li>
 				))}
@@ -198,8 +199,12 @@ function RuntimeStatePanel({
 
 	return (
 		<section className={className}>
-			<h2 className="m-0 text-base font-semibold text-zinc-200">{title}</h2>
-			<p className="m-0 text-sm text-muted-foreground">{message}</p>
+			<Typography className="text-zinc-200" variant="sectionTitle">
+				{title}
+			</Typography>
+			<Typography variant={tone === "error" ? "error" : "description"}>
+				{message}
+			</Typography>
 		</section>
 	);
 }

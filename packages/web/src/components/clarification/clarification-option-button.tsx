@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
 import type { TaskClarificationOption } from "@/lib/api";
 
 interface ClarificationOptionButtonProps {
@@ -26,11 +27,14 @@ export function ClarificationOptionButton({
 			type="button"
 			variant={selected ? "default" : "secondary"}
 		>
-			<span>{option.label}</span>
+			<Typography as="span">{option.label}</Typography>
 			{option.recommended ? (
-				<span className="rounded-sm border border-sky-500/40 bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-sky-200">
+				<Typography
+					className="rounded-sm border border-sky-500/40 bg-sky-500/10 px-1.5 py-0.5 text-[10px] text-sky-200"
+					variant="eyebrow"
+				>
 					Recommended
-				</span>
+				</Typography>
 			) : null}
 		</Button>
 	);

@@ -2,6 +2,8 @@
 
 import type { ReactElement, ReactNode } from "react";
 
+import { Typography } from "@/components/ui/typography";
+
 export function ActivityRichText({ body }: { body: string }): ReactElement {
 	const lines = body.split(/\r?\n/);
 	return (
@@ -14,26 +16,25 @@ export function ActivityRichText({ body }: { body: string }): ReactElement {
 function renderLine(line: string, index: number): ReactElement {
 	const trimmed = line.trim();
 	if (!trimmed) {
-		return <span aria-hidden="true" key={lineKey(index, line)} />;
+		return <Typography aria-hidden="true" key={lineKey(index, line)} />;
 	}
 	if (trimmed.startsWith("# ")) {
 		return (
-			<h3
-				className="m-0 text-lg font-semibold text-zinc-100"
+			<Typography
+				as="h3"
+				className="text-lg"
 				key={lineKey(index, line)}
+				variant="sectionTitle"
 			>
 				{renderInline(trimmed.slice(2))}
-			</h3>
+			</Typography>
 		);
 	}
 	if (trimmed.startsWith("## ")) {
 		return (
-			<h4
-				className="m-0 text-base font-semibold text-zinc-100"
-				key={lineKey(index, line)}
-			>
+			<Typography as="h4" key={lineKey(index, line)} variant="sectionTitle">
 				{renderInline(trimmed.slice(3))}
-			</h4>
+			</Typography>
 		);
 	}
 	if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
@@ -47,9 +48,7 @@ function renderLine(line: string, index: number): ReactElement {
 		);
 	}
 	return (
-		<p className="m-0 text-zinc-300" key={lineKey(index, line)}>
-			{renderInline(trimmed)}
-		</p>
+		<Typography key={lineKey(index, line)}>{renderInline(trimmed)}</Typography>
 	);
 }
 
@@ -65,7 +64,11 @@ function renderInline(text: string): ReactNode[] {
 				</code>
 			);
 		}
-		return <span key={part.key}>{part.text}</span>;
+		return (
+			<Typography as="span" key={part.key}>
+				{part.text}
+			</Typography>
+		);
 	});
 }
 
