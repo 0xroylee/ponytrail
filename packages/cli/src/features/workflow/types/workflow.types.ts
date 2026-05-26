@@ -85,11 +85,6 @@ export interface WorkflowLinearClient {
 		stage: keyof ResolvedProjectConfig["linear"]["statusMap"],
 	): Promise<void>;
 	markCanceled(issueId: string): Promise<void>;
-	updateIssueDetails(
-		issueId: string,
-		title: string,
-		description: string,
-	): Promise<void>;
 	createBacklogTask(input: {
 		title: string;
 		description: string;

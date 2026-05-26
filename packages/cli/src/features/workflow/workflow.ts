@@ -1535,15 +1535,8 @@ export {
 	resolveReviewModeForComplexityScore,
 	shouldSquashMergePullRequestForComplexityScore,
 } from "./plan";
-export {
-	applyPlannerIssueRefinement,
-	parsePlannerIssueRefinement,
-} from "./plan-refinement";
 export { parsePlannerSplitTasks } from "./plan-split-tasks";
-export type {
-	PlannerDecision,
-	PlannerIssueRefinement,
-} from "./types/plan.types";
+export type { PlannerDecision } from "./types/plan.types";
 export {
 	normalizeFailedReviewBugs,
 	readyPullRequestAfterPassingReview,

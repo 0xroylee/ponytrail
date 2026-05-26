@@ -75,7 +75,6 @@ export async function buildPlanPrompt(
 		supplementalSection,
 		"",
 		"Return exactly one planning route: PLANNING_RESULT: READY or PLANNING_RESULT: NEEDS_INFO.",
-		"For READY, include ISSUE_REFINEMENT_JSON with a refined title and description that preserve original user intent and do not invent scope.",
 		"For READY, include SUCCESS_GOAL with the concise acceptance goal that review/testing must use as the success scope.",
 		"For NEEDS_INFO, include QUESTIONS_JSON with one to three concise clarification questions and do not include SUCCESS_GOAL.",
 		"Do not invent a success goal when acceptance criteria are unclear; use NEEDS_INFO instead.",

@@ -7,11 +7,6 @@ import type {
 } from "../../types";
 
 export interface PlanningLinearClient {
-	updateIssueDetails(
-		issueId: string,
-		title: string,
-		description: string,
-	): Promise<void>;
 	markStage(issueId: string, stage: string): Promise<void>;
 	comment(issueId: string, body: string): Promise<void>;
 	createTodoIssueFromPlan(
@@ -34,11 +29,6 @@ export interface PlannerReadyDecision {
 export interface PlannerNeedsInfoDecision {
 	result: "NEEDS_INFO";
 	questions: string[];
-}
-
-export interface PlannerIssueRefinement {
-	title: string;
-	description: string;
 }
 
 export interface HandlePlanningStageDeps {

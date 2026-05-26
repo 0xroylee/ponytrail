@@ -68,7 +68,6 @@ PLANNING_RESULT: READY
 SUCCESS_GOAL: <concise acceptance goal>
 COMPLEXITY: SIMPLE|COMPLEX
 COMPLEXITY_SCORE: <integer 0..10>
-ISSUE_REFINEMENT_JSON: {"title":"...","description":"..."}
 
 Title
 <short plan title>
@@ -89,7 +88,7 @@ Assumptions
 - <assumption, or None>
 ```
 
-- For `COMPLEX`, add `SPLIT_TASKS_JSON: [...]` after `ISSUE_REFINEMENT_JSON`.
+- For `COMPLEX`, add `SPLIT_TASKS_JSON: [...]` after the required `READY` routing markers.
 - Use this skeleton for `NEEDS_INFO` output:
 
 ```text
@@ -107,9 +106,6 @@ QUESTIONS_JSON: ["..."]
   - `COMPLEXITY_SCORE: 0..10` (integer)
     - `< 5`: completed PR can be squash-merged by the review automation
     - `>= 5`: completed PR requires human approval by email
-  - `ISSUE_REFINEMENT_JSON: {"title":"...","description":"..."}`
-    - Both fields must be non-empty strings.
-    - Preserve user intent; do not invent scope or requirements.
 - Optional decomposition contract when task is too complex for one pass:
   - If `COMPLEX`, include `SPLIT_TASKS_JSON: [...]` with a non-empty JSON array.
   - Each split task object:

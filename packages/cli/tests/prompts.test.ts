@@ -110,7 +110,7 @@ describe("buildPlanPrompt", () => {
 			expect(prompt).toContain("PLANNING_RESULT: NEEDS_INFO");
 			expect(prompt).toContain("QUESTIONS_JSON");
 			expect(prompt).toContain("SUCCESS_GOAL");
-			expect(prompt).toContain("ISSUE_REFINEMENT_JSON");
+			expect(prompt).not.toContain("ISSUE_REFINEMENT_JSON");
 			expect(prompt).toContain("do not run git fetch or git pull");
 			expect(prompt).toContain(
 				"Do not invent a success goal when acceptance criteria are unclear",
@@ -156,7 +156,7 @@ describe("buildPlanPrompt", () => {
 			"implementation target and the validation or progress signal",
 		);
 		expect(prompt).toContain("PLANNING_RESULT: READY");
-		expect(prompt).toContain('ISSUE_REFINEMENT_JSON: {"title"');
+		expect(prompt).not.toContain("ISSUE_REFINEMENT_JSON");
 		expect(prompt).toContain("`Checkpoints (Steps)`");
 		expect(prompt).toContain("`Assumptions`");
 		expect(prompt).toContain("Do not wrap the full response");

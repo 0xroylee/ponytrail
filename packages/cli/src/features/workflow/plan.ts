@@ -12,7 +12,6 @@ import type {
 	RunState,
 } from "../types";
 import { parsePlannerDecision } from "./plan-parsing";
-import { applyPlannerIssueRefinement } from "./plan-refinement";
 import { buildPlannerRepairPrompt } from "./plan-repair-prompt";
 import {
 	emitActionProgress,
@@ -70,7 +69,6 @@ export async function handlePlanningStage(
 	state.codexSessionId = result.sessionId ?? state.codexSessionId;
 	state.planSummary = result.finalMessage || result.stdout;
 	deps.appendCodexUsage(state, "planning", result.usage);
-	await applyPlannerIssueRefinement(linear, state.issue, state.planSummary);
 
 	let parsedPlan: PlannerDecision;
 	try {
@@ -96,7 +94,6 @@ export async function handlePlanningStage(
 		state.codexSessionId = result.sessionId ?? state.codexSessionId;
 		state.planSummary = result.finalMessage || result.stdout;
 		deps.appendCodexUsage(state, "planning", result.usage);
-		await applyPlannerIssueRefinement(linear, state.issue, state.planSummary);
 		try {
 			parsedPlan = parsePlannerDecision(state.planSummary);
 		} catch (retryError) {

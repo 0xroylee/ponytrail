@@ -11,7 +11,7 @@ describe("buildPlannerRepairPrompt", () => {
 		expect(prompt).toContain("original planning prompt");
 		expect(prompt).toContain("PLANNING_RESULT: READY");
 		expect(prompt).toContain("PLANNING_RESULT: NEEDS_INFO");
-		expect(prompt).toContain("ISSUE_REFINEMENT_JSON");
+		expect(prompt).not.toContain("ISSUE_REFINEMENT_JSON");
 		expect(prompt).toContain(
 			"Title, Summary, Key Changes, Checkpoints (Steps), Test plan, Assumptions",
 		);

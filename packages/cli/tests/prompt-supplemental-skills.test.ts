@@ -49,7 +49,7 @@ describe("buildPlanPrompt supplemental skills", () => {
 
 			expect(prompt).toContain("Description: Planning should auto-select");
 			expect(prompt).toContain("Auto-selected supplemental skills:");
-			expect(prompt).toContain("include ISSUE_REFINEMENT_JSON");
+			expect(prompt).not.toContain("ISSUE_REFINEMENT_JSON");
 			expect(prompt).toContain("1. linear");
 			expect(prompt).toContain("source: folder");
 			expect(prompt).toContain("score: 9");
