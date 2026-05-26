@@ -126,15 +126,14 @@ export function ChatRoomSessionList({
 
 function ChatSessionListSkeleton(): ReactElement {
 	return (
-		<output className="grid gap-2" aria-label="Loading sessions">
+		<output className="grid gap-1" aria-label="Loading sessions">
 			{[0, 1, 2, 3, 4].map((item) => (
 				<div
-					className="grid grid-cols-[minmax(0,1fr)_2rem_2rem] gap-1 rounded-md"
+					className="grid min-h-9 grid-cols-[minmax(0,1fr)_2rem_2rem] items-center gap-1 rounded-md"
 					key={item}
 				>
-					<div className="grid gap-2 px-2 py-2">
-						<Skeleton className="h-4 w-36" />
-						<Skeleton className="h-3 w-24" />
+					<div className="px-2 py-2">
+						<Skeleton className="h-4 w-32 max-w-full" />
 					</div>
 					<Skeleton className="h-8 w-8" />
 					<Skeleton className="h-8 w-8" />
