@@ -27,6 +27,8 @@ describe("chat loading skeletons", () => {
 
 		expect(loadingHtml).toContain('aria-label="Loading sessions"');
 		expect(loadingHtml).toContain("animate-pulse");
+		expect(loadingHtml).toContain("grid-cols-[minmax(0,1fr)_2rem_2rem]");
+		expect(loadingHtml).toContain("min-h-9");
 		expect(textContent(loadingHtml)).not.toContain("Pinned session");
 		expect(textContent(loadingHtml)).not.toContain("Loaded chat");
 		expect(textContent(loadingHtml)).not.toContain("Sessions failed");
