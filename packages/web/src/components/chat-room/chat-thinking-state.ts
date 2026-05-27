@@ -1,3 +1,5 @@
+import { resolvePlanningStatusLabel } from "./chat-mission-phase-labels";
+
 export interface ChatThinkingStateInput {
 	isSending: boolean;
 	selectedSessionId: string;
@@ -33,5 +35,5 @@ export function shouldShowChatPlanningIndicator({
 }
 
 function isPlanningTaskStatus(status: string): boolean {
-	return ["plan", "planning", "todo"].includes(status.toLowerCase());
+	return Boolean(resolvePlanningStatusLabel(status));
 }

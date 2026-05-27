@@ -10,8 +10,8 @@ import type {
 
 export const MISSION_PHASES: Array<{ id: ChatMissionPhaseId; label: string }> =
 	[
-		{ id: "plan", label: "Plan" },
-		{ id: "implement", label: "Implement" },
+		{ id: "plan", label: "Planning" },
+		{ id: "implement", label: "Implementing" },
 		{ id: "testing", label: "Testing" },
 		{ id: "qa", label: "QA" },
 	];
