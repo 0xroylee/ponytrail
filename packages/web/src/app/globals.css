@@ -3,6 +3,39 @@
 @tailwind utilities;
 
 :root {
+	color-scheme: light;
+	--background: 36 20% 97%;
+	--foreground: 24 12% 16%;
+	--card: 0 0% 100%;
+	--card-foreground: 24 12% 16%;
+	--popover: 0 0% 100%;
+	--popover-foreground: 24 12% 16%;
+	--primary: 24 16% 28%;
+	--primary-foreground: 0 0% 98%;
+	--secondary: 30 13% 92%;
+	--secondary-foreground: 24 11% 20%;
+	--muted: 30 13% 92%;
+	--muted-foreground: 24 7% 40%;
+	--accent: 30 14% 90%;
+	--accent-foreground: 24 11% 20%;
+	--destructive: 0 73% 41%;
+	--destructive-foreground: 0 0% 98%;
+	--border: 24 10% 84%;
+	--input: 30 14% 93%;
+	--ring: 24 20% 40%;
+	--surface-base: 36 20% 97%;
+	--surface-panel: 0 0% 100%;
+	--surface-raised: 30 15% 95%;
+	--surface-inset: 30 13% 94%;
+	--surface-input: 30 14% 93%;
+	--surface-active: 30 14% 90%;
+	--surface-hover: 30 14% 88%;
+	--surface-plan: 212 37% 92%;
+	--accent-warm: 18 63% 50%;
+	--radius: 0.5rem;
+}
+
+.dark {
 	color-scheme: dark;
 	--background: 40 3% 10%;
 	--foreground: 36 8% 91%;
@@ -32,7 +65,6 @@
 	--surface-hover: 36 4% 21%;
 	--surface-plan: 212 20% 20%;
 	--accent-warm: 18 63% 58%;
-	--radius: 0.5rem;
 }
 
 * {

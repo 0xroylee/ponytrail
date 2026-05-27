@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import { AgentMonitorShell } from "@/components/agent-monitor/agent-monitor-shell";
+import { ThemeSettingsCard } from "@/components/settings/theme-settings-card";
 import { TaskCreatePanel } from "@/components/task-create/task-create-panel";
 import { Typography } from "@/components/ui/typography";
 
@@ -13,6 +14,7 @@ export function OperatorSectionPanel({
 	sectionKey: SidebarNavKey;
 }): ReactElement {
 	const content = sectionContentByKey[sectionKey];
+	const isSettingsSection = sectionKey === "settings";
 
 	return (
 		<section
@@ -32,7 +34,7 @@ export function OperatorSectionPanel({
 					border: "1px solid hsl(var(--border))",
 					borderRadius: "8px",
 					background: "hsl(var(--card))",
-					color: "#f4f4f5",
+					color: "hsl(var(--foreground))",
 					padding: "1rem",
 				}}
 			>
@@ -50,6 +52,7 @@ export function OperatorSectionPanel({
 					minWidth: 0,
 				}}
 			>
+				{isSettingsSection ? <ThemeSettingsCard /> : null}
 				<TaskCreatePanel />
 				<AgentMonitorShell />
 			</div>
