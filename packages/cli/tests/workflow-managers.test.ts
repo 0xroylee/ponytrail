@@ -6,14 +6,14 @@ import type {
 } from "adapters";
 import type { LoadedConfig } from "../src/features/config";
 import type { ResolvedProjectConfig } from "../src/features/types";
-import { AgentAdapterBridge } from "../src/features/workflow/oop/agent-adapter-bridge";
-import { createBuiltInWorkflowMetadata } from "../src/features/workflow/oop/built-in-workflow-metadata";
-import { MissionManager } from "../src/features/workflow/oop/mission-manager";
-import { PhaseRunner } from "../src/features/workflow/oop/phase-runner";
-import { PipelineManager } from "../src/features/workflow/oop/pipeline-manager";
-import { WorkflowManager } from "../src/features/workflow/oop/workflow-manager";
+import { AgentAdapterBridge } from "../src/features/workflow/agents/agent-adapter-bridge";
+import { WorkflowManager } from "../src/features/workflow/management/workflow-manager";
+import { MissionManager } from "../src/features/workflow/mission/mission-manager";
+import { createBuiltInWorkflowMetadata } from "../src/features/workflow/pipeline/built-in-workflow-metadata";
+import { PhaseRunner } from "../src/features/workflow/pipeline/phase-runner";
+import { PipelineManager } from "../src/features/workflow/pipeline/pipeline-manager";
 
-describe("workflow OOP bridge", () => {
+describe("workflow managers", () => {
 	it("routes stage agents through the structured adapter contract", async () => {
 		const calls: string[] = [];
 		const adapter = fakeAgentAdapter(async (method) => {

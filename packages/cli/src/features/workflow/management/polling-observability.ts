@@ -1,8 +1,8 @@
-import { logger, normalizeError } from "../../utils/logger";
-import type { ResolvedProjectConfig } from "../types";
-import { createReliableWorkflowDataClient } from "./reliable-workflow-data-client";
-import type { PollingSettings } from "./types/workflow.types";
-import type { WorkflowPollingRecordInput } from "./workflow-data-protocol";
+import { logger, normalizeError } from "../../../utils/logger";
+import type { ResolvedProjectConfig } from "../../types";
+import { createReliableWorkflowDataClient } from "../reliable-workflow-data-client";
+import type { PollingSettings } from "../types/workflow.types";
+import type { WorkflowPollingRecordInput } from "../workflow-data-protocol";
 
 const failureCounts = new Map<string, number>();
 

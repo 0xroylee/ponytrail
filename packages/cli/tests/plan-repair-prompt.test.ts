@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { buildPlannerRepairPrompt } from "../src/features/workflow/plan-repair-prompt";
+import { buildPlannerRepairPrompt } from "../src/features/workflow/planning/plan-repair-prompt";
 
 describe("buildPlannerRepairPrompt", () => {
 	it("preserves routing markers and the READY narrative template", () => {

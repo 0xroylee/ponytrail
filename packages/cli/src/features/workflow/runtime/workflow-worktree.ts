@@ -1,8 +1,8 @@
 import path from "node:path";
-import { logger } from "../../utils/logger";
-import type { ResolvedProjectConfig, RunOptions, RunState } from "../types";
-import { normalizeIssueKey } from "./state";
-import type { WorkflowRuntime } from "./workflow-runtime";
+import { logger } from "../../../utils/logger";
+import type { ResolvedProjectConfig, RunOptions, RunState } from "../../types";
+import { normalizeIssueKey } from "../state";
+import type { WorkflowRuntime } from "../types/workflow.types";
 
 export function shouldUseIsolatedWorktree(
 	config: ResolvedProjectConfig,

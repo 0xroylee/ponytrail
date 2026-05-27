@@ -1,9 +1,13 @@
 import type { AgentResult } from "adapters";
 import type { AgentStreamEvent } from "devos-agents";
-import { logger, normalizeError } from "../../utils/logger";
-import { emitWorkflowProgress } from "../server";
-import type { AgentChatLogEntry, AgentChatLogRole, RunState } from "../types";
-import { appendAgentChatLog } from "./state";
+import { logger, normalizeError } from "../../../utils/logger";
+import { emitWorkflowProgress } from "../../server";
+import type {
+	AgentChatLogEntry,
+	AgentChatLogRole,
+	RunState,
+} from "../../types";
+import { appendAgentChatLog } from "../state-chat-log";
 
 interface RunAgentWithChatLogOptions {
 	workspacePath: string;

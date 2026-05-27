@@ -2,13 +2,17 @@ import { type AgentAdapter, runAdapterAgent } from "adapters";
 import {
 	buildGithubCommentPrompt,
 	buildReviewPrompt,
-} from "../../skills/prompts";
+} from "../../../skills/prompts";
 import {
 	buildImplementationFeedbackComment,
 	buildReviewComment,
-} from "../../utils/comments";
-import type { ResolvedProjectConfig, RunState } from "../types";
-import { emitActionProgress, emitStageProgress } from "./progress";
+} from "../../../utils/comments";
+import type { ResolvedProjectConfig, RunState } from "../../types";
+import { emitActionProgress, emitStageProgress } from "../progress";
+import type {
+	HandleReviewTestingStageDeps,
+	ReviewLinearClient,
+} from "../types/review-stage.types";
 import { parseReviewOutcome } from "./review";
 import {
 	MAX_AUTOMATED_REVIEW_FIX_PASSES,
@@ -17,19 +21,6 @@ import {
 	readyPullRequestAfterPassingReview,
 	resolveReviewFailureStage,
 	reviewFailureHumanReason,
-} from "./review-stage-helpers";
-import type {
-	HandleReviewTestingStageDeps,
-	ReviewLinearClient,
-} from "./types/review-stage.types";
-export { finalizeIssueAfterReviewMerge } from "./review-merge";
-export {
-	MAX_AUTOMATED_REVIEW_FIX_PASSES,
-	incrementAutomatedReviewFixPasses,
-	normalizeFailedReviewBugs,
-	readyPullRequestAfterPassingReview,
-	reviewFailureHumanReason,
-	resolveReviewFailureStage,
 } from "./review-stage-helpers";
 export async function handleReviewTestingStage(
 	config: ResolvedProjectConfig,

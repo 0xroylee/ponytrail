@@ -1,5 +1,5 @@
-import { markPrReadyForReview } from "../../integrations/github";
-import type { ResolvedProjectConfig, RunState } from "../types";
+import { markPrReadyForReview } from "../../../integrations/github";
+import type { ResolvedProjectConfig, RunState } from "../../types";
 import type { ReviewOutcome } from "./review";
 
 export const MAX_AUTOMATED_REVIEW_FIX_PASSES = 3;

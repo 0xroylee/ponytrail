@@ -5,7 +5,7 @@ import type {
 	RunState,
 	WorkflowStage,
 } from "../../types";
-import type { WorkflowAgentRole } from "../oop/agent-adapter-bridge";
+import type { WorkflowAgentRole } from "./workflow-agent.types";
 
 export type BuiltInWorkflowPhaseId = "plan" | "implement" | "testing";
 

@@ -12,17 +12,13 @@ import {
 	removeIssueWorktree,
 	squashMergePullRequest,
 	updateDraftPrFromWorktree,
-} from "../../integrations/github";
+} from "../../../integrations/github";
 import {
 	sendHumanReviewRequiredEmail,
 	sendTaskOutcomeEmail,
-} from "../../integrations/notifications";
-import { createBoardTaskWorkflowClient } from "./board-task-workflow-client";
-import type { WorkflowRuntime } from "./types/workflow.types";
-export type {
-	WorkflowLinearClient,
-	WorkflowRuntime,
-} from "./types/workflow.types";
+} from "../../../integrations/notifications";
+import { createBoardTaskWorkflowClient } from "../board-task-workflow-client";
+import type { WorkflowRuntime } from "../types/workflow.types";
 
 export function createWorkflowRuntime(
 	overrides: Partial<WorkflowRuntime> = {},

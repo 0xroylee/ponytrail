@@ -6,7 +6,6 @@ import type {
 	WorkflowMetadata,
 	WorkflowPhaseDefinition,
 } from "../types/workflow-metadata.types";
-import type { AgentAdapterBridge } from "./agent-adapter-bridge";
 
 export interface PhaseRunnerDeps {
 	runAgent(input: PhaseAgentRunInput): Promise<PhaseAgentRunResult>;
@@ -44,21 +43,6 @@ export class PhaseRunner {
 		}
 		return { status: "fulfilled", phase, agents };
 	}
-}
-
-export function createBridgePhaseAgentRunner(
-	bridge: AgentAdapterBridge,
-): PhaseRunnerDeps["runAgent"] {
-	return async (input) => {
-		const agent = bridge.createAgent(input.assignment.role);
-		const result = await agent.run({
-			role: input.assignment.role,
-			prompt: input.state.planSummary ?? input.state.issue.description ?? "",
-			sessionId: input.state.codexSessionId,
-			skills: input.assignment.skills,
-		});
-		return { assignment: input.assignment, result: result.output };
-	};
 }
 
 function formatError(error: unknown): string {

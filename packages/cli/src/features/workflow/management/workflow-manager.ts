@@ -3,8 +3,8 @@ import type { ResolvedProjectConfig, RunOptions } from "../../types";
 import type {
 	PollingSettings,
 	WorkflowLinearClient,
+	WorkflowRuntime,
 } from "../types/workflow.types";
-import type { WorkflowRuntime } from "../workflow-runtime";
 
 export interface ProjectWorkflowContext<
 	TProject extends ResolvedProjectConfig,

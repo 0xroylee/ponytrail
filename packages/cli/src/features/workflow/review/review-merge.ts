@@ -2,11 +2,11 @@ import type {
 	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
 	RunState,
-} from "../types";
+} from "../../types";
 import type {
 	FinalizeReviewMergeDeps,
 	ReviewLinearClient,
-} from "./types/review-stage.types";
+} from "../types/review-stage.types";
 
 export async function finalizeIssueAfterReviewMerge(
 	config: ResolvedProjectConfig,

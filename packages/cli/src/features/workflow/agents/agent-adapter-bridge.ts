@@ -4,24 +4,13 @@ import {
 	type AgentResult,
 	runAdapterAgent,
 } from "adapters";
-import type { AgentRunInput, AgentSkillReference } from "devos-agents";
+import type { AgentRunInput } from "devos-agents";
 import { Agent, SandboxAgent } from "devos-agents";
 import type { ResolvedProjectConfig } from "../../types";
-
-export type WorkflowAgentRole =
-	| "planning"
-	| "implementing"
-	| "review-testing"
-	| "github-comment";
-
-export interface WorkflowAgentBridgeInput {
-	role: WorkflowAgentRole;
-	prompt: string;
-	sessionId?: string;
-	customInstructions?: string;
-	skills?: AgentSkillReference[];
-	skillsets?: string[];
-}
+import type {
+	WorkflowAgentBridgeInput,
+	WorkflowAgentRole,
+} from "../types/workflow-agent.types";
 
 export class AgentAdapterBridge {
 	constructor(
