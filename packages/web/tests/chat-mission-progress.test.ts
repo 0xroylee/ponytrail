@@ -23,7 +23,7 @@ describe("chat mission progress", () => {
 	it("maps task activity into status, notes, logs, steps, and result", () => {
 		const mission = missionModel();
 
-		expect(mission.statusLabel).toBe("In Progress");
+		expect(mission.statusLabel).toBe("Implementing");
 		expect(mission.notes[0]?.body).toContain("changed status");
 		expect(mission.latestLogLines.at(-1)).toEqual(
 			expect.objectContaining({ stream: "stderr", text: "Testing output" }),
@@ -37,6 +37,12 @@ describe("chat mission progress", () => {
 			"implement",
 			"testing",
 			"qa",
+		]);
+		expect(mission.phases.map((phase) => phase.label)).toEqual([
+			"Planning",
+			"Implementing",
+			"Testing",
+			"QA",
 		]);
 		expect(mission.phases.map((phase) => phase.status)).toEqual([
 			"success",

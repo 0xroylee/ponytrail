@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import {
+	CHAT_WORKFLOW_THINKING_LABEL,
+	resolvePlanningStatusLabel,
+} from "../src/components/chat-room/chat-mission-phase-labels";
+import {
 	shouldShowChatPlanningIndicator,
 	shouldShowChatThinkingIndicator,
 } from "../src/components/chat-room/chat-thinking-state";
@@ -48,6 +52,9 @@ describe("chat thinking indicator", () => {
 		).toBe(false);
 	});
 	it("shows planning when a task is waiting in a planning status", () => {
+		expect(CHAT_WORKFLOW_THINKING_LABEL).toBe("Thinking");
+		expect(resolvePlanningStatusLabel("plan")).toBe("Planning");
+		expect(resolvePlanningStatusLabel("planning")).toBe("Planning");
 		expect(
 			shouldShowChatPlanningIndicator({
 				hasMissionProgress: false,
