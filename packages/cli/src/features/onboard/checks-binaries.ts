@@ -7,12 +7,12 @@ import {
 	formatMissingRtkMessage,
 	safeRun,
 } from "./checks-helpers";
-import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
+import type { OnboardCheck, OnboardCheckDeps } from "./types/onboard.types";
 
 export async function addBinaryChecks(
-	checks: SetupCheck[],
+	checks: OnboardCheck[],
 	config: LoadedConfig,
-	commandRunner: NonNullable<SetupCheckDeps["runCommand"]>,
+	commandRunner: NonNullable<OnboardCheckDeps["runCommand"]>,
 	cwd: string,
 ): Promise<void> {
 	const commandCwd = config.projects[0]?.executionPath ?? cwd;

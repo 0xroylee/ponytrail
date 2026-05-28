@@ -8,7 +8,10 @@ import {
 	DEFAULT_WORKSPACE_NAME,
 } from "./constants";
 import { collectInstanceDraft } from "./instance-prompts";
-import type { SetupDraft, SetupDraftPromptDeps } from "./types/setup.types";
+import type {
+	OnboardDraft,
+	OnboardDraftPromptDeps,
+} from "./types/onboard.types";
 import { parseRecipients, resolveUserPath } from "./wizard-helpers";
 
 const DEFAULT_CODEX_MODELS = {
@@ -17,10 +20,10 @@ const DEFAULT_CODEX_MODELS = {
 	reviewTest: "gpt-5.3-codex",
 } as const;
 
-export async function collectSetupDraft(
+export async function collectOnboardDraft(
 	cwd: string,
-	deps: Partial<SetupDraftPromptDeps> = {},
-): Promise<SetupDraft> {
+	deps: Partial<OnboardDraftPromptDeps> = {},
+): Promise<OnboardDraft> {
 	const prompts = deps.prompts ?? clackPromptAdapter;
 	const executionPath = resolveUserPath(cwd);
 	const workspaceName = await promptText(
@@ -75,7 +78,7 @@ export async function collectSetupDraft(
 
 async function collectNotificationDraft(
 	prompts: PromptAdapter,
-): Promise<SetupDraft["notifications"]> {
+): Promise<OnboardDraft["notifications"]> {
 	const enabled = await prompts.confirm({
 		message: "Enable email notifications?",
 		initialValue: false,

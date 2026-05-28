@@ -6,20 +6,20 @@ import {
 	DEFAULT_LABEL_MAP,
 	DEFAULT_REASONING_EFFORTS,
 	DEFAULT_STATUS_MAP,
-	type SetupDraft,
-	createDefaultSetupInstanceDraft,
-	writeSetupFiles,
-} from "../src/features/setup";
+	type OnboardDraft,
+	createDefaultOnboardInstanceDraft,
+	writeOnboardFiles,
+} from "../src/features/onboard";
 
-let draft: SetupDraft;
+let draft: OnboardDraft;
 let previousHome: string | undefined;
 let testHomeDir: string | undefined;
 
-describe("setup database boundary", () => {
+describe("onboard database boundary", () => {
 	beforeEach(async () => {
 		previousHome = process.env.HOME;
 		testHomeDir = await mkdtemp(
-			path.join(process.cwd(), ".tmp-setup-db-home-"),
+			path.join(process.cwd(), ".tmp-onboard-db-home-"),
 		);
 		process.env.HOME = testHomeDir;
 		draft = createTestDraft();
@@ -35,7 +35,7 @@ describe("setup database boundary", () => {
 	});
 
 	it("does not create or migrate the server database during fresh onboarding", async () => {
-		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-db-"));
+		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-onboard-db-"));
 		const repoFallbackDatabasePath = path.join(
 			tempDir,
 			".devos",
@@ -45,7 +45,7 @@ describe("setup database boundary", () => {
 
 		try {
 			await expect(access(repoFallbackDatabasePath)).rejects.toThrow();
-			await writeSetupFiles(tempDir, draft);
+			await writeOnboardFiles(tempDir, draft);
 			await expect(access(repoFallbackDatabasePath)).rejects.toThrow();
 
 			const instanceConfig = JSON.parse(
@@ -69,7 +69,7 @@ describe("setup database boundary", () => {
 	});
 
 	it("reruns onboarding without creating server database records", async () => {
-		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-db-"));
+		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-onboard-db-"));
 		const repoFallbackDatabasePath = path.join(
 			tempDir,
 			".devos",
@@ -78,13 +78,13 @@ describe("setup database boundary", () => {
 		);
 
 		try {
-			await writeSetupFiles(tempDir, draft);
+			await writeOnboardFiles(tempDir, draft);
 			const firstInstanceConfig = JSON.parse(
 				await readFile(instanceConfigPath(), "utf8"),
 			) as {
 				workspace: { id: string; name: string };
 			};
-			await writeSetupFiles(tempDir, {
+			await writeOnboardFiles(tempDir, {
 				...draft,
 				workspaceName: "Renamed Workspace",
 			});
@@ -111,13 +111,13 @@ describe("setup database boundary", () => {
 	});
 });
 
-function createTestDraft(): SetupDraft {
+function createTestDraft(): OnboardDraft {
 	return {
 		workspaceName: "Demo Workspace",
 		workspacePath: "/tmp/demo",
 		executionPath: "/tmp/demo",
 		linearApiKey: "lin_secret_123",
-		instance: createDefaultSetupInstanceDraft(),
+		instance: createDefaultOnboardInstanceDraft(),
 		notifications: {
 			email: {
 				enabled: false,

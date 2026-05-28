@@ -7,9 +7,9 @@ import { safeRun } from "./checks-helpers";
 import { DEFAULT_BASE_BRANCH } from "./constants";
 import type {
 	GitHubDefaults,
-	SetupCheckDeps,
-	SetupDraft,
-} from "./types/setup.types";
+	OnboardCheckDeps,
+	OnboardDraft,
+} from "./types/onboard.types";
 
 export async function readExistingFile(
 	filePath: string,
@@ -24,7 +24,9 @@ export async function readExistingFile(
 export async function inferGitHubDefaults(
 	cwd: string,
 ): Promise<GitHubDefaults> {
-	const commandRunner = runCommand as NonNullable<SetupCheckDeps["runCommand"]>;
+	const commandRunner = runCommand as NonNullable<
+		OnboardCheckDeps["runCommand"]
+	>;
 	const remote = await safeRun(
 		commandRunner,
 		"git",
@@ -62,7 +64,7 @@ export function parseRecipients(input: string): string[] {
 
 export function normalizeSandbox(
 	input: string,
-): SetupDraft["codex"]["sandbox"] | undefined {
+): OnboardDraft["codex"]["sandbox"] | undefined {
 	const value = input.trim();
 	if (!value || value === "off" || value === "none" || value === "0") {
 		return undefined;

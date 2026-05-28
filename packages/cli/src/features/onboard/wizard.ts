@@ -5,34 +5,34 @@ import { promptForMissingPluginCredentials } from "../plugins/credentials";
 import { clackPromptAdapter } from "../prompts";
 import { renderDevosBanner } from "./banner";
 import {
-	collectSetupChecks,
-	formatSetupChecks,
-	renderSetupGitHubInstallPrompt,
-	renderSetupRtkInstallPrompt,
+	collectOnboardChecks,
+	formatOnboardChecks,
+	renderOnboardGitHubInstallPrompt,
+	renderOnboardRtkInstallPrompt,
 } from "./checks";
 import { safeRun } from "./checks-helpers";
 import { ENV_FILE } from "./constants";
 import { loadInstanceConfig, saveInstanceConfig } from "./instance-config";
-import { collectSetupDraft } from "./setup-draft";
-import { writeSetupFiles } from "./setup-files";
-import type { SetupWizardDeps } from "./types/setup.types";
+import { collectOnboardDraft } from "./onboard-draft";
+import { writeOnboardFiles } from "./onboard-files";
+import type { OnboardWizardDeps } from "./types/onboard.types";
 
-export async function runSetupWizard(
+export async function runOnboardWizard(
 	cwd: string,
-	deps: SetupWizardDeps = {},
+	deps: OnboardWizardDeps = {},
 ): Promise<void> {
 	const commandRunner = deps.runCommand ?? runCommand;
 	const prompts = deps.prompts ?? clackPromptAdapter;
-	const writeFiles = deps.writeSetupFiles ?? writeSetupFiles;
-	const collectChecks = deps.collectSetupChecks ?? collectSetupChecks;
+	const writeFiles = deps.writeOnboardFiles ?? writeOnboardFiles;
+	const collectChecks = deps.collectOnboardChecks ?? collectOnboardChecks;
 	const configurePluginCredentials =
 		deps.configurePluginCredentials ?? configureInstalledPluginCredentials;
 	const rtk = await safeRun(commandRunner, "rtk", ["--version"], cwd);
-	if (rtk.code !== 0) process.stdout.write(renderSetupRtkInstallPrompt());
+	if (rtk.code !== 0) process.stdout.write(renderOnboardRtkInstallPrompt());
 	const gh = await safeRun(commandRunner, "gh", ["auth", "status"], cwd);
-	if (gh.code !== 0) process.stdout.write(renderSetupGitHubInstallPrompt());
+	if (gh.code !== 0) process.stdout.write(renderOnboardGitHubInstallPrompt());
 
-	const draft = await collectSetupDraft(cwd, {
+	const draft = await collectOnboardDraft(cwd, {
 		prompts,
 		inferGitHubDefaults: deps.inferGitHubDefaults,
 	});
@@ -44,9 +44,9 @@ export async function runSetupWizard(
 	process.stdout.write(`${renderDevosBanner()}\n`);
 	process.stdout.write(`\n${renderCliHeading("Running doctor checks...")}\n`);
 	const checks = await collectChecks(cwd);
-	process.stdout.write(formatSetupChecks(checks));
+	process.stdout.write(formatOnboardChecks(checks));
 	if (checks.some((check) => check.status === "fail")) {
-		throw new Error("Setup check failed");
+		throw new Error("Onboard check failed");
 	}
 }
 

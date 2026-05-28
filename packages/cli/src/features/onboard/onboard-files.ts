@@ -14,12 +14,12 @@ import {
 	renderInstanceConfigDocument,
 } from "./instance-config";
 import type { OnboardInstanceConfig } from "./types/instance-config.types";
-import type { SetupDraft } from "./types/setup.types";
+import type { OnboardDraft } from "./types/onboard.types";
 import { readExistingFile } from "./wizard-helpers";
 
-export async function writeSetupFiles(
+export async function writeOnboardFiles(
 	cwd: string,
-	draft: SetupDraft,
+	draft: OnboardDraft,
 ): Promise<void> {
 	const envPath = path.join(cwd, ENV_FILE);
 	const targetInstanceConfigPath = instanceConfigPath();

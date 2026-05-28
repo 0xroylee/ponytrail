@@ -6,7 +6,7 @@ import {
 	LOCAL_WORKSPACE_ID,
 } from "./constants";
 import {
-	createDefaultSetupInstanceDraft,
+	createDefaultOnboardInstanceDraft,
 	createInstanceConfigSections,
 } from "./instance-draft";
 import type {
@@ -14,7 +14,7 @@ import type {
 	OnboardInstanceConfig,
 	OnboardWorkspaceConfig,
 } from "./types/instance-config.types";
-import type { SetupInstanceDraft } from "./types/setup.types";
+import type { OnboardInstanceDraft } from "./types/onboard.types";
 
 export function renderInstanceConfig(
 	cwd: string,
@@ -87,7 +87,7 @@ export function createInstanceConfig(
 	_cwd: string,
 	updatedAt: string,
 	workspace: OnboardWorkspaceConfig = defaultWorkspaceConfig(),
-	instance: SetupInstanceDraft = createDefaultSetupInstanceDraft(),
+	instance: OnboardInstanceDraft = createDefaultOnboardInstanceDraft(),
 ): OnboardInstanceConfig {
 	return {
 		$meta: {

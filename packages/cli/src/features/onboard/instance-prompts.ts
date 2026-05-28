@@ -1,12 +1,12 @@
 import type { PromptAdapter } from "../prompts";
-import { createDefaultSetupInstanceDraft } from "./instance-draft";
-import type { SetupInstanceDraft } from "./types/setup.types";
+import { createDefaultOnboardInstanceDraft } from "./instance-draft";
+import type { OnboardInstanceDraft } from "./types/onboard.types";
 import { parseRecipients, resolveUserPath } from "./wizard-helpers";
 
 export async function collectInstanceDraft(
 	prompts: PromptAdapter,
-): Promise<SetupInstanceDraft> {
-	const defaults = createDefaultSetupInstanceDraft();
+): Promise<OnboardInstanceDraft> {
+	const defaults = createDefaultOnboardInstanceDraft();
 	const customize = await prompts.confirm({
 		message: "Customize advanced instance fields?",
 		initialValue: false,
@@ -16,8 +16,8 @@ export async function collectInstanceDraft(
 
 async function promptInstanceDraft(
 	prompts: PromptAdapter,
-	defaults: SetupInstanceDraft,
-): Promise<SetupInstanceDraft> {
+	defaults: OnboardInstanceDraft,
+): Promise<OnboardInstanceDraft> {
 	const backupEnabled = await prompts.confirm({
 		message: "Enable database backups?",
 		initialValue: defaults.database.backup.enabled,

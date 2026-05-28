@@ -4,20 +4,20 @@ import { loadConfig, loadResolvedEnv } from "../config";
 import type { LoadedConfig } from "../config";
 import { addBinaryChecks } from "./checks-binaries";
 import { collectConfigFileCheck } from "./checks-config-file";
-import { collectInstanceSetupChecks } from "./checks-instance";
+import { collectInstanceOnboardChecks } from "./checks-instance";
 import { loadInstanceConfig } from "./instance-config";
-import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
+import type { OnboardCheck, OnboardCheckDeps } from "./types/onboard.types";
 
-export async function collectSetupChecks(
+export async function collectOnboardChecks(
 	cwd: string,
-	deps: SetupCheckDeps = {},
-): Promise<SetupCheck[]> {
+	deps: OnboardCheckDeps = {},
+): Promise<OnboardCheck[]> {
 	const configLoader = deps.loadConfig ?? loadConfig;
 	const envLoader = deps.loadResolvedEnv ?? loadResolvedEnv;
 	const instanceLoader = deps.loadInstanceConfig ?? loadInstanceConfig;
 	const commandRunner = deps.runCommand ?? runCommand;
 	const accessPath = deps.access ?? access;
-	const checks: SetupCheck[] = [];
+	const checks: OnboardCheck[] = [];
 
 	const { check, config, instanceResult } = await collectConfigFileCheck({
 		cwd,
@@ -27,7 +27,7 @@ export async function collectSetupChecks(
 	checks.push(check);
 	const env = await loadEnvForChecks(envLoader, cwd);
 	checks.push(
-		...(await collectInstanceSetupChecks({
+		...(await collectInstanceOnboardChecks({
 			env,
 			instanceResult,
 			mkdir: deps.mkdir,
@@ -44,7 +44,7 @@ export async function collectSetupChecks(
 }
 
 async function loadEnvForChecks(
-	envLoader: NonNullable<SetupCheckDeps["loadResolvedEnv"]>,
+	envLoader: NonNullable<OnboardCheckDeps["loadResolvedEnv"]>,
 	cwd: string,
 ): Promise<Record<string, string | undefined>> {
 	try {
@@ -55,9 +55,9 @@ async function loadEnvForChecks(
 }
 
 async function addProjectPathChecks(
-	checks: SetupCheck[],
+	checks: OnboardCheck[],
 	config: LoadedConfig,
-	accessPath: NonNullable<SetupCheckDeps["access"]>,
+	accessPath: NonNullable<OnboardCheckDeps["access"]>,
 ): Promise<void> {
 	for (const project of config.projects) {
 		try {
@@ -78,9 +78,9 @@ async function addProjectPathChecks(
 }
 
 async function addSkillChecks(
-	checks: SetupCheck[],
+	checks: OnboardCheck[],
 	config: LoadedConfig,
-	accessPath: NonNullable<SetupCheckDeps["access"]>,
+	accessPath: NonNullable<OnboardCheckDeps["access"]>,
 ): Promise<void> {
 	for (const project of config.projects) {
 		const skillChecks: Array<[string, string]> = [
@@ -110,9 +110,9 @@ async function addSkillChecks(
 }
 
 async function addAutoSelectChecks(
-	checks: SetupCheck[],
+	checks: OnboardCheck[],
 	config: LoadedConfig,
-	accessPath: NonNullable<SetupCheckDeps["access"]>,
+	accessPath: NonNullable<OnboardCheckDeps["access"]>,
 ): Promise<void> {
 	for (const project of config.projects) {
 		const autoSelect = project.skills.autoSelect;

@@ -6,17 +6,17 @@ export * from "./instance-draft";
 export * from "./instance-config";
 export * from "./instance-prompts";
 export * from "./normalize";
-export * from "./setup-draft";
-export * from "./setup-files";
+export * from "./onboard-draft";
+export * from "./onboard-files";
 export type {
 	GitHubDefaults,
-	SetupCheck,
-	SetupCheckDeps,
-	SetupDraft,
-	SetupDraftPromptDeps,
-	SetupInstanceDraft,
-	SetupWizardDeps,
-} from "./types/setup.types";
+	OnboardCheck,
+	OnboardCheckDeps,
+	OnboardDraft,
+	OnboardDraftPromptDeps,
+	OnboardInstanceDraft,
+	OnboardWizardDeps,
+} from "./types/onboard.types";
 export type {
 	InstanceConfigLoadResult,
 	OnboardInstanceConfig,

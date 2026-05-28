@@ -3,13 +3,13 @@ import {
 	renderStatusLine,
 	renderSummaryBox,
 } from "../../utils/terminal-format";
-import { collectSetupChecks } from "./checks-collection";
+import { collectOnboardChecks } from "./checks-collection";
 import { GITHUB_CLI_INSTALL_URL, RTK_INSTALL_URL } from "./constants";
-import type { SetupCheck } from "./types/setup.types";
+import type { OnboardCheck } from "./types/onboard.types";
 
-export { collectSetupChecks };
+export { collectOnboardChecks };
 
-export function formatSetupChecks(checks: SetupCheck[]): string {
+export function formatOnboardChecks(checks: OnboardCheck[]): string {
 	const passed = checks.filter((check) => check.status === "pass").length;
 	const failed = checks.length - passed;
 	return [
@@ -32,18 +32,18 @@ export function formatSetupChecks(checks: SetupCheck[]): string {
 	].join("\n");
 }
 
-export async function runSetupCheck(cwd: string): Promise<void> {
-	const checks = await collectSetupChecks(cwd);
-	process.stdout.write(formatSetupChecks(checks));
+export async function runOnboardCheck(cwd: string): Promise<void> {
+	const checks = await collectOnboardChecks(cwd);
+	process.stdout.write(formatOnboardChecks(checks));
 	if (checks.some((check) => check.status === "fail")) {
-		throw new Error("Setup check failed");
+		throw new Error("Onboard check failed");
 	}
 }
 
-export function renderSetupRtkInstallPrompt(): string {
+export function renderOnboardRtkInstallPrompt(): string {
 	return `RTK is required for devos.ing agent workflow commands.\nInstall RTK before running workflows: ${RTK_INSTALL_URL}\n`;
 }
 
-export function renderSetupGitHubInstallPrompt(): string {
+export function renderOnboardGitHubInstallPrompt(): string {
 	return `GitHub CLI auth is required for devos.ing GitHub workflow commands.\nInstall GitHub CLI: ${GITHUB_CLI_INSTALL_URL}\nThen authenticate: gh auth login\n`;
 }

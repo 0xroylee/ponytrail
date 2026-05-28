@@ -1,23 +1,23 @@
 import path from "node:path";
-import type {
-	PromptAdapter,
-	SelectPromptOptions,
-} from "../src/features/prompts";
 import {
 	DEFAULT_LABEL_MAP,
 	DEFAULT_REASONING_EFFORTS,
 	DEFAULT_STATUS_MAP,
-	type SetupDraft,
-	createDefaultSetupInstanceDraft,
-} from "../src/features/setup";
+	type OnboardDraft,
+	createDefaultOnboardInstanceDraft,
+} from "../src/features/onboard";
+import type {
+	PromptAdapter,
+	SelectPromptOptions,
+} from "../src/features/prompts";
 
-export function baseSetupDraft(): SetupDraft {
+export function baseOnboardDraft(): OnboardDraft {
 	return {
 		workspaceName: "Demo Workspace",
 		workspacePath: "/tmp/demo",
 		executionPath: "/tmp/demo",
 		linearApiKey: "lin_secret_123",
-		instance: createDefaultSetupInstanceDraft(),
+		instance: createDefaultOnboardInstanceDraft(),
 		notifications: { email: { enabled: false, to: [] } },
 		workflow: { isolatedWorktrees: true },
 		statusMap: DEFAULT_STATUS_MAP,
@@ -43,7 +43,7 @@ export function baseSetupDraft(): SetupDraft {
 	};
 }
 
-export function customInstanceDraft(root: string): SetupDraft["instance"] {
+export function customInstanceDraft(root: string): OnboardDraft["instance"] {
 	return {
 		database: {
 			embeddedPostgresDataDir: path.join(root, "postgres"),

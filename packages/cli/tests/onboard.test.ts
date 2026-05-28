@@ -15,34 +15,34 @@ import {
 	loadSqliteEnv,
 	sqliteEnvDbPath,
 } from "../src/features/config";
-import { PromptCancelledError } from "../src/features/prompts";
-import type {
-	PromptAdapter,
-	SelectPromptOptions,
-} from "../src/features/prompts";
 import {
 	DEFAULT_LABEL_MAP,
 	DEFAULT_REASONING_EFFORTS,
 	DEFAULT_STATUS_MAP,
 	LINEAR_API_KEY_SETTINGS_URL,
-	type SetupCheckDeps,
-	type SetupDraft,
-	collectSetupChecks,
-	collectSetupDraft,
-	createDefaultSetupInstanceDraft,
+	type OnboardCheckDeps,
+	type OnboardDraft,
+	collectOnboardChecks,
+	collectOnboardDraft,
+	createDefaultOnboardInstanceDraft,
 	createInstanceConfig,
-	formatSetupChecks,
+	formatOnboardChecks,
 	loadInstanceConfig,
 	mergeEnvFile,
 	normalizeProjectId,
 	renderDevosBanner,
 	renderEnvFile,
 	renderInstanceConfig,
-	renderSetupGitHubInstallPrompt,
-	renderSetupRtkInstallPrompt,
-	runSetupWizard,
-	writeSetupFiles,
-} from "../src/features/setup";
+	renderOnboardGitHubInstallPrompt,
+	renderOnboardRtkInstallPrompt,
+	runOnboardWizard,
+	writeOnboardFiles,
+} from "../src/features/onboard";
+import { PromptCancelledError } from "../src/features/prompts";
+import type {
+	PromptAdapter,
+	SelectPromptOptions,
+} from "../src/features/prompts";
 import type { CommandResult } from "../src/utils/shell";
 
 const checkProjectId = "demo-project";
@@ -50,14 +50,14 @@ const checkProjectName = "Demo Project";
 const checkRepoOwner = "octo";
 const checkRepoName = "demo";
 const checkBaseBranch = "main";
-let draft: SetupDraft;
+let draft: OnboardDraft;
 let previousHome: string | undefined;
 let testHomeDir: string | undefined;
 
-describe("setup helpers", () => {
+describe("onboard helpers", () => {
 	beforeEach(async () => {
 		previousHome = process.env.HOME;
-		testHomeDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-home-"));
+		testHomeDir = await mkdtemp(path.join(process.cwd(), ".tmp-onboard-home-"));
 		process.env.HOME = testHomeDir;
 		draft = createTestDraft();
 	});
@@ -174,7 +174,7 @@ describe("setup helpers", () => {
 		);
 	});
 
-	it("maps typed onboarding prompts into the setup draft", async () => {
+	it("maps typed onboarding prompts into the onboard draft", async () => {
 		const previousLinearApiKey = process.env.LINEAR_API_KEY;
 		process.env.LINEAR_API_KEY = "lin_secret_123";
 		const textPrompts: string[] = [];
@@ -189,7 +189,7 @@ describe("setup helpers", () => {
 			baseBranch: "main",
 		}));
 		try {
-			const draft = await collectSetupDraft("/tmp/demo", {
+			const draft = await collectOnboardDraft("/tmp/demo", {
 				prompts: {
 					...prompts,
 					text: async (options) => {
@@ -232,10 +232,10 @@ describe("setup helpers", () => {
 		}
 	});
 
-	it("does not write setup files when onboarding prompts are cancelled", async () => {
+	it("does not write onboard files when onboarding prompts are cancelled", async () => {
 		let wroteFiles = false;
 		await expect(
-			runSetupWizard("/tmp/demo", {
+			runOnboardWizard("/tmp/demo", {
 				runCommand: async () => okCommand(),
 				prompts: {
 					...promptAdapter({}),
@@ -243,7 +243,7 @@ describe("setup helpers", () => {
 						throw new PromptCancelledError();
 					},
 				},
-				writeSetupFiles: async () => {
+				writeOnboardFiles: async () => {
 					wroteFiles = true;
 				},
 			}),
@@ -252,7 +252,9 @@ describe("setup helpers", () => {
 	});
 
 	it("runs post-onboard doctor after writing files and keeps JWT secret out of output", async () => {
-		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-test-"));
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-onboard-test-"),
+		);
 		const collectChecks = mock(async (cwd: string) => {
 			const sqliteEnv = await loadSqliteEnv(cwd);
 			expect(sqliteEnv?.JWT_SECRET).toBeTruthy();
@@ -262,10 +264,10 @@ describe("setup helpers", () => {
 		});
 		try {
 			const output = await captureStdout(() =>
-				runSetupWizard(tempDir, {
+				runOnboardWizard(tempDir, {
 					runCommand: async () => okCommand(),
 					prompts: onboardingPromptAdapter(),
-					collectSetupChecks: collectChecks,
+					collectOnboardChecks: collectChecks,
 				}),
 			);
 			const sqliteEnv = await loadSqliteEnv(tempDir);
@@ -326,9 +328,11 @@ describe("setup helpers", () => {
 	});
 
 	it("writes integration values to sqlite without touching the server DB", async () => {
-		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-test-"));
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-onboard-test-"),
+		);
 		try {
-			await writeSetupFiles(tempDir, draft);
+			await writeOnboardFiles(tempDir, draft);
 			const sqliteEnv = await loadSqliteEnv(tempDir);
 			expect(sqliteEnv?.LINEAR_API_KEY).toBe("lin_secret_123");
 			expect(sqliteEnv?.PIV_ISOLATED_WORKTREES).toBe("1");
@@ -381,8 +385,8 @@ describe("setup helpers", () => {
 		}
 	});
 
-	it("formats setup checks", () => {
-		const output = formatSetupChecks([
+	it("formats onboard checks", () => {
+		const output = formatOnboardChecks([
 			{ name: "Config", status: "pass", message: "ok" },
 			{ name: "Codex", status: "fail", message: "missing" },
 		]);
@@ -394,10 +398,10 @@ describe("setup helpers", () => {
 		expect(output).toContain("1 check failed");
 	});
 
-	it("reports successful minimal setup checks", async () => {
-		const checks = await collectSetupChecks(
+	it("reports successful minimal onboard checks", async () => {
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123" }),
 				access: async () => {},
@@ -424,10 +428,10 @@ describe("setup helpers", () => {
 		});
 	});
 
-	it("passes workspace-level setup checks when no projects exist", async () => {
-		const checks = await collectSetupChecks(
+	it("passes workspace-level onboard checks when no projects exist", async () => {
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () => ({
 					...loadedConfig({ linearApiKey: "lin_secret_123" }),
 					projects: [],
@@ -445,10 +449,10 @@ describe("setup helpers", () => {
 		expect(checks.map((check) => check.name)).not.toContain("Linear API key");
 	});
 
-	it("passes instance setup checks without a workspace config file", async () => {
-		const checks = await collectSetupChecks(
+	it("passes instance onboard checks without a workspace config file", async () => {
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () => ({
 					...loadedConfig({ linearApiKey: "lin_secret_123" }),
 					projects: [],
@@ -469,9 +473,9 @@ describe("setup helpers", () => {
 
 	it("reports targeted instance doctor failures when instance config is missing or malformed", async () => {
 		const missingInstanceMessage = `${instanceConfigPath()} missing or inaccessible`;
-		const missingChecks = await collectSetupChecks(
+		const missingChecks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123" }),
 				loadInstanceConfig: async () => ({
@@ -495,7 +499,9 @@ describe("setup helpers", () => {
 			message: `instance config unavailable: ${missingInstanceMessage}`,
 		});
 
-		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-test-"));
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-onboard-test-"),
+		);
 		try {
 			await mkdir(path.dirname(instanceConfigPath()), { recursive: true });
 			await writeFile(instanceConfigPath(), "{nope");
@@ -515,9 +521,9 @@ describe("setup helpers", () => {
 			"2026-05-12T16:13:11.419Z",
 		);
 		config.database.embeddedPostgresPort = 0;
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123" }),
 				loadInstanceConfig: async () => ({ ok: true, config }),
@@ -564,9 +570,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports configured LLM provider backends", async () => {
-		const claudeChecks = await collectSetupChecks(
+		const claudeChecks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({
 						linearApiKey: "lin_secret_123",
@@ -586,9 +592,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports cursor agent provider and binary failures", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({
 						linearApiKey: "lin_secret_123",
@@ -621,9 +627,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports custom cursor agent binary failures with the configured binary", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({
 						linearApiKey: "lin_secret_123",
@@ -651,10 +657,10 @@ describe("setup helpers", () => {
 		});
 	});
 
-	it("ignores missing Linear API keys in setup checks", async () => {
-		const checks = await collectSetupChecks(
+	it("ignores missing Linear API keys in onboard checks", async () => {
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () => loadedConfig({ linearApiKey: "" }),
 				access: async () => {},
 				readFile: async () => "",
@@ -667,9 +673,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports missing execution path", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123" }),
 				access: async () => {
@@ -688,9 +694,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports missing skill files", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123" }),
 				access: async (targetPath) => {
@@ -712,9 +718,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports missing auto-select database when database source is enabled", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () => {
 					const config = loadedConfig({ linearApiKey: "lin_secret_123" });
 					const project = config.projects[0];
@@ -749,9 +755,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports missing rtk binary", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123" }),
 				access: async () => {},
@@ -776,9 +782,9 @@ describe("setup helpers", () => {
 	});
 
 	it("reports missing docker binary when codex docker is enabled", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123", dockerEnabled: true }),
 				access: async () => {},
@@ -803,9 +809,9 @@ describe("setup helpers", () => {
 	});
 
 	it("skips host codex check when only docker-backed codex projects are configured", async () => {
-		const checks = await collectSetupChecks(
+		const checks = await collectOnboardChecks(
 			"/tmp/demo",
-			setupCheckDeps({
+			onboardCheckDeps({
 				loadConfig: async () =>
 					loadedConfig({ linearApiKey: "lin_secret_123", dockerEnabled: true }),
 				access: async () => {},
@@ -831,14 +837,14 @@ describe("setup helpers", () => {
 		});
 	});
 
-	it("renders setup rtk install prompt", () => {
-		expect(renderSetupRtkInstallPrompt()).toContain(
+	it("renders onboard rtk install prompt", () => {
+		expect(renderOnboardRtkInstallPrompt()).toContain(
 			"Install RTK before running workflows: https://github.com/rtk-ai/rtk",
 		);
 	});
 
-	it("renders setup github install prompt", () => {
-		expect(renderSetupGitHubInstallPrompt()).toContain(
+	it("renders onboard github install prompt", () => {
+		expect(renderOnboardGitHubInstallPrompt()).toContain(
 			"Then authenticate: gh auth login",
 		);
 	});
@@ -941,13 +947,13 @@ function loadedConfig({
 	};
 }
 
-function createTestDraft(): SetupDraft {
+function createTestDraft(): OnboardDraft {
 	return {
 		workspaceName: "Demo Workspace",
 		workspacePath: "/tmp/demo",
 		executionPath: "/tmp/demo",
 		linearApiKey: "lin_secret_123",
-		instance: createDefaultSetupInstanceDraft(),
+		instance: createDefaultOnboardInstanceDraft(),
 		notifications: {
 			email: {
 				enabled: true,
@@ -992,7 +998,7 @@ function okCommand(): CommandResult {
 	};
 }
 
-function setupCheckDeps(overrides: SetupCheckDeps = {}): SetupCheckDeps {
+function onboardCheckDeps(overrides: OnboardCheckDeps = {}): OnboardCheckDeps {
 	return {
 		loadResolvedEnv: async () => ({ JWT_SECRET: "present" }),
 		loadInstanceConfig: async () => ({

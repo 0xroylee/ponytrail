@@ -1,5 +1,5 @@
 import type { CodexReasoningEffort } from "../types";
-import type { SetupDraft } from "./types/setup.types";
+import type { OnboardDraft } from "./types/onboard.types";
 export { INSTANCE_CONFIG_FILE } from "../config/home-paths";
 
 export const ENV_FILE = ".env";
@@ -14,7 +14,7 @@ export const GITHUB_CLI_INSTALL_URL =
 export const LINEAR_API_KEY_SETTINGS_URL =
 	"https://linear.app/settings/account/security";
 
-export const DEFAULT_STATUS_MAP: SetupDraft["statusMap"] = {
+export const DEFAULT_STATUS_MAP: OnboardDraft["statusMap"] = {
 	backlog: "Backlog",
 	assigned: "Todo",
 	plan: "In Progress",
@@ -25,7 +25,7 @@ export const DEFAULT_STATUS_MAP: SetupDraft["statusMap"] = {
 	done: "Done",
 };
 
-export const DEFAULT_LABEL_MAP: SetupDraft["labelMap"] = {
+export const DEFAULT_LABEL_MAP: OnboardDraft["labelMap"] = {
 	pr_created: "PR Created",
 	reviewing: "Reviewing",
 	testing: "Testing",

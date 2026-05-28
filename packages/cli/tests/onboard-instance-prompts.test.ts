@@ -2,21 +2,24 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { instanceConfigPath } from "../src/features/config";
-import { collectSetupDraft, writeSetupFiles } from "../src/features/setup";
 import {
-	baseSetupDraft,
+	collectOnboardDraft,
+	writeOnboardFiles,
+} from "../src/features/onboard";
+import {
+	baseOnboardDraft,
 	customInstanceDraft,
 	promptAdapter,
-} from "./setup-instance-test-helpers";
+} from "./onboard-instance-test-helpers";
 
-describe("setup instance prompts", () => {
+describe("onboard instance prompts", () => {
 	let previousHome: string | undefined;
 	let testHomeDir: string | undefined;
 
 	beforeEach(async () => {
 		previousHome = process.env.HOME;
 		testHomeDir = await mkdtemp(
-			path.join(process.cwd(), ".tmp-setup-instance-home-"),
+			path.join(process.cwd(), ".tmp-onboard-instance-home-"),
 		);
 		process.env.HOME = testHomeDir;
 	});
@@ -31,7 +34,7 @@ describe("setup instance prompts", () => {
 	});
 
 	it("collects default instance fields when advanced prompts are skipped", async () => {
-		const draft = await collectSetupDraft("/tmp/demo", {
+		const draft = await collectOnboardDraft("/tmp/demo", {
 			prompts: promptAdapter({
 				text: { "Workspace name": "Demo Workspace" },
 				confirm: { "Customize advanced instance fields?": false },
@@ -47,8 +50,8 @@ describe("setup instance prompts", () => {
 		expect(draft.instance.secrets.strictMode).toBe(false);
 	});
 
-	it("maps advanced instance prompt answers into the setup draft", async () => {
-		const draft = await collectSetupDraft("/tmp/demo", {
+	it("maps advanced instance prompt answers into the onboard draft", async () => {
+		const draft = await collectOnboardDraft("/tmp/demo", {
 			prompts: promptAdapter({
 				text: {
 					"Workspace name": "Demo Workspace",
@@ -114,11 +117,11 @@ describe("setup instance prompts", () => {
 	});
 
 	it("writes customized instance fields to the instance config", async () => {
-		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-"));
+		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-onboard-"));
 		const instance = customInstanceDraft(tempDir);
 		try {
-			await writeSetupFiles(tempDir, {
-				...baseSetupDraft(),
+			await writeOnboardFiles(tempDir, {
+				...baseOnboardDraft(),
 				instance,
 			});
 

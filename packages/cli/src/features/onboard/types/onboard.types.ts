@@ -4,12 +4,12 @@ import type { PromptAdapter } from "../../prompts";
 import type { CodexReasoningEffort } from "../../types";
 import type { InstanceConfigLoadResult } from "./instance-config.types";
 
-export interface SetupDraft {
+export interface OnboardDraft {
 	workspaceName: string;
 	workspacePath: string;
 	executionPath: string;
 	linearApiKey: string;
-	instance: SetupInstanceDraft;
+	instance: OnboardInstanceDraft;
 	notifications: {
 		email: {
 			enabled: boolean;
@@ -57,7 +57,7 @@ export interface SetupDraft {
 	};
 }
 
-export interface SetupInstanceDraft {
+export interface OnboardInstanceDraft {
 	database: {
 		embeddedPostgresDataDir: string;
 		embeddedPostgresPort: number;
@@ -97,13 +97,13 @@ export interface SetupInstanceDraft {
 	};
 }
 
-export interface SetupCheck {
+export interface OnboardCheck {
 	name: string;
 	status: "pass" | "fail";
 	message: string;
 }
 
-export interface SetupCheckDeps {
+export interface OnboardCheckDeps {
 	loadConfig?: (cwd: string) => Promise<LoadedConfig>;
 	loadResolvedEnv?: (cwd: string) => Promise<ResolvedEnv>;
 	loadInstanceConfig?: (cwd: string) => Promise<InstanceConfigLoadResult>;
@@ -127,15 +127,15 @@ export interface GitHubDefaults {
 	baseBranch?: string;
 }
 
-export interface SetupDraftPromptDeps {
+export interface OnboardDraftPromptDeps {
 	prompts: PromptAdapter;
 	inferGitHubDefaults?: (cwd: string) => Promise<GitHubDefaults>;
 }
 
-export interface SetupWizardDeps extends Partial<SetupDraftPromptDeps> {
-	runCommand?: SetupCheckDeps["runCommand"];
-	writeSetupFiles?: (cwd: string, draft: SetupDraft) => Promise<void>;
-	collectSetupChecks?: (cwd: string) => Promise<SetupCheck[]>;
+export interface OnboardWizardDeps extends Partial<OnboardDraftPromptDeps> {
+	runCommand?: OnboardCheckDeps["runCommand"];
+	writeOnboardFiles?: (cwd: string, draft: OnboardDraft) => Promise<void>;
+	collectOnboardChecks?: (cwd: string) => Promise<OnboardCheck[]>;
 	configurePluginCredentials?: (
 		cwd: string,
 		prompts: PromptAdapter,

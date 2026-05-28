@@ -2,22 +2,22 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { instanceConfigPath } from "../src/features/config";
-import type { PromptAdapter } from "../src/features/prompts";
 import {
 	createInstanceConfig,
 	renderInstanceConfigDocument,
-	runSetupWizard,
-} from "../src/features/setup";
+	runOnboardWizard,
+} from "../src/features/onboard";
+import type { PromptAdapter } from "../src/features/prompts";
 
 let previousHome: string | undefined;
 let previousLinearApiKey: string | undefined;
 let testHomeDir: string | undefined;
 
-describe("setup plugin credentials", () => {
+describe("onboard plugin credentials", () => {
 	beforeEach(async () => {
 		previousHome = process.env.HOME;
 		previousLinearApiKey = process.env.LINEAR_API_KEY;
-		testHomeDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-home-"));
+		testHomeDir = await mkdtemp(path.join(process.cwd(), ".tmp-onboard-home-"));
 		process.env.HOME = testHomeDir;
 		process.env.LINEAR_API_KEY = "lin_secret";
 	});
@@ -29,7 +29,9 @@ describe("setup plugin credentials", () => {
 	});
 
 	it("prompts for installed plugin credentials and saves raw values", async () => {
-		const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-setup-test-"));
+		const tempDir = await mkdtemp(
+			path.join(process.cwd(), ".tmp-onboard-test-"),
+		);
 		const instanceConfig = createInstanceConfig(
 			tempDir,
 			"2026-05-24T00:00:00.000Z",
@@ -73,10 +75,10 @@ describe("setup plugin credentials", () => {
 				"utf8",
 			);
 
-			await runSetupWizard(tempDir, {
+			await runOnboardWizard(tempDir, {
 				runCommand: async () => ({ code: 0, stdout: "ok", stderr: "" }),
 				prompts: promptAdapter(),
-				collectSetupChecks: async () => [
+				collectOnboardChecks: async () => [
 					{ name: "Instance config", status: "pass", message: "ok" },
 				],
 			});

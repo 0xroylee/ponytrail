@@ -1,13 +1,13 @@
 import path from "node:path";
 import { devosHomeInstanceRoot } from "../config/home-paths";
 import type { OnboardInstanceConfig } from "./types/instance-config.types";
-import type { SetupInstanceDraft } from "./types/setup.types";
+import type { OnboardInstanceDraft } from "./types/onboard.types";
 
 const DEFAULT_INSTANCE_ID = "default";
 const DEFAULT_INSTANCE_PORT = 3100;
 const DEFAULT_EMBEDDED_POSTGRES_PORT = 54329;
 
-export function createDefaultSetupInstanceDraft(): SetupInstanceDraft {
+export function createDefaultOnboardInstanceDraft(): OnboardInstanceDraft {
 	const instanceRoot = devosHomeInstanceRoot(DEFAULT_INSTANCE_ID);
 	return {
 		database: {
@@ -51,7 +51,7 @@ export function createDefaultSetupInstanceDraft(): SetupInstanceDraft {
 }
 
 export function createInstanceConfigSections(
-	draft: SetupInstanceDraft,
+	draft: OnboardInstanceDraft,
 ): Pick<
 	OnboardInstanceConfig,
 	| "auth"

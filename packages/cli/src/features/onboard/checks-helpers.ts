@@ -1,9 +1,9 @@
 import type { CommandResult } from "../../utils/shell";
 import { RTK_INSTALL_URL } from "./constants";
-import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
+import type { OnboardCheck, OnboardCheckDeps } from "./types/onboard.types";
 
 export async function safeRun(
-	commandRunner: NonNullable<SetupCheckDeps["runCommand"]>,
+	commandRunner: NonNullable<OnboardCheckDeps["runCommand"]>,
 	command: string,
 	args: string[],
 	cwd: string,

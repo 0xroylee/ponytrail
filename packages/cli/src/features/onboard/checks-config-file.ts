@@ -1,11 +1,11 @@
 import type { LoadedConfig } from "../config";
 import type { InstanceConfigLoadResult } from "./types/instance-config.types";
-import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
+import type { OnboardCheck, OnboardCheckDeps } from "./types/onboard.types";
 
 interface ConfigFileCheckOptions {
 	cwd: string;
-	configLoader: NonNullable<SetupCheckDeps["loadConfig"]>;
-	instanceLoader: NonNullable<SetupCheckDeps["loadInstanceConfig"]>;
+	configLoader: NonNullable<OnboardCheckDeps["loadConfig"]>;
+	instanceLoader: NonNullable<OnboardCheckDeps["loadInstanceConfig"]>;
 }
 
 export async function collectConfigFileCheck({
@@ -13,7 +13,7 @@ export async function collectConfigFileCheck({
 	configLoader,
 	instanceLoader,
 }: ConfigFileCheckOptions): Promise<{
-	check: SetupCheck;
+	check: OnboardCheck;
 	config?: LoadedConfig;
 	instanceResult: InstanceConfigLoadResult;
 }> {
@@ -34,7 +34,7 @@ function buildConfigFileCheck(
 		| { ok: true; config: LoadedConfig }
 		| { ok: false; message: string },
 	instanceResult: InstanceConfigLoadResult,
-): SetupCheck {
+): OnboardCheck {
 	if (!configResult.ok) return fail(configResult.message);
 	if (!instanceResult.ok) return fail(instanceResult.message);
 	return {
@@ -46,7 +46,7 @@ function buildConfigFileCheck(
 
 async function loadConfigForCheck(
 	cwd: string,
-	configLoader: NonNullable<SetupCheckDeps["loadConfig"]>,
+	configLoader: NonNullable<OnboardCheckDeps["loadConfig"]>,
 ): Promise<
 	{ ok: true; config: LoadedConfig } | { ok: false; message: string }
 > {
@@ -60,6 +60,6 @@ async function loadConfigForCheck(
 	}
 }
 
-function fail(message: string): SetupCheck {
+function fail(message: string): OnboardCheck {
 	return { name: "Instance config", status: "fail", message };
 }

@@ -5,22 +5,22 @@ import type {
 	InstanceConfigLoadResult,
 	OnboardInstanceConfig,
 } from "./types/instance-config.types";
-import type { SetupCheck, SetupCheckDeps } from "./types/setup.types";
+import type { OnboardCheck, OnboardCheckDeps } from "./types/onboard.types";
 
 interface InstanceCheckOptions {
 	env: ResolvedEnv;
 	instanceResult: InstanceConfigLoadResult;
-	mkdir?: SetupCheckDeps["mkdir"];
-	canBindPort?: SetupCheckDeps["canBindPort"];
+	mkdir?: OnboardCheckDeps["mkdir"];
+	canBindPort?: OnboardCheckDeps["canBindPort"];
 }
 
-export async function collectInstanceSetupChecks({
+export async function collectInstanceOnboardChecks({
 	env,
 	instanceResult,
 	mkdir: makeDir = mkdir,
 	canBindPort = canBindTcpPort,
-}: InstanceCheckOptions): Promise<SetupCheck[]> {
-	const checks: SetupCheck[] = [checkJwtSecret(env)];
+}: InstanceCheckOptions): Promise<OnboardCheck[]> {
+	const checks: OnboardCheck[] = [checkJwtSecret(env)];
 	if (!instanceResult.ok) {
 		const message = `instance config unavailable: ${instanceResult.message}`;
 		checks.push(
@@ -63,7 +63,7 @@ export function canBindTcpPort(host: string, port: number): Promise<boolean> {
 	});
 }
 
-function checkJwtSecret(env: ResolvedEnv): SetupCheck {
+function checkJwtSecret(env: ResolvedEnv): OnboardCheck {
 	return env.JWT_SECRET?.trim()
 		? { name: "JWT secret", status: "pass", message: "present" }
 		: { name: "JWT secret", status: "fail", message: "missing" };
@@ -71,8 +71,8 @@ function checkJwtSecret(env: ResolvedEnv): SetupCheck {
 
 async function checkDatabase(
 	config: OnboardInstanceConfig,
-	makeDir: NonNullable<SetupCheckDeps["mkdir"]>,
-): Promise<SetupCheck> {
+	makeDir: NonNullable<OnboardCheckDeps["mkdir"]>,
+): Promise<OnboardCheck> {
 	const dirCheck = await ensureDirectory(
 		config.database.embeddedPostgresDataDir,
 		makeDir,
@@ -98,8 +98,8 @@ async function checkDirectory(
 	name: string,
 	dir: string,
 	label: string,
-	makeDir: NonNullable<SetupCheckDeps["mkdir"]>,
-): Promise<SetupCheck> {
+	makeDir: NonNullable<OnboardCheckDeps["mkdir"]>,
+): Promise<OnboardCheck> {
 	const result = await ensureDirectory(dir, makeDir);
 	return result.ok
 		? { name, status: "pass", message: `${label} accessible` }
@@ -108,8 +108,8 @@ async function checkDirectory(
 
 async function checkServerPort(
 	config: OnboardInstanceConfig,
-	canBindPort: NonNullable<SetupCheckDeps["canBindPort"]>,
-): Promise<SetupCheck> {
+	canBindPort: NonNullable<OnboardCheckDeps["canBindPort"]>,
+): Promise<OnboardCheck> {
 	const port = config.server.port;
 	if (!isValidTcpPort(port)) {
 		return fail("Server port", `server port ${port} is invalid`);
@@ -127,7 +127,7 @@ async function checkServerPort(
 
 async function ensureDirectory(
 	dir: string,
-	makeDir: NonNullable<SetupCheckDeps["mkdir"]>,
+	makeDir: NonNullable<OnboardCheckDeps["mkdir"]>,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
 	try {
 		await makeDir(dir, { recursive: true });
@@ -144,6 +144,6 @@ function isValidTcpPort(port: number): boolean {
 	return Number.isInteger(port) && port > 0 && port <= 65535;
 }
 
-function fail(name: string, message: string): SetupCheck {
+function fail(name: string, message: string): OnboardCheck {
 	return { name, status: "fail", message };
 }

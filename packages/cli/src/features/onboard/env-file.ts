@@ -1,7 +1,7 @@
-import type { SetupDraft } from "./types/setup.types";
+import type { OnboardDraft } from "./types/onboard.types";
 
 export function renderEnvFile(
-	draft: Pick<SetupDraft, "notifications" | "workflow">,
+	draft: Pick<OnboardDraft, "notifications" | "workflow">,
 ): string {
 	return `${renderEnvEntries(buildEnvUpdates(draft))}\n`;
 }
@@ -48,7 +48,7 @@ export function mergeEnvFile(
 }
 
 export function buildEnvUpdates(
-	draft: Pick<SetupDraft, "notifications" | "workflow">,
+	draft: Pick<OnboardDraft, "notifications" | "workflow">,
 ): Record<string, string | undefined> {
 	const updates: Record<string, string | undefined> = {};
 	updates.PIV_ISOLATED_WORKTREES = draft.workflow.isolatedWorktrees ? "1" : "0";
@@ -65,7 +65,7 @@ export function buildEnvUpdates(
 }
 
 export function buildDatabaseEnvUpdates(
-	draft: Pick<SetupDraft, "linearApiKey">,
+	draft: Pick<OnboardDraft, "linearApiKey">,
 ): Record<string, string | undefined> {
 	return {
 		LINEAR_API_KEY: draft.linearApiKey || undefined,
