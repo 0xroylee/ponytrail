@@ -1,11 +1,13 @@
-import type { AgentResult } from "adapters";
+import type { AgentAdapter, AgentResult } from "adapters";
 import type { AgentSkillReference } from "devos-agents";
 import type {
+	ResolvedNotificationConfig,
 	ResolvedProjectConfig,
 	RunState,
 	WorkflowStage,
 } from "../../types";
 import type { WorkflowAgentRole } from "./workflow-agent.types";
+import type { WorkflowLinearClient } from "./workflow.types";
 
 export type BuiltInWorkflowPhaseId = "plan" | "implement" | "testing";
 
@@ -42,6 +44,8 @@ export interface PhaseAgentRunResult {
 	result: AgentResult;
 }
 
+export type PipelineBeforePhaseResult = "continue" | "skip";
+
 export type PhaseRunResult =
 	| {
 			status: "fulfilled";
@@ -52,9 +56,31 @@ export type PhaseRunResult =
 			status: "rejected";
 			phase: WorkflowPhaseDefinition;
 			error: string;
+	  }
+	| {
+			status: "skipped";
+			phase: WorkflowPhaseDefinition;
 	  };
 
 export interface PipelineRunResult {
 	ok: boolean;
 	phaseResults: PhaseRunResult[];
 }
+
+export interface BuiltInWorkflowPhaseRunInput {
+	phaseId: BuiltInWorkflowPhaseId;
+	config: ResolvedProjectConfig;
+	agent: AgentAdapter;
+	notifications: ResolvedNotificationConfig;
+	linear: WorkflowLinearClient;
+	state: RunState;
+}
+
+export type BuiltInWorkflowPhaseHandler = (
+	input: BuiltInWorkflowPhaseRunInput,
+) => Promise<void>;
+
+export type BuiltInWorkflowPhaseHandlers = Record<
+	BuiltInWorkflowPhaseId,
+	BuiltInWorkflowPhaseHandler
+>;

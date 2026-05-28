@@ -1,10 +1,10 @@
 import { logger } from "../../../utils/logger";
 import { type LoadedConfig, getProjectById } from "../../config";
 import type { ResolvedProjectConfig, RunOptions } from "../../types";
+import type { ProjectWorkflowContext } from "../types/workflow-scheduler.types";
 import type { PollingSettings, WorkflowRuntime } from "../types/workflow.types";
 import { resolvePollingSettings, sleep } from "./polling-settings";
 import { routeProjectsForIssueProjectId } from "./project-routing";
-import type { ProjectWorkflowContext } from "./workflow-manager";
 
 export function resolveWorkflowPolling(
 	config: LoadedConfig,

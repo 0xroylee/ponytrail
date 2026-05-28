@@ -1,5 +1,6 @@
 import type { ResolvedProjectConfig, RunState } from "../../types";
 import type {
+	PipelineBeforePhaseResult,
 	PipelineRunResult,
 	WorkflowMetadata,
 	WorkflowPhaseDefinition,
@@ -20,7 +21,9 @@ export class PipelineManager {
 		config: ResolvedProjectConfig;
 		state: RunState;
 		shouldContinue(state: RunState): boolean;
-		beforePhase?(phase: WorkflowPhaseDefinition): Promise<"continue" | "skip">;
+		beforePhase?(
+			phase: WorkflowPhaseDefinition,
+		): Promise<PipelineBeforePhaseResult>;
 		afterPhase?(phase: WorkflowPhaseDefinition): Promise<void>;
 	}): Promise<PipelineRunResult> {
 		const phaseResults: PipelineRunResult["phaseResults"] = [];
@@ -31,6 +34,10 @@ export class PipelineManager {
 			}
 			const beforePhase = await input.beforePhase?.(phase);
 			if (beforePhase === "skip") {
+				phaseResults.push({ status: "skipped", phase });
+				if (input.state.stage === phase.stage) {
+					return { ok: true, phaseResults };
+				}
 				continue;
 			}
 			const result = await this.deps.phaseRunner.run({
