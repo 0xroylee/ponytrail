@@ -18,6 +18,7 @@ export function ChatRoomSessionList({
 	isLoading,
 	pinnedSessions,
 	projectGroups,
+	runningSessionIds,
 	onArchiveSession,
 	onPinSession,
 	onSelectSession,
@@ -60,6 +61,7 @@ export function ChatRoomSessionList({
 									<ChatRoomSessionRow
 										activeSessionId={activeSessionId}
 										isPinned={true}
+										isRunning={runningSessionIds.has(session.id)}
 										key={session.id}
 										onArchiveSession={onArchiveSession}
 										onPinSession={onPinSession}
@@ -124,6 +126,7 @@ export function ChatRoomSessionList({
 												<ChatRoomSessionRow
 													activeSessionId={activeSessionId}
 													isPinned={false}
+													isRunning={runningSessionIds.has(session.id)}
 													key={session.id}
 													onArchiveSession={onArchiveSession}
 													onPinSession={onPinSession}

@@ -19,6 +19,7 @@ export function ChatRoomSidebar({
 	isCreating,
 	isLoading,
 	projects,
+	runningSessionIds,
 	sessions,
 	onNewSession,
 	onArchiveSession,
@@ -140,6 +141,7 @@ export function ChatRoomSidebar({
 						isLoading={isLoading}
 						pinnedSessions={pinnedSessions}
 						projectGroups={projectGroups}
+						runningSessionIds={runningSessionIds}
 						onArchiveSession={onArchiveSession}
 						onPinSession={pinSession}
 						onSelectSession={onSelectSession}

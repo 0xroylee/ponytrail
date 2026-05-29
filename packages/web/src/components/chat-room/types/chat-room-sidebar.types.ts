@@ -6,6 +6,7 @@ export interface ChatRoomSidebarProps {
 	isCreating: boolean;
 	isLoading: boolean;
 	projects: WorkspaceProjectRecord[];
+	runningSessionIds: Set<string>;
 	sidebarControlId: string;
 	sessions: ChatSessionRecord[];
 	onNewSession: () => void;
@@ -22,6 +23,7 @@ export interface ChatRoomSessionListProps {
 	isLoading: boolean;
 	pinnedSessions: ChatSessionRecord[];
 	projectGroups: ChatSessionProjectGroup[];
+	runningSessionIds: Set<string>;
 	onArchiveSession: (sessionId: string) => void;
 	onPinSession: (sessionId: string) => void;
 	onSelectSession: (sessionId: string) => void;
@@ -70,6 +72,7 @@ export interface VisibleProjectSessions {
 export interface ChatRoomSessionRowProps {
 	activeSessionId: string;
 	isPinned: boolean;
+	isRunning: boolean;
 	session: ChatSessionRecord;
 	onArchiveSession: (sessionId: string) => void;
 	onPinSession: (sessionId: string) => void;

@@ -30,6 +30,18 @@ export function hasLoadingChatStreamForSession(
 	);
 }
 
+export function activeChatStreamSessionIds(
+	streamsByRunId: Record<string, RealtimeChatStreamBuffer>,
+): Set<string> {
+	const sessionIds = new Set<string>();
+	for (const stream of Object.values(streamsByRunId)) {
+		if (stream.status === "loading" || stream.status === "streaming") {
+			sessionIds.add(stream.sessionId);
+		}
+	}
+	return sessionIds;
+}
+
 export function chatStreamActivityStartedAtForSession(
 	streamsByRunId: Record<string, RealtimeChatStreamBuffer>,
 	sessionId: string,

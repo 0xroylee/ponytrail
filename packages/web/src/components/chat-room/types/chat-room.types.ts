@@ -86,6 +86,7 @@ export interface ChatRoomPanelViewProps {
 	pendingAnswers: string[];
 	pendingQuestionIndex: number;
 	projects: WorkspaceProjectRecord[];
+	runningSessionIds: Set<string>;
 	selectedSession: ChatSessionRecord | null;
 	sidebarControlId: string;
 	sidebarToggleRef: RefObject<HTMLInputElement | null>;
