@@ -30,7 +30,7 @@ export const DEFAULT_LABEL_MAP: OnboardDraft["labelMap"] = {
 };
 
 export const DEFAULT_REASONING_EFFORTS = {
-	plan: "low",
-	implement: "low",
+	plan: "high",
+	implement: "medium",
 	reviewTest: "medium",
 } as const satisfies Record<string, CodexReasoningEffort>;

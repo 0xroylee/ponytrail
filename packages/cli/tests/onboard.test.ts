@@ -86,8 +86,8 @@ describe("onboard helpers", () => {
 		expect(env).not.toContain("/tmp/demo");
 	});
 
-	it("uses low as default implementation reasoning effort", () => {
-		expect(DEFAULT_REASONING_EFFORTS.implement).toBe("low");
+	it("uses medium as default implementation reasoning effort", () => {
+		expect(DEFAULT_REASONING_EFFORTS.implement).toBe("medium");
 	});
 
 	it("renders onboarding instance config from the devos home directory", () => {
@@ -181,8 +181,8 @@ describe("onboard helpers", () => {
 		}
 	});
 
-	it("uses low as default planning reasoning effort", () => {
-		expect(DEFAULT_REASONING_EFFORTS.plan).toBe("low");
+	it("uses high as default planning reasoning effort", () => {
+		expect(DEFAULT_REASONING_EFFORTS.plan).toBe("high");
 	});
 
 	it("maps typed onboarding prompts into the onboard draft", async () => {
@@ -220,8 +220,8 @@ describe("onboard helpers", () => {
 		expect(draft.statusMap).toEqual(DEFAULT_STATUS_MAP);
 		expect(draft.codex.sandbox).toBe("workspace-write");
 		expect(draft.codex.reasoningEfforts).toMatchObject({
-			plan: "low",
-			implement: "low",
+			plan: "high",
+			implement: "medium",
 			reviewTest: "medium",
 			githubComment: "medium",
 		});
