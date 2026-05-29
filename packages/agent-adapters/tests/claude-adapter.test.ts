@@ -7,6 +7,11 @@ import {
 import { config } from "./fixtures";
 
 describe("claude code adapter", () => {
+	it("owns Claude binary resolution on the adapter class", () => {
+		expect(typeof ClaudeCodeAdapter.findBinary).toBe("function");
+		expect(typeof ClaudeCodeAdapter.getBinaryPath).toBe("function");
+	});
+
 	it("builds common args from primary claude config", () => {
 		const adapter = new ClaudeCodeAdapter({
 			...config,

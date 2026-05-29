@@ -1,4 +1,4 @@
-import { findClaudeBinary } from "../../utils/claude-path";
+import { ClaudeCodeAdapter } from "adapters/claude";
 import type { LoadedConfig } from "../config";
 import {
 	commandFailureMessage,
@@ -104,7 +104,7 @@ export async function addBinaryChecks(
 		(project) => project.agent?.backend === "claude-code",
 	);
 	if (claudeCodeBackends.length > 0) {
-		const claudePath = findClaudeBinary();
+		const claudePath = ClaudeCodeAdapter.findBinary();
 		if (claudePath) {
 			const claude = await safeRun(
 				commandRunner,

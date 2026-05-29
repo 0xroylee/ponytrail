@@ -23,15 +23,23 @@ import {
 	extractSessionId,
 	extractUsage,
 } from "./cli/parse/output";
-import { getClaudeBinaryPath } from "./cli/utils/path";
+import { findClaudeBinary, getClaudeBinaryPath } from "./cli/utils/path";
 
 export class ClaudeCodeAdapter implements AgentAdapter {
 	private claudePath: string;
 	private config: AgentAdapterRuntimeConfig;
 
+	static findBinary(): string | undefined {
+		return findClaudeBinary();
+	}
+
+	static getBinaryPath(configPath?: string): string {
+		return getClaudeBinaryPath(configPath);
+	}
+
 	constructor(config: AgentAdapterRuntimeConfig) {
 		this.config = validateAgentAdapterRuntimeConfig(config);
-		this.claudePath = getClaudeBinaryPath(this.config.codex.binary);
+		this.claudePath = ClaudeCodeAdapter.getBinaryPath(this.config.codex.binary);
 	}
 
 	async runPlan(prompt: string): Promise<AgentResult> {

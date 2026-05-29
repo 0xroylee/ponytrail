@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import * as configExports from "../src/features/config";
 import {
 	instanceConfigPath,
+	loadInstanceServerDatabaseConfig,
 	loadServerStartupConfig,
 } from "../src/features/config";
 
@@ -40,6 +42,11 @@ afterEach(async () => {
 });
 
 describe("loadServerStartupConfig", () => {
+	it("keeps database config available without exporting path-only database helpers", () => {
+		expect(loadInstanceServerDatabaseConfig).toBeFunction();
+		expect("loadInstanceServerDatabasePath" in configExports).toBe(false);
+	});
+
 	it("resolves startup config without opening server DB metadata", async () => {
 		tempDir = await mkdtemp(
 			path.join(process.cwd(), ".tmp-server-startup-config-"),

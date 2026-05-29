@@ -9,15 +9,6 @@ export interface InstanceServerDatabaseConfig {
 	port: number;
 }
 
-export async function loadInstanceServerDatabasePath(
-	readText: (
-		targetPath: string,
-		encoding: BufferEncoding,
-	) => Promise<string> = readFile,
-): Promise<string | undefined> {
-	return (await loadInstanceServerDatabaseConfig(readText)).databasePath;
-}
-
 export async function loadInstanceServerDatabaseConfig(
 	readText: (
 		targetPath: string,

@@ -10,10 +10,7 @@ import {
 	loadResolvedEnv,
 } from "./env";
 import { normalizeOptionalValue } from "./env-normalizers";
-import {
-	loadInstanceServerDatabaseConfig,
-	loadInstanceServerDatabasePath,
-} from "./instance-database-path";
+import { loadInstanceServerDatabaseConfig } from "./instance-database-path";
 import { loadInstanceWorkspaceConfig } from "./instance-workspace";
 import { resolveNotifications } from "./notification-resolution";
 import { applyInstancePlugins } from "./plugin-resolution";
@@ -117,7 +114,7 @@ export {
 	devosHomeInstanceRoot,
 	instanceConfigPath,
 } from "./home-paths";
-export { loadInstanceServerDatabaseConfig, loadInstanceServerDatabasePath };
+export { loadInstanceServerDatabaseConfig };
 export { loadInstanceWorkspaceConfig };
 export { loadResolvedEnv };
 export type { LoadedConfig } from "./types/config.types";
