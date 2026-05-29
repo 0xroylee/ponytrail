@@ -40,6 +40,7 @@ export async function createDatabasePort(): Promise<number> {
 
 export async function readMigrationCount(dbPath: string): Promise<number> {
 	const database = await initializeServerDatabase(dbPath, {
+		port: await createDatabasePort(),
 		runMigrations: false,
 	});
 	try {
