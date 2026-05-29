@@ -9,6 +9,7 @@ import { useUiStore } from "@/lib/ui-store";
 import { cn } from "@/lib/utils";
 import { ChatRoomSessionList } from "./chat-room-session-list";
 import { ChatRoomSettingsSidebar } from "./chat-room-settings-sidebar";
+import { ChatRoomSidebarHeader } from "./chat-room-sidebar-header";
 import { buildChatSessionSidebarContent } from "./chat-room-sidebar-utils";
 import type { ChatRoomSidebarProps } from "./types/chat-room-sidebar.types";
 import type { ChatRoomSidebarView } from "./types/chat-room.types";
@@ -16,6 +17,7 @@ import type { ChatRoomSidebarView } from "./types/chat-room.types";
 export function ChatRoomSidebar({
 	activeSessionId,
 	error,
+	isCollapsed,
 	isCreating,
 	isLoading,
 	projects,
@@ -26,6 +28,7 @@ export function ChatRoomSidebar({
 	onCloseSidebar,
 	onSearch,
 	onSelectSession,
+	onToggleCollapsed,
 }: ChatRoomSidebarProps): ReactElement {
 	const [sidebarView, setSidebarView] = useState<ChatRoomSidebarView>("main");
 	const [collapsedProjectIds, setCollapsedProjectIds] = useState<Set<string>>(
@@ -48,6 +51,13 @@ export function ChatRoomSidebar({
 
 	function showSettingsSidebar(): void {
 		setSidebarView("settings");
+	}
+
+	function handleSettingsClick(): void {
+		if (isCollapsed) {
+			onToggleCollapsed();
+		}
+		showSettingsSidebar();
 	}
 
 	function handleCloseSidebar(): void {
@@ -86,23 +96,40 @@ export function ChatRoomSidebar({
 	return (
 		<aside
 			aria-label="Projects and sessions"
-			className="fixed inset-y-0 left-0 z-40 grid min-h-0 w-[18rem] max-w-[calc(100vw-2rem)] -translate-x-full border-r border-border bg-surface-panel transition-transform peer-checked:translate-x-0 md:static md:z-auto md:max-w-none md:translate-x-0"
+			className={cn(
+				"fixed inset-y-0 left-0 z-40 grid min-h-0 w-[18rem] max-w-[calc(100vw-2rem)] -translate-x-full border-r border-border bg-surface-panel transition-[transform,width] peer-checked:translate-x-0 md:static md:z-auto md:max-w-none md:translate-x-0",
+				isCollapsed ? "md:w-[5.5rem]" : "md:w-[18rem]",
+			)}
 		>
 			<div className="relative h-full min-h-0 overflow-hidden">
 				<div
 					aria-hidden={isSettingsView}
 					className={cn(
-						"absolute inset-0 grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] transition-transform duration-200 ease-out",
+						"absolute inset-0 grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] transition-transform duration-200 ease-out",
 						isSettingsView
 							? "pointer-events-none translate-x-full"
 							: "translate-x-0",
 					)}
 					inert={isSettingsView ? true : undefined}
 				>
+					<ChatRoomSidebarHeader
+						isCollapsed={isCollapsed}
+						onToggleCollapsed={onToggleCollapsed}
+					/>
 					<div className="grid gap-2 p-3">
-						<div className="flex min-w-0 gap-2">
+						<div
+							className={cn(
+								"flex min-w-0 gap-2",
+								isCollapsed && "md:justify-center",
+							)}
+						>
 							<Button
-								className="min-w-0 flex-1 justify-start border-transparent bg-transparent text-zinc-300 hover:bg-surface-active"
+								aria-label="New Session"
+								className={cn(
+									"min-w-0 flex-1 justify-start border-transparent bg-transparent text-zinc-300 hover:bg-surface-active",
+									isCollapsed &&
+										"md:h-9 md:w-9 md:flex-none md:justify-center md:px-0",
+								)}
 								disabled={isCreating}
 								onClick={onNewSession}
 								size="sm"
@@ -110,7 +137,12 @@ export function ChatRoomSidebar({
 								variant="outline"
 							>
 								<MessageSquarePlus size={16} />
-								New Session
+								<Typography
+									as="span"
+									className={cn(isCollapsed && "md:sr-only")}
+								>
+									New Session
+								</Typography>
 							</Button>
 							<Button
 								aria-label="Close chat sidebar"
@@ -124,34 +156,46 @@ export function ChatRoomSidebar({
 							</Button>
 						</div>
 						<Button
-							className="w-full justify-start border-transparent bg-transparent text-zinc-300 hover:bg-surface-active"
+							aria-label="Search sessions"
+							className={cn(
+								"w-full justify-start border-transparent bg-transparent text-zinc-300 hover:bg-surface-active",
+								isCollapsed && "md:justify-center md:px-0",
+							)}
 							onClick={onSearch}
 							size="sm"
 							type="button"
 							variant="outline"
 						>
 							<Search size={16} />
-							Search
+							<Typography as="span" className={cn(isCollapsed && "md:sr-only")}>
+								Search
+							</Typography>
 						</Button>
 					</div>
-					<ChatRoomSessionList
-						activeSessionId={activeSessionId}
-						collapsedProjectIds={collapsedProjectIds}
-						error={error}
-						isLoading={isLoading}
-						pinnedSessions={pinnedSessions}
-						projectGroups={projectGroups}
-						runningSessionIds={runningSessionIds}
-						onArchiveSession={onArchiveSession}
-						onPinSession={pinSession}
-						onSelectSession={onSelectSession}
-						onToggleProjectGroup={toggleProjectGroup}
-						onUnpinSession={unpinSession}
-					/>
+					<div className={cn("min-h-0", isCollapsed && "md:hidden")}>
+						<ChatRoomSessionList
+							activeSessionId={activeSessionId}
+							collapsedProjectIds={collapsedProjectIds}
+							error={error}
+							isLoading={isLoading}
+							pinnedSessions={pinnedSessions}
+							projectGroups={projectGroups}
+							runningSessionIds={runningSessionIds}
+							onArchiveSession={onArchiveSession}
+							onPinSession={pinSession}
+							onSelectSession={onSelectSession}
+							onToggleProjectGroup={toggleProjectGroup}
+							onUnpinSession={unpinSession}
+						/>
+					</div>
 					<nav className="border-t border-border p-3">
 						<Button
-							className="h-9 w-full justify-start gap-2 px-2 text-xs text-zinc-400 hover:bg-surface-hover hover:text-zinc-200"
-							onClick={showSettingsSidebar}
+							aria-label="Settings"
+							className={cn(
+								"h-9 w-full justify-start gap-2 px-2 text-xs text-zinc-400 hover:bg-surface-hover hover:text-zinc-200",
+								isCollapsed && "md:justify-center md:px-0",
+							)}
+							onClick={handleSettingsClick}
 							size="sm"
 							type="button"
 							variant="ghost"
@@ -159,7 +203,10 @@ export function ChatRoomSidebar({
 							<Settings size={15} />
 							<Typography
 								as="span"
-								className="min-w-0 flex-1 truncate text-left"
+								className={cn(
+									"min-w-0 flex-1 truncate text-left",
+									isCollapsed && "md:sr-only",
+								)}
 							>
 								Settings
 							</Typography>

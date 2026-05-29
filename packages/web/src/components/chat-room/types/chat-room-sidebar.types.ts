@@ -3,6 +3,7 @@ import type { ChatSessionRecord, WorkspaceProjectRecord } from "@/lib/api";
 export interface ChatRoomSidebarProps {
 	activeSessionId: string;
 	error: Error | null;
+	isCollapsed: boolean;
 	isCreating: boolean;
 	isLoading: boolean;
 	projects: WorkspaceProjectRecord[];
@@ -14,6 +15,12 @@ export interface ChatRoomSidebarProps {
 	onArchiveSession: (sessionId: string) => void;
 	onSearch: () => void;
 	onSelectSession: (sessionId: string) => void;
+	onToggleCollapsed: () => void;
+}
+
+export interface ChatRoomSidebarHeaderProps {
+	isCollapsed: boolean;
+	onToggleCollapsed: () => void;
 }
 
 export interface ChatRoomSessionListProps {

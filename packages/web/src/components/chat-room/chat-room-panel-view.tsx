@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { cn } from "@/lib/utils";
+import { type ReactElement, useState } from "react";
 import { ChatClarificationComposer } from "./chat-clarification-composer";
 import { ChatComposer } from "./chat-composer";
 import { ChatRoomHeader } from "./chat-room-header";
@@ -50,12 +51,25 @@ export function ChatRoomPanelView({
 	onSubmit,
 	onSubmitAnswers,
 }: ChatRoomPanelViewProps): ReactElement {
+	const [isSessionSidebarCollapsed, setIsSessionSidebarCollapsed] =
+		useState(false);
 	const pendingQuestions = selectedSession?.pendingQuestions ?? [];
 	const hasPendingQuestions = pendingQuestions.length > 0;
 	const hasOpenTaskDetails = isTaskDetailPanelOpen && Boolean(activeTaskId);
-	const layoutClassName = hasOpenTaskDetails
-		? "relative grid h-[100dvh] min-w-0 grid-rows-[minmax(0,1fr)] overflow-hidden bg-background text-zinc-100 md:grid-cols-[18rem_minmax(0,1fr)_26rem]"
-		: "relative grid h-[100dvh] min-w-0 grid-rows-[minmax(0,1fr)] overflow-hidden bg-background text-zinc-100 md:grid-cols-[18rem_minmax(0,1fr)]";
+	const layoutClassName = cn(
+		"relative grid h-[100dvh] min-w-0 grid-rows-[minmax(0,1fr)] overflow-hidden bg-background text-zinc-100",
+		hasOpenTaskDetails
+			? isSessionSidebarCollapsed
+				? "md:grid-cols-[5.5rem_minmax(0,1fr)_26rem]"
+				: "md:grid-cols-[18rem_minmax(0,1fr)_26rem]"
+			: isSessionSidebarCollapsed
+				? "md:grid-cols-[5.5rem_minmax(0,1fr)]"
+				: "md:grid-cols-[18rem_minmax(0,1fr)]",
+	);
+
+	function toggleSessionSidebar(): void {
+		setIsSessionSidebarCollapsed((current) => !current);
+	}
 
 	return (
 		<section className={layoutClassName}>
@@ -75,6 +89,7 @@ export function ChatRoomPanelView({
 			<ChatRoomSidebar
 				activeSessionId={activeSessionId}
 				error={sessionsError}
+				isCollapsed={isSessionSidebarCollapsed}
 				isCreating={isCreatingSession}
 				isLoading={isSessionListLoading}
 				projects={projects}
@@ -86,6 +101,7 @@ export function ChatRoomPanelView({
 				onNewSession={onNewSession}
 				onSearch={onSearch}
 				onSelectSession={onSelectSession}
+				onToggleCollapsed={toggleSessionSidebar}
 			/>
 			{selectedSession ? (
 				<div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto]">
