@@ -1,4 +1,3 @@
-import { sortIssuesByPriority } from "../../../integrations/linear";
 import { logger, normalizeError } from "../../../utils/logger";
 import type {
 	PullRequestRef,
@@ -10,9 +9,10 @@ import { listRunStates, normalizeIssueKey } from "../state";
 import type {
 	PollingSettings,
 	WorkflowIssue,
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "../types/workflow.types";
+import { sortIssuesByPriority } from "../workflow-issue-sort";
 import {
 	buildPrioritizedIssueQueue as buildPrioritizedIssueQueueHelper,
 	buildReviewOnlyIssueQueue,
@@ -27,7 +27,7 @@ export class IssueQueueBuilder {
 	constructor(
 		private readonly config: ResolvedProjectConfig,
 		private readonly options: RunOptions,
-		private readonly linear: WorkflowLinearClient,
+		private readonly taskClient: WorkflowTaskClient,
 		private readonly polling: PollingSettings,
 		private readonly runtime: WorkflowRuntime,
 	) {}
@@ -48,11 +48,14 @@ export class IssueQueueBuilder {
 			};
 		}
 
-		const assignedIssues = await this.linear.fetchWork(this.options.issueArg, {
-			includeUnprojected:
-				usesAllProjectScope(this.options, this.polling) &&
-				!this.options.issueArg,
-		});
+		const assignedIssues = await this.taskClient.fetchWork(
+			this.options.issueArg,
+			{
+				includeUnprojected:
+					usesAllProjectScope(this.options, this.polling) &&
+					!this.options.issueArg,
+			},
+		);
 		if (this.options.issueArg !== undefined) {
 			return {
 				issueQueue: selectIssueQueueForCycle(
@@ -96,7 +99,7 @@ export class IssueQueueBuilder {
 		for (const key of staleRunKeys.filter(
 			(key) => !assignedIssueKeys.has(key),
 		)) {
-			const issue = await this.linear.fetchIssueByIdentifier(key);
+			const issue = await this.taskClient.fetchIssueByIdentifier(key);
 			if (issue) {
 				staleIssues.push(toWorkflowIssue(issue));
 			}
@@ -109,12 +112,12 @@ export class IssueQueueBuilder {
 	): Promise<WorkflowIssue[]> {
 		const issueKeys = selectReviewOnlyIssueKeys(runStates);
 		const localIssues = await this.fetchIssuesByKey(issueKeys);
-		const linearIssues = await this.linear.fetchReviewOnlyWork();
+		const taskIssues = await this.taskClient.fetchReviewOnlyWork();
 		const discoveredPullRequestsByIssueKey = new Map<
 			string,
 			PullRequestRef | undefined
 		>();
-		for (const issue of dedupeIssuesByKey([...localIssues, ...linearIssues])) {
+		for (const issue of dedupeIssuesByKey([...localIssues, ...taskIssues])) {
 			const key = normalizeIssueKey(issue.identifier);
 			if (hasRunStatePullRequest(runStates, key)) {
 				continue;
@@ -127,7 +130,7 @@ export class IssueQueueBuilder {
 				);
 				discoveredPullRequestsByIssueKey.set(key, discovered);
 				if (discovered) {
-					await this.linear.linkPullRequest?.(issue.id, discovered);
+					await this.taskClient.linkPullRequest?.(issue.id, discovered);
 				}
 			} catch (error) {
 				discoveredPullRequestsByIssueKey.set(key, undefined);
@@ -144,13 +147,13 @@ export class IssueQueueBuilder {
 		const built = buildReviewOnlyIssueQueue({
 			runStates,
 			localIssues,
-			linearIssues,
+			taskIssues,
 			discoveredPullRequestsByIssueKey,
 		});
 		logReviewOnlyQueue(
 			this.config.id,
 			localIssues.length,
-			linearIssues.length,
+			taskIssues.length,
 			built,
 		);
 		return built.issueQueue;
@@ -159,7 +162,7 @@ export class IssueQueueBuilder {
 	private async fetchIssuesByKey(keys: string[]): Promise<WorkflowIssue[]> {
 		const issues: WorkflowIssue[] = [];
 		for (const key of keys) {
-			const issue = await this.linear.fetchIssueByIdentifier(key);
+			const issue = await this.taskClient.fetchIssueByIdentifier(key);
 			if (issue) {
 				issues.push(toWorkflowIssue(issue));
 			}

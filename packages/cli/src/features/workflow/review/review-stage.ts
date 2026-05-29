@@ -11,7 +11,7 @@ import type { ResolvedProjectConfig, RunState } from "../../types";
 import { emitActionProgress, emitStageProgress } from "../progress";
 import type {
 	HandleReviewTestingStageDeps,
-	ReviewLinearClient,
+	ReviewTaskClient,
 } from "../types/review-stage.types";
 import { parseReviewOutcome } from "./review";
 import {
@@ -25,7 +25,7 @@ import {
 export async function handleReviewTestingStage(
 	config: ResolvedProjectConfig,
 	agent: AgentAdapter,
-	linear: ReviewLinearClient,
+	taskClient: ReviewTaskClient,
 	state: RunState,
 	deps: HandleReviewTestingStageDeps,
 ): Promise<void> {
@@ -35,8 +35,8 @@ export async function handleReviewTestingStage(
 	);
 	emitStageProgress(state, "in_review", "started", "Testing issue");
 	emitActionProgress(state, "in_review", "review-testing", "started");
-	await linear.markStage(state.issue.id, "in_review");
-	await linear.applyStageLabel(state.issue.id, "in_review");
+	await taskClient.markStage(state.issue.id, "in_review");
+	await taskClient.applyStageLabel(state.issue.id, "in_review");
 	Object.assign(state, deps.transitionStage(state, "in_review"));
 	await deps.saveRunState(config.workspacePath, state);
 
@@ -149,7 +149,7 @@ export async function handleReviewTestingStage(
 	if (!config.dryRun && state.pullRequest) {
 		await deps.safePrComment(config, state, githubComment);
 	}
-	await linear.comment(state.issue.id, reviewComment);
+	await taskClient.comment(state.issue.id, reviewComment);
 
 	if (!outcome.passed) {
 		const implementationFeedbackComment = buildImplementationFeedbackComment({
@@ -160,7 +160,7 @@ export async function handleReviewTestingStage(
 		if (!config.dryRun && state.pullRequest) {
 			await deps.safePrComment(config, state, implementationFeedbackComment);
 		}
-		await linear.comment(state.issue.id, implementationFeedbackComment);
+		await taskClient.comment(state.issue.id, implementationFeedbackComment);
 
 		const nextStage = resolveReviewFailureStage(state);
 		const humanReason = reviewFailureHumanReason(state);
@@ -170,8 +170,8 @@ export async function handleReviewTestingStage(
 		}
 		await deps.saveRunState(config.workspacePath, state);
 		if (nextStage === "in_progress") {
-			await linear.markStage(state.issue.id, nextStage);
-			await linear.comment(
+			await taskClient.markStage(state.issue.id, nextStage);
+			await taskClient.comment(
 				state.issue.id,
 				`Review/testing failed. Feedback was sent back to implementation for automated fix pass ${state.automatedReviewFixPasses}/${MAX_AUTOMATED_REVIEW_FIX_PASSES}.`,
 			);
@@ -180,9 +180,9 @@ export async function handleReviewTestingStage(
 				state.codexSessionId && state.automatedReviewFixPasses
 					? `${humanReason} Parked for human review and PR updates.`
 					: "Review/testing failed, but no resumable implementation session is available. Parked for manual review and PR updates.";
-			await linear.markStage(state.issue.id, "in_review");
-			await linear.applyStageLabel(state.issue.id, "in_review");
-			await linear.comment(state.issue.id, humanComment);
+			await taskClient.markStage(state.issue.id, "in_review");
+			await taskClient.applyStageLabel(state.issue.id, "in_review");
+			await taskClient.comment(state.issue.id, humanComment);
 			if (!config.dryRun && state.pullRequest && state.codexSessionId) {
 				await deps.safePrComment(config, state, humanComment);
 			}
@@ -202,9 +202,9 @@ export async function handleReviewTestingStage(
 	)(config, state.pullRequest, true);
 	Object.assign(state, deps.transitionStage(state, "done"));
 	await deps.saveRunState(config.workspacePath, state);
-	await linear.markStage(state.issue.id, "in_review");
-	await linear.applyStageLabel(state.issue.id, "in_review");
-	await linear.comment(
+	await taskClient.markStage(state.issue.id, "in_review");
+	await taskClient.applyStageLabel(state.issue.id, "in_review");
+	await taskClient.comment(
 		state.issue.id,
 		"Review/testing passed. PR is ready and issue remains in review until merge.",
 	);

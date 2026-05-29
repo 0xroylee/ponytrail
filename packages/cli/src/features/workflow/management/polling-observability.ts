@@ -27,11 +27,11 @@ export async function recordCliPollingEvent(
 	if (!polling.enabled) {
 		return;
 	}
-	const pollerId = `linear:${config.id}`;
+	const pollerId = `tasks:${config.id}`;
 	try {
 		const payload: WorkflowPollingRecordInput = {
 			pollerId,
-			sourceType: "linear",
+			sourceType: "tasks",
 			sourceId: config.id,
 			projectId: config.id,
 			state: input.state,

@@ -12,8 +12,8 @@ import { runAgentWithChatLog } from "../agents/agent-chat-log";
 import { buildIssueJobLogFields } from "../mission/issue-job-log-fields";
 import { saveRunState, transitionStage } from "../state";
 import type {
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "../types/workflow.types";
 import { appendCodexUsage } from "../usage/usage-state";
 
@@ -34,7 +34,7 @@ export function fixedBugsForImplementationComment(
 export async function handleImplementingStage(
 	config: ResolvedProjectConfig,
 	agent: AgentAdapter,
-	linear: WorkflowLinearClient,
+	taskClient: WorkflowTaskClient,
 	state: RunState,
 	runtime: WorkflowRuntime,
 ): Promise<void> {
@@ -122,16 +122,16 @@ export async function handleImplementingStage(
 		}
 	}
 	if (state.pullRequest) {
-		await linear.linkPullRequest?.(state.issue.id, state.pullRequest);
+		await taskClient.linkPullRequest?.(state.issue.id, state.pullRequest);
 	}
 
 	state.bugs = [];
 	const nextStage: WorkflowStage = "in_review";
 	Object.assign(state, transitionStage(state, nextStage));
 	await saveRunState(config.workspacePath, state);
-	await linear.markStage(state.issue.id, nextStage);
-	await linear.applyStageLabel(state.issue.id, nextStage);
-	await linear.comment(
+	await taskClient.markStage(state.issue.id, nextStage);
+	await taskClient.applyStageLabel(state.issue.id, nextStage);
+	await taskClient.comment(
 		state.issue.id,
 		buildImplementationComment(state.pullRequest?.url, result.usage, {
 			updated: hasExistingPr,

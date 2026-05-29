@@ -43,7 +43,7 @@ describe("buildFixPrompt", () => {
 		expect(prompt).toContain(
 			"This is a fix pass after review/testing found bugs.",
 		);
-		expect(prompt).toContain("Linear issue: ENG-1");
+		expect(prompt).toContain("Workflow task: ENG-1");
 		expect(prompt).toContain("do not run git fetch or git pull");
 		expect(prompt).toContain("PR: https://github.com/acme/repo/pull/10");
 		expect(prompt).toContain("Regression found in verify stage.");

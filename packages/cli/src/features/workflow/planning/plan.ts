@@ -20,7 +20,7 @@ import { loadRunState } from "../state";
 import type {
 	HandlePlanningStageDeps,
 	PlannerDecision,
-	PlanningLinearClient,
+	PlanningTaskClient,
 } from "../types/plan.types";
 import { parsePlannerDecision } from "./plan-parsing";
 import { buildPlannerRepairPrompt } from "./plan-repair-prompt";
@@ -34,7 +34,7 @@ export async function handlePlanningStage(
 	config: ResolvedProjectConfig,
 	agent: AgentAdapter,
 	notifications: ResolvedNotificationConfig,
-	linear: PlanningLinearClient,
+	taskClient: PlanningTaskClient,
 	state: RunState,
 	deps: HandlePlanningStageDeps,
 ): Promise<void> {
@@ -127,9 +127,9 @@ export async function handlePlanningStage(
 		state.lastError = "Planning needs clarification before implementation.";
 		Object.assign(state, deps.transitionStage(state, "canceled"));
 		await deps.saveRunState(config.workspacePath, state);
-		await linear.markStage(state.issue.id, "canceled");
-		await linear.clearWorkflowStageLabels(state.issue.id);
-		await linear.comment(
+		await taskClient.markStage(state.issue.id, "canceled");
+		await taskClient.clearWorkflowStageLabels(state.issue.id);
+		await taskClient.comment(
 			state.issue.id,
 			buildPlanNeedsInfoComment({
 				issueKey: state.issue.key,
@@ -162,8 +162,8 @@ export async function handlePlanningStage(
 	if (parsedPlan.complexity === "SIMPLE") {
 		Object.assign(state, deps.transitionStage(state, "in_progress"));
 		await deps.saveRunState(config.workspacePath, state);
-		await linear.markStage(state.issue.id, "in_progress");
-		await linear.comment(
+		await taskClient.markStage(state.issue.id, "in_progress");
+		await taskClient.comment(
 			state.issue.id,
 			buildPlanComment(state.issue.key, state.planSummary, result.usage),
 		);
@@ -179,7 +179,7 @@ export async function handlePlanningStage(
 
 	const createdTasks = [];
 	for (const task of parsedPlan.splitTasks) {
-		const created = await linear.createTodoIssueFromPlan(state.issue, task);
+		const created = await taskClient.createTodoIssueFromPlan(state.issue, task);
 		createdTasks.push({
 			title: created.title,
 			issueKey: created.identifier,
@@ -189,9 +189,9 @@ export async function handlePlanningStage(
 	state.splitTasks = createdTasks;
 	Object.assign(state, deps.transitionStage(state, "done"));
 	await deps.saveRunState(config.workspacePath, state);
-	await linear.markStage(state.issue.id, "done");
-	await linear.clearWorkflowStageLabels(state.issue.id);
-	await linear.comment(
+	await taskClient.markStage(state.issue.id, "done");
+	await taskClient.clearWorkflowStageLabels(state.issue.id);
+	await taskClient.comment(
 		state.issue.id,
 		buildPlanSplitComment(state.issue.key, state.planSummary, createdTasks, {
 			usage: result.usage,

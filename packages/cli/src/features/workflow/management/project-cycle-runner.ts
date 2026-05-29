@@ -7,8 +7,8 @@ import type {
 import { IssueProcessor } from "../mission/issue-processor";
 import type {
 	PollingSettings,
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "../types/workflow.types";
 import { buildRunLeaseOwnerId } from "../workflow-lease";
 import { processIssueQueueBounded } from "../workflow-queue";
@@ -21,7 +21,7 @@ export class ProjectCycleRunner {
 		private readonly config: ResolvedProjectConfig,
 		private readonly notifications: ResolvedNotificationConfig,
 		private readonly options: RunOptions,
-		private readonly linear: WorkflowLinearClient,
+		private readonly taskClient: WorkflowTaskClient,
 		private readonly polling: PollingSettings,
 		private readonly runtime: WorkflowRuntime,
 	) {}
@@ -43,7 +43,7 @@ export class ProjectCycleRunner {
 		const { issueQueue, staleRetryCount } = await new IssueQueueBuilder(
 			this.config,
 			this.options,
-			this.linear,
+			this.taskClient,
 			this.polling,
 			this.runtime,
 		).build();
@@ -83,7 +83,7 @@ export class ProjectCycleRunner {
 		return new IssueProcessor({
 			config: this.config,
 			notifications: this.notifications,
-			linear: this.linear,
+			taskClient: this.taskClient,
 			options: this.options,
 			effectiveConcurrency,
 			leaseTimeoutMs: this.polling.staleRunTimeoutMs,

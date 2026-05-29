@@ -16,12 +16,12 @@ import type {
 } from "../types/issue-processing.types";
 import type {
 	WorkflowIssue,
-	WorkflowLinearClient,
+	WorkflowTaskClient,
 } from "../types/workflow.types";
 import {
-	isCanceledLinearIssueState,
-	matchesIssueStateConfigValue,
-} from "../workflow-linear-state";
+	isCanceledWorkflowIssueState,
+	matchesIssueStateValue,
+} from "../workflow-issue-state";
 import {
 	isReviewOnlyExecutableStage,
 	shouldSkipReviewOnlyRunState,
@@ -30,9 +30,8 @@ import { refreshRunStateIssueIdentity } from "../workflow-run-state-refresh";
 
 export function resolveReviewOnlyBootstrapStage(
 	state: WorkflowIssue["state"],
-	statusMap: ResolvedProjectConfig["linear"]["statusMap"],
 ): WorkflowStage {
-	if (matchesIssueStateConfigValue(state, statusMap.done)) {
+	if (matchesIssueStateValue(state, "done")) {
 		return "done";
 	}
 	return "in_review";
@@ -41,7 +40,7 @@ export function resolveReviewOnlyBootstrapStage(
 export class IssueRunStateResolver {
 	constructor(
 		private readonly config: ResolvedProjectConfig,
-		private readonly linear: WorkflowLinearClient,
+		private readonly taskClient: WorkflowTaskClient,
 		private readonly options: RunOptions,
 		private readonly issueLogger: IssueLogger,
 	) {}
@@ -79,11 +78,10 @@ export class IssueRunStateResolver {
 			return null;
 		}
 
-		const isAssignedState = await this.linear.isAssignedState(issue.state.id);
-		const isCanceledState = isCanceledLinearIssueState(
-			issue.state,
-			this.config.linear.statusMap,
+		const isAssignedState = await this.taskClient.isAssignedState(
+			issue.state.id,
 		);
+		const isCanceledState = isCanceledWorkflowIssueState(issue.state);
 		if (
 			!existing &&
 			!isAssignedState &&
@@ -134,10 +132,7 @@ export class IssueRunStateResolver {
 					parentIssue: issue.parentIssue,
 				},
 				stage: this.options.reviewOnly
-					? resolveReviewOnlyBootstrapStage(
-							issue.state,
-							this.config.linear.statusMap,
-						)
+					? resolveReviewOnlyBootstrapStage(issue.state)
 					: "plan",
 				reviewMode: this.options.reviewOnly ? "bot" : undefined,
 				pullRequest: issue.pullRequest,
@@ -182,10 +177,7 @@ export class IssueRunStateResolver {
 			this.options.reviewOnly &&
 			!isReviewOnlyExecutableStage(runState.stage)
 		) {
-			runState.stage = resolveReviewOnlyBootstrapStage(
-				issue.state,
-				this.config.linear.statusMap,
-			);
+			runState.stage = resolveReviewOnlyBootstrapStage(issue.state);
 		}
 		if (this.options.reviewOnly && !runState.reviewMode) {
 			runState.reviewMode = "bot";

@@ -5,12 +5,12 @@ import type {
 	RunState,
 } from "../src/features/types";
 import {
-	safeLinearComment,
-	safeLinearMoveToCanceled,
 	safeNotifyHumanReviewRequired,
 	safeNotifyTaskOutcome,
 	safePrComment,
 	safeSquashMergePullRequest,
+	safeTaskComment,
+	safeTaskMoveToCanceled,
 } from "../src/features/workflow/integration-wrappers";
 
 function createState(): RunState {
@@ -50,27 +50,6 @@ function createConfig(): ResolvedProjectConfig {
 		workspacePath: "/tmp/work",
 		executionPath: "/tmp/work/repo",
 		repo: { owner: "acme", name: "repo", baseBranch: "main" },
-		linear: {
-			apiKey: "x",
-			apiUrl: "https://api.linear.app/graphql",
-			pollLimit: 10,
-			statusMap: {
-				backlog: "z",
-				assigned: "a",
-				plan: "b",
-				in_progress: "c",
-				in_review: "e",
-				canceled: "g",
-				failed: "x",
-				done: "h",
-			},
-			labelMap: {
-				pr_created: "PR Created",
-				reviewing: "Reviewing",
-				testing: "Testing",
-			},
-			autoCreateLabels: true,
-		},
 		github: { useGhCli: true, defaultBugLabel: "bug" },
 		server: {
 			database: {
@@ -110,7 +89,7 @@ function createNotifications(): ResolvedNotificationConfig {
 describe("integration wrappers", () => {
 	it("swallows linear comment errors", async () => {
 		await expect(
-			safeLinearComment(
+			safeTaskComment(
 				{ comment: async () => Promise.reject(new Error("boom")) },
 				"lin_1",
 				"body",
@@ -120,7 +99,7 @@ describe("integration wrappers", () => {
 
 	it("swallows linear cancel errors", async () => {
 		await expect(
-			safeLinearMoveToCanceled(
+			safeTaskMoveToCanceled(
 				{ markCanceled: async () => Promise.reject(new Error("boom")) },
 				"lin_1",
 			),

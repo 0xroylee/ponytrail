@@ -60,40 +60,6 @@ export function buildEnvBase(
 			name: env.GITHUB_REPO_NAME ?? "",
 			baseBranch: env.GITHUB_BASE_BRANCH ?? "main",
 		},
-		linear: {
-			apiKey: env.LINEAR_API_KEY ?? "",
-			apiUrl: env.LINEAR_API_URL ?? "https://api.linear.app/graphql",
-			projectId: normalizeOptionalValue(env.LINEAR_PROJECT_ID),
-			teamId: env.LINEAR_TEAM_ID,
-			requiredLabel: env.LINEAR_REQUIRED_LABEL,
-			pollLimit: Number(env.PIV_POLL_LIMIT ?? "10"),
-			statusMap: {
-				backlog: env.LINEAR_STATUS_BACKLOG ?? "Backlog",
-				assigned: env.LINEAR_STATUS_ASSIGNED ?? "Todo",
-				plan:
-					env.LINEAR_STATUS_PLAN ?? env.LINEAR_STATUS_PLANNING ?? "In Progress",
-				in_progress:
-					env.LINEAR_STATUS_IN_PROGRESS ??
-					env.LINEAR_STATUS_IMPLEMENTING ??
-					"In Progress",
-				in_review:
-					env.LINEAR_STATUS_IN_REVIEW ??
-					env.LINEAR_STATUS_REVIEWING ??
-					env.LINEAR_STATUS_PR_CREATED ??
-					env.LINEAR_STATUS_TESTING ??
-					"In Review",
-				canceled:
-					env.LINEAR_STATUS_CANCELED ?? env.LINEAR_STATUS_BLOCKED ?? "Canceled",
-				failed: env.LINEAR_STATUS_FAILED ?? "Failed",
-				done: env.LINEAR_STATUS_DONE ?? "Done",
-			},
-			labelMap: {
-				pr_created: env.LINEAR_LABEL_PR_CREATED ?? "PR Created",
-				reviewing: env.LINEAR_LABEL_REVIEWING ?? "Reviewing",
-				testing: env.LINEAR_LABEL_TESTING ?? "Testing",
-			},
-			autoCreateLabels: env.LINEAR_AUTO_CREATE_LABELS !== "0",
-		},
 		github: {
 			useGhCli: true,
 			defaultBugLabel: env.GITHUB_BUG_LABEL ?? "bug",

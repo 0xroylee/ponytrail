@@ -8,7 +8,6 @@ export interface OnboardDraft {
 	workspaceName: string;
 	workspacePath: string;
 	executionPath: string;
-	linearApiKey: string;
 	instance: OnboardInstanceDraft;
 	notifications: {
 		email: {

@@ -27,7 +27,7 @@ export class IssueProcessor {
 		const issueLogger = logger.child({ projectId: config.id, issueKey: key });
 		const resolved = await new IssueRunStateResolver(
 			config,
-			this.input.linear,
+			this.input.taskClient,
 			this.input.options,
 			issueLogger,
 		).resolve(issue);
@@ -101,7 +101,7 @@ export class IssueProcessor {
 		return new IssueExecutionReporter(
 			this.input.config,
 			this.input.notifications,
-			this.input.linear,
+			this.input.taskClient,
 			this.input.runtime,
 			this.input.leaseOwnerId,
 		);
@@ -156,7 +156,7 @@ export class IssueProcessor {
 		}
 		issueLogger.info({ leaseOwnerId }, "Issue lease acquired");
 		if (!options.reviewOnly && isCanceledState) {
-			await this.input.linear.markStage(issue.id, "plan");
+			await this.input.taskClient.markStage(issue.id, "plan");
 			issueLogger.info(
 				{ issueState: issue.state.name, issueStateId: issue.state.id },
 				"Moved canceled task back to plan before execution",
@@ -177,7 +177,7 @@ export class IssueProcessor {
 		await new IssuePipelineExecutor(
 			executionConfig,
 			this.input.notifications,
-			this.input.linear,
+			this.input.taskClient,
 			options,
 			leaseOwnerId,
 			leaseTimeoutMs,

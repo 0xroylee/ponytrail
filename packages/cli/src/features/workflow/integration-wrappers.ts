@@ -1,5 +1,4 @@
 import { commentOnPr, squashMergePullRequest } from "../../integrations/github";
-import type { LinearClient } from "../../integrations/linear";
 import {
 	sendHumanReviewRequiredEmail,
 	sendTaskOutcomeEmail,
@@ -11,15 +10,16 @@ import type {
 	RunState,
 } from "../types";
 import type { IntegrationWrapperDeps } from "./types/integration-wrappers.types";
+import type { WorkflowTaskClient } from "./types/workflow.types";
 
-export async function safeLinearComment(
-	linear: Pick<LinearClient, "comment">,
+export async function safeTaskComment(
+	taskClient: Pick<WorkflowTaskClient, "comment">,
 	issueId: string,
 	body: string,
 ): Promise<void> {
 	const runLogger = logger.child({ issueId });
 	try {
-		await linear.comment(issueId, body);
+		await taskClient.comment(issueId, body);
 	} catch (error) {
 		runLogger.error(
 			{ err: normalizeError(error) },
@@ -28,13 +28,13 @@ export async function safeLinearComment(
 	}
 }
 
-export async function safeLinearMoveToCanceled(
-	linear: Pick<LinearClient, "markCanceled">,
+export async function safeTaskMoveToCanceled(
+	taskClient: Pick<WorkflowTaskClient, "markCanceled">,
 	issueId: string,
 ): Promise<void> {
 	const runLogger = logger.child({ issueId, stage: "canceled" });
 	try {
-		await linear.markCanceled(issueId);
+		await taskClient.markCanceled(issueId);
 	} catch (error) {
 		runLogger.error(
 			{ err: normalizeError(error) },

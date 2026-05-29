@@ -28,7 +28,7 @@ export async function buildTaskIntakePrompt(
 
 	return [
 		"You are the task-intake agent in the devos.ing ADHD (Agentic Development Hub & Daemon) workflow.",
-		"Your job is to turn a loose operator request into one clear Linear backlog task.",
+		"Your job is to turn a loose operator request into one clear backlog task.",
 		"",
 		"Use this skill:",
 		skill,
@@ -38,7 +38,7 @@ export async function buildTaskIntakePrompt(
 		"",
 		answerSection,
 		"",
-		"Decide whether the goal and requirements are clear enough to create one actionable Linear issue.",
+		"Decide whether the goal and requirements are clear enough to create one actionable workflow task.",
 		"When asking for clarification, return exactly one concise question for this round. Do not batch multiple questions together.",
 		"Prefer an object with a question field and optional options array when the operator can choose between clear alternatives.",
 		"Use options only when the choices are meaningful; include two to four options with label and value, plus optional description.",

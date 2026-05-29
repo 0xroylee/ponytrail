@@ -29,7 +29,7 @@ export class ProjectContextResolver<TProject extends ResolvedProjectConfig> {
 
 		let contexts = projects.map((project) => ({
 			config: project,
-			linear: this.runtime.createLinearClient(project),
+			taskClient: this.runtime.createTaskClient(project),
 		}));
 		if (!this.shouldRouteTargetIssue(contexts.length, polling)) {
 			return contexts;

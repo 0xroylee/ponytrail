@@ -2,7 +2,7 @@ import type { ResolvedProjectConfig, RunOptions, RunState } from "../../types";
 import type {
 	PollingSettings,
 	WorkflowIssue,
-	WorkflowLinearClient,
+	WorkflowTaskClient,
 } from "./workflow.types";
 
 export interface Mission {
@@ -16,7 +16,7 @@ export interface Mission {
 
 export interface MissionCycleInput {
 	project: ResolvedProjectConfig;
-	linear: WorkflowLinearClient;
+	taskClient: WorkflowTaskClient;
 	options: RunOptions;
 	polling: PollingSettings;
 }

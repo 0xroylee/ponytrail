@@ -7,7 +7,7 @@ import type {
 	WorkflowStage,
 } from "../../types";
 import type { WorkflowAgentRole } from "./workflow-agent.types";
-import type { WorkflowLinearClient } from "./workflow.types";
+import type { WorkflowTaskClient } from "./workflow.types";
 
 export type BuiltInWorkflowPhaseId = "plan" | "implement" | "testing";
 
@@ -72,7 +72,7 @@ export interface BuiltInWorkflowPhaseRunInput {
 	config: ResolvedProjectConfig;
 	agent: AgentAdapter;
 	notifications: ResolvedNotificationConfig;
-	linear: WorkflowLinearClient;
+	taskClient: WorkflowTaskClient;
 	state: RunState;
 }
 

@@ -146,8 +146,8 @@ describe("resolvePollingSettings", () => {
 
 describe("runWorkflow no-project polling", () => {
 	it("returns immediately when no projects are configured outside poll-forever", async () => {
-		const createLinearClient = mock();
-		const runtime = { createLinearClient } as unknown as WorkflowRuntime;
+		const createTaskClient = mock();
+		const runtime = { createTaskClient } as unknown as WorkflowRuntime;
 
 		await runWorkflow(
 			createLoadedConfigWithProjects([]),
@@ -155,14 +155,14 @@ describe("runWorkflow no-project polling", () => {
 			runtime,
 		);
 
-		expect(createLinearClient).not.toHaveBeenCalled();
+		expect(createTaskClient).not.toHaveBeenCalled();
 	});
 
 	it("keeps poll-forever alive when no projects are configured", async () => {
 		const stopped = new Error("stop after first no-project sleep");
 		const sleepCalls: number[] = [];
 		const runtime = {
-			createLinearClient: mock(),
+			createTaskClient: mock(),
 			sleep: mock(async (ms: number) => {
 				sleepCalls.push(ms);
 				throw stopped;
@@ -206,7 +206,7 @@ describe("workflow run visibility", () => {
 	it("logs cycle start and no-work progress around an empty poll", async () => {
 		const linear = { fetchWork: mock(async () => []) };
 		const runtime = {
-			createLinearClient: mock(() => linear),
+			createTaskClient: mock(() => linear),
 		} as unknown as WorkflowRuntime;
 
 		const output = await captureStderr(() =>
@@ -226,7 +226,7 @@ describe("workflow run visibility", () => {
 		const socket = installFailingWorkflowPollingSocket();
 		const linear = { fetchWork: mock(async () => []) };
 		const runtime = {
-			createLinearClient: mock(() => linear),
+			createTaskClient: mock(() => linear),
 		} as unknown as WorkflowRuntime;
 
 		try {
@@ -498,7 +498,7 @@ describe("review-only selection", () => {
 		]);
 	});
 
-	it("merges local and Linear review-only candidates and skips missing PRs", () => {
+	it("merges local and task review-only candidates and skips missing PRs", () => {
 		const now = Date.parse("2026-05-07T12:00:00.000Z");
 		const runStates: RunState[] = [
 			{
@@ -511,7 +511,7 @@ describe("review-only selection", () => {
 			},
 		];
 		const localIssues = [createWorkflowIssue("ROY-1", 2, "High")];
-		const linearIssues = [
+		const taskIssues = [
 			createWorkflowIssue("ROY-1", 1, "Urgent"),
 			createWorkflowIssue("ROY-2", 2, "High"),
 			createWorkflowIssue("ROY-3", 3, "Medium"),
@@ -531,7 +531,7 @@ describe("review-only selection", () => {
 		const result = buildReviewOnlyIssueQueue({
 			runStates,
 			localIssues,
-			linearIssues,
+			taskIssues,
 			discoveredPullRequestsByIssueKey,
 		});
 
@@ -545,36 +545,20 @@ describe("review-only selection", () => {
 	});
 
 	it("resolves review-only bootstrap stage from issue state mapping", () => {
-		const statusMap = {
-			...createProject("default").linear.statusMap,
-			in_review: "In Review",
-		};
 		expect(
-			resolveReviewOnlyBootstrapStage(
-				{ id: "unknown", name: "In Review" },
-				statusMap,
-			),
+			resolveReviewOnlyBootstrapStage({ id: "unknown", name: "In Review" }),
 		).toBe("in_review");
 		expect(
-			resolveReviewOnlyBootstrapStage(
-				{ id: "in review", name: "Whatever" },
-				{
-					...statusMap,
-					in_review: "In Review",
-				},
-			),
+			resolveReviewOnlyBootstrapStage({ id: "in review", name: "Whatever" }),
 		).toBe("in_review");
 		expect(
-			resolveReviewOnlyBootstrapStage(
-				{ id: "unknown", name: "Something else" },
-				statusMap,
-			),
+			resolveReviewOnlyBootstrapStage({
+				id: "unknown",
+				name: "Something else",
+			}),
 		).toBe("in_review");
 		expect(
-			resolveReviewOnlyBootstrapStage(
-				{ id: "unknown", name: "Done" },
-				statusMap,
-			),
+			resolveReviewOnlyBootstrapStage({ id: "unknown", name: "Done" }),
 		).toBe("done");
 	});
 });
@@ -811,7 +795,7 @@ describe("runWorkflow parallel issue regression", () => {
 		}> = [];
 		const projects = [createProject("api"), createProject("web")];
 		const runtime = {
-			createLinearClient: (config: ResolvedProjectConfig) =>
+			createTaskClient: (config: ResolvedProjectConfig) =>
 				({
 					fetchWork: mock(async (issueArg, options) => {
 						fetchCalls.push({
@@ -861,7 +845,7 @@ describe("runWorkflow parallel issue regression", () => {
 		config.executionPath = workspacePath;
 		config.server.database.databasePath = path.join(workspacePath, "server-db");
 		const runtime = {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchWork: mock(async () => []),
 				}) as unknown,
@@ -878,7 +862,7 @@ describe("runWorkflow parallel issue regression", () => {
 			expect(
 				calls.find((call) => call.eventType === "cycle_completed"),
 			).toMatchObject({
-				pollerId: "linear:default",
+				pollerId: "tasks:default",
 				state: "success",
 				counts: { issueCount: 0, staleRetryCount: 0 },
 				consecutiveFailures: 0,
@@ -898,7 +882,7 @@ describe("runWorkflow parallel issue regression", () => {
 		config.executionPath = workspacePath;
 		config.server.database.databasePath = path.join(workspacePath, "server-db");
 		const runtime = {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchWork: mock(async () => {
 						throw new Error("Linear unavailable");
@@ -955,7 +939,7 @@ describe("runWorkflow parallel issue regression", () => {
 		let isolatedMaxActive = 0;
 
 		const runtime = {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchWork: mock(async () => issues),
 					isAssignedState: mock(async () => true),
@@ -1052,7 +1036,7 @@ describe("runWorkflow parallel issue regression", () => {
 		const ensureIssueWorktree = mock(async () => "codex/eng-9");
 		const createAgentAdapter = mock(() => ({}) as AgentAdapter);
 		const runtime = {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchWork: mock(async () => [
 						{
@@ -1109,7 +1093,7 @@ describe("runWorkflow parallel issue regression", () => {
 
 		const output = await captureStderr(() =>
 			runWorkflow(createLoadedConfig(config), {}, {
-				createLinearClient: () =>
+				createTaskClient: () =>
 					({
 						fetchWork: mock(async () => [
 							{
@@ -1154,7 +1138,7 @@ describe("runWorkflow parallel issue regression", () => {
 
 		const output = await captureStderr(() =>
 			runWorkflow(createLoadedConfig(config), {}, {
-				createLinearClient: () =>
+				createTaskClient: () =>
 					({
 						fetchWork: mock(async () => [
 							{
@@ -1219,7 +1203,7 @@ describe("runWorkflow parallel issue regression", () => {
 
 		const output = await captureStderr(() =>
 			runWorkflow(createLoadedConfig(config), {}, {
-				createLinearClient: () =>
+				createTaskClient: () =>
 					({
 						fetchWork: mock(async () => [
 							{
@@ -1277,7 +1261,7 @@ describe("runWorkflow canceled Linear issue intake", () => {
 		const markStage = mock(async (_issueId: string, _stage: string) => {});
 
 		await runWorkflow(createLoadedConfig(config), { issueArg: "ENG-55" }, {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchWork: mock(async () => [issue]),
 					isAssignedState: mock(async () => false),
@@ -1318,7 +1302,7 @@ describe("runWorkflow canceled Linear issue intake", () => {
 		const markStage = mock(async (_issueId: string, _stage: string) => {});
 
 		await runWorkflow(createLoadedConfig(config), { issueArg: "ENG-56" }, {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchWork: mock(async () => [issue]),
 					isAssignedState: mock(async () => false),
@@ -1352,7 +1336,7 @@ describe("runWorkflow canceled Linear issue intake", () => {
 		const markStage = mock(async (_issueId: string, _stage: string) => {});
 
 		await runWorkflow(createLoadedConfig(config), {}, {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchWork: mock(async () => [
 						{
@@ -1393,7 +1377,7 @@ describe("runWorkflow canceled Linear issue intake", () => {
 		const markStage = mock(async (_issueId: string, _stage: string) => {});
 
 		await runWorkflow(createLoadedConfig(config), { reviewOnly: true }, {
-			createLinearClient: () =>
+			createTaskClient: () =>
 				({
 					fetchIssueByIdentifier: mock(async () => issue),
 					fetchReviewOnlyWork: mock(async () => []),
@@ -3078,10 +3062,7 @@ function createComplexPlanningAgent(): AgentAdapter {
 	};
 }
 
-function createProject(
-	id: string,
-	linearProjectId?: string,
-): ResolvedProjectConfig {
+function createProject(id: string): ResolvedProjectConfig {
 	return {
 		id,
 		name: id,
@@ -3091,30 +3072,6 @@ function createProject(
 			owner: "acme",
 			name: "repo",
 			baseBranch: "main",
-		},
-		linear: {
-			apiKey: "key",
-			apiUrl: "https://api.linear.app/graphql",
-			projectId: linearProjectId,
-			teamId: undefined,
-			requiredLabel: undefined,
-			pollLimit: 10,
-			statusMap: {
-				backlog: "Backlog",
-				assigned: "Todo",
-				plan: "In Progress",
-				in_progress: "In Progress",
-				in_review: "In Review",
-				canceled: "Canceled",
-				failed: "Failed",
-				done: "Done",
-			},
-			labelMap: {
-				pr_created: "PR Created",
-				reviewing: "Reviewing",
-				testing: "Testing",
-			},
-			autoCreateLabels: true,
 		},
 		github: {
 			useGhCli: true,
@@ -3300,10 +3257,10 @@ function installFailingWorkflowPollingSocket(): { restore(): void } {
 }
 
 describe("routeProjectsForIssueProjectId", () => {
-	it("routes to explicit linear.projectId match", () => {
+	it("routes to explicit project id match", () => {
 		const result = routeProjectsForIssueProjectId(
-			[createProject("api", "proj_api"), createProject("web", "proj_web")],
-			"proj_web",
+			[createProject("api"), createProject("web")],
+			"web",
 		);
 		expect(result).toEqual({
 			selectedProjectId: "web",
@@ -3312,8 +3269,8 @@ describe("routeProjectsForIssueProjectId", () => {
 
 	it("skips when no configured project matches issue project id", () => {
 		const result = routeProjectsForIssueProjectId(
-			[createProject("api", "proj_api"), createProject("web", "proj_web")],
-			"proj_unknown",
+			[createProject("api"), createProject("web")],
+			"unknown",
 		);
 		expect(result.selectedProjectId).toBeUndefined();
 		expect(result.error).toBeUndefined();
@@ -3322,7 +3279,7 @@ describe("routeProjectsForIssueProjectId", () => {
 
 	it("routes missing issue project id to the only configured project", () => {
 		const result = routeProjectsForIssueProjectId(
-			[createProject("api", "proj_api")],
+			[createProject("api")],
 			undefined,
 		);
 		expect(result).toEqual({
@@ -3330,29 +3287,11 @@ describe("routeProjectsForIssueProjectId", () => {
 		});
 	});
 
-	it("routes missing issue project id to the only unscoped project", () => {
-		const result = routeProjectsForIssueProjectId(
-			[createProject("api", "proj_api"), createProject("web")],
-			undefined,
-		);
-		expect(result).toEqual({
-			selectedProjectId: "web",
-		});
-	});
-
-	it("fails when multiple projects share same linear.projectId", () => {
-		const result = routeProjectsForIssueProjectId(
-			[createProject("api", "proj_a"), createProject("web", "proj_a")],
-			"proj_a",
-		);
-		expect(result.error).toContain("Multiple projects are configured");
-	});
-
-	it("fails when issue has no project id and multiple unscoped projects exist", () => {
+	it("skips when issue has no project id and multiple projects exist", () => {
 		const result = routeProjectsForIssueProjectId(
 			[createProject("api"), createProject("web")],
 			undefined,
 		);
-		expect(result.error).toContain("multiple unscoped projects");
+		expect(result.skipReason).toContain("no project id");
 	});
 });

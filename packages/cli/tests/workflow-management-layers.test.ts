@@ -2,16 +2,26 @@ import { describe, expect, it } from "bun:test";
 import type { LoadedConfig } from "../src/features/config";
 import type { ResolvedProjectConfig, RunOptions } from "../src/features/types";
 import { ProjectContextResolver } from "../src/features/workflow/management/project-context-resolver";
+import { pickProjects } from "../src/features/workflow/management/project-selection";
 import { WorkflowScheduler } from "../src/features/workflow/management/workflow-scheduler";
 import type { PollingSettings } from "../src/features/workflow/types/workflow.types";
 
 describe("workflow management layers", () => {
+	it("defaults to every configured project when no explicit project is selected", () => {
+		const api = fakeProject("api");
+		const web = fakeProject("web");
+
+		const projects = pickProjects(fakeConfig([api, web]), {}, fakePolling());
+
+		expect(projects.map((project) => project.id)).toEqual(["api", "web"]);
+	});
+
 	it("resolves project contexts before workflow scheduling", async () => {
 		const events: string[] = [];
 		const api = fakeProject("api");
 		const web = fakeProject("web");
 		const runtime = {
-			createLinearClient: (project: ResolvedProjectConfig) => ({
+			createTaskClient: (project: ResolvedProjectConfig) => ({
 				projectId: project.id,
 			}),
 		};
@@ -69,7 +79,7 @@ describe("workflow management layers", () => {
 			[
 				{
 					config: fakeProject("api"),
-					linear: {} as never,
+					taskClient: {} as never,
 				},
 			],
 			fakePolling({ enabled: true, intervalMs: 25 }),
@@ -117,23 +127,6 @@ function fakeProject(id: string): ResolvedProjectConfig {
 		workspacePath: "/tmp/workspace",
 		executionPath: "/tmp/workspace",
 		repo: { owner: "o", name: "r", baseBranch: "main" },
-		linear: {
-			apiKey: "",
-			apiUrl: "",
-			pollLimit: 10,
-			statusMap: {
-				backlog: "backlog",
-				assigned: "assigned",
-				plan: "plan",
-				in_progress: "in_progress",
-				in_review: "in_review",
-				canceled: "canceled",
-				failed: "failed",
-				done: "done",
-			},
-			labelMap: {},
-			autoCreateLabels: false,
-		},
 		github: { useGhCli: true, defaultBugLabel: "bug" },
 		server: { database: { databasePath: "/tmp/devos.sqlite", port: 0 } },
 		codex: { binary: "codex", streamLogs: false },

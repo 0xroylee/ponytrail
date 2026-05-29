@@ -40,7 +40,7 @@ describe("workflow managers", () => {
 			config as LoadedConfig,
 			{},
 			{
-				createLinearClient: () => fakeLinearClient(),
+				createTaskClient: () => fakeLinearClient(),
 			} as never,
 			{
 				resolvePolling: () => ({
@@ -173,23 +173,6 @@ function fakeProject(): ResolvedProjectConfig {
 		workspacePath: "/tmp/workspace",
 		executionPath: "/tmp/workspace",
 		repo: { owner: "o", name: "r", baseBranch: "main" },
-		linear: {
-			apiKey: "",
-			apiUrl: "",
-			pollLimit: 10,
-			statusMap: {
-				backlog: "backlog",
-				assigned: "assigned",
-				plan: "plan",
-				in_progress: "in_progress",
-				in_review: "in_review",
-				canceled: "canceled",
-				failed: "failed",
-				done: "done",
-			},
-			labelMap: {},
-			autoCreateLabels: false,
-		},
 		github: { useGhCli: true, defaultBugLabel: "bug" },
 		server: { database: { databasePath: "/tmp/devos.sqlite", port: 0 } },
 		codex: { binary: "codex", streamLogs: false },

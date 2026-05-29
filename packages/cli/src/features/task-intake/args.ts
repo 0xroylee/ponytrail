@@ -13,7 +13,7 @@ export function registerTaskCommand(
 	const task = program.command("task").description("manage task intake");
 	task
 		.command("create [request...]")
-		.description("generate a Linear backlog issue from a loose request")
+		.description("generate a backlog task from a loose request")
 		.option("--request <TEXT|->", "request text, or - to read stdin")
 		.option("--project <PROJECT_ID>", "configured project identifier")
 		.option("--non-interactive", "disable interactive clarification")

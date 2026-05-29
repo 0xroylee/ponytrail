@@ -23,9 +23,9 @@ export interface BoardTaskCreateInput {
 	dueDate: string | null;
 	creatorId: string;
 	linkedPr: string | null;
-	linearIssueId: string | null;
-	linearIdentifier: string | null;
-	linearUrl: string | null;
+	externalIssueId: string | null;
+	externalIdentifier: string | null;
+	externalUrl: string | null;
 }
 
 export type BoardTaskUpdateInput = Partial<
@@ -40,9 +40,9 @@ export type BoardTaskUpdateInput = Partial<
 		| "creatorId"
 		| "dueDate"
 		| "linkedPr"
-		| "linearIssueId"
-		| "linearIdentifier"
-		| "linearUrl"
+		| "externalIssueId"
+		| "externalIdentifier"
+		| "externalUrl"
 	>
 >;
 

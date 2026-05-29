@@ -17,14 +17,14 @@ import {
 import type { CommandResult } from "../src/utils/shell";
 
 describe("buildBugIssueBody", () => {
-	it("includes linear and optional pr links", () => {
+	it("includes task and optional pr links", () => {
 		const body = buildBugIssueBody(
 			"Failing test",
 			"Stack trace here",
 			"https://linear.app/acme/issue/ENG-1",
 			"https://github.com/acme/repo/pull/10",
 		);
-		expect(body).toContain("Linear: https://linear.app/acme/issue/ENG-1");
+		expect(body).toContain("Task: https://linear.app/acme/issue/ENG-1");
 		expect(body).toContain("PR: https://github.com/acme/repo/pull/10");
 		expect(body).toContain("Stack trace here");
 	});
@@ -1037,23 +1037,6 @@ function createProjectConfig(): ResolvedProjectConfig {
 			owner: "acme",
 			name: "repo",
 			baseBranch: "main",
-		},
-		linear: {
-			apiKey: "key",
-			apiUrl: "https://api.linear.app/graphql",
-			pollLimit: 10,
-			statusMap: {
-				backlog: "Backlog",
-				assigned: "Todo",
-				plan: "Planning",
-				in_progress: "Implementing",
-				in_review: "Reviewing",
-				canceled: "Canceled",
-				failed: "Failed",
-				done: "Done",
-			},
-			labelMap: {},
-			autoCreateLabels: true,
 		},
 		github: {
 			useGhCli: true,

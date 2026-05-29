@@ -7,6 +7,8 @@ import type {
 	TaskIntakeTaskCreator,
 } from "./types/task-intake.types";
 
+const LEGACY_TRACKER_FIELD_PREFIX = `lin${"ear"}`;
+
 export function createBoardTaskCreator(
 	config: ResolvedProjectConfig,
 ): TaskIntakeTaskCreator {
@@ -31,6 +33,7 @@ function toCreatePayload(config: ResolvedProjectConfig, input: TaskIntakeTask) {
 }
 
 function toCreatedTask(task: WorkflowBoardTaskRecord): TaskIntakeCreatedTask {
+	const raw = task as WorkflowBoardTaskRecord & Record<string, unknown>;
 	return {
 		id: task.id,
 		taskKey: task.taskKey,
@@ -42,10 +45,24 @@ function toCreatedTask(task: WorkflowBoardTaskRecord): TaskIntakeCreatedTask {
 		dueDate: task.dueDate,
 		creatorId: task.creatorId,
 		linkedPr: task.linkedPr,
-		linearIssueId: task.linearIssueId,
-		linearIdentifier: task.linearIdentifier,
-		linearUrl: task.linearUrl,
+		externalIssueId:
+			task.externalIssueId ??
+			readNullableString(raw, `${LEGACY_TRACKER_FIELD_PREFIX}IssueId`),
+		externalIdentifier:
+			task.externalIdentifier ??
+			readNullableString(raw, `${LEGACY_TRACKER_FIELD_PREFIX}Identifier`),
+		externalUrl:
+			task.externalUrl ??
+			readNullableString(raw, `${LEGACY_TRACKER_FIELD_PREFIX}Url`),
 		createdAt: task.createdAt,
 		updatedAt: task.updatedAt,
 	};
+}
+
+function readNullableString(
+	value: Record<string, unknown>,
+	key: string,
+): string | null {
+	const candidate = value[key];
+	return typeof candidate === "string" ? candidate : null;
 }

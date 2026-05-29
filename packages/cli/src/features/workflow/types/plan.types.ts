@@ -8,7 +8,7 @@ import type {
 	RunState,
 } from "../../types";
 
-export interface PlanningLinearClient {
+export interface PlanningTaskClient {
 	markStage(issueId: string, stage: string): Promise<void>;
 	comment(issueId: string, body: string): Promise<void>;
 	createTodoIssueFromPlan(

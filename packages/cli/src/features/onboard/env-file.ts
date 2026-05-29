@@ -65,11 +65,9 @@ export function buildEnvUpdates(
 }
 
 export function buildDatabaseEnvUpdates(
-	draft: Pick<OnboardDraft, "linearApiKey">,
+	_draft: OnboardDraft,
 ): Record<string, string | undefined> {
-	return {
-		LINEAR_API_KEY: draft.linearApiKey || undefined,
-	};
+	return {};
 }
 
 function renderEnvEntries(entries: Record<string, string | undefined>): string {

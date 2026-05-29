@@ -1,34 +1,5 @@
 import type { ServerRuntimeConfig } from "./server.types";
 
-export interface LinearStatusMap {
-	backlog: string;
-	assigned: string;
-	plan: string;
-	in_progress: string;
-	in_review: string;
-	canceled: string;
-	failed: string;
-	done: string;
-}
-
-export interface LegacyLinearStatusMap {
-	planning?: string;
-	implementing?: string;
-	pr_created?: string;
-	reviewing?: string;
-	testing?: string;
-	blocked?: string;
-}
-
-export type LinearStatusMapInput = Partial<LinearStatusMap> &
-	LegacyLinearStatusMap;
-
-export interface LinearLabelMap {
-	pr_created?: string;
-	reviewing?: string;
-	testing?: string;
-}
-
 export type CodexReasoningEffort = "low" | "medium" | "high" | "xhigh";
 
 export interface WorkflowRuntimeConfig {
@@ -66,17 +37,6 @@ export interface ProjectRuntimeConfig {
 		owner: string;
 		name: string;
 		baseBranch: string;
-	};
-	linear: {
-		apiKey: string;
-		apiUrl: string;
-		projectId?: string;
-		teamId?: string;
-		requiredLabel?: string;
-		pollLimit: number;
-		statusMap: LinearStatusMap;
-		labelMap: LinearLabelMap;
-		autoCreateLabels: boolean;
 	};
 	github: {
 		useGhCli: boolean;
@@ -186,13 +146,9 @@ export interface ProjectRuntimeConfig {
 	dryRun: boolean;
 }
 
-export interface ProjectConfig
-	extends Partial<Omit<ProjectRuntimeConfig, "linear">> {
+export interface ProjectConfig extends Partial<ProjectRuntimeConfig> {
 	id: string;
 	name?: string;
-	linear?: Partial<Omit<ProjectRuntimeConfig["linear"], "statusMap">> & {
-		statusMap?: LinearStatusMapInput;
-	};
 }
 
 export interface ResolvedProjectConfig extends ProjectRuntimeConfig {
@@ -229,12 +185,7 @@ export interface ResolvedNotificationConfig {
 	email: ResolvedNotificationEmailConfig;
 }
 
-export type DevosRootConfig = DeepPartial<
-	Omit<ProjectRuntimeConfig, "linear">
-> & {
-	linear?: DeepPartial<Omit<ProjectRuntimeConfig["linear"], "statusMap">> & {
-		statusMap?: LinearStatusMapInput;
-	};
+export type DevosRootConfig = DeepPartial<ProjectRuntimeConfig> & {
 	polling?: DeepPartial<PollingConfig>;
 	notifications?: DeepPartial<NotificationConfig>;
 	projects: ProjectConfig[];

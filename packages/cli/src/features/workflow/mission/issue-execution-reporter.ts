@@ -5,8 +5,8 @@ import type {
 	RunState,
 } from "../../types";
 import {
-	safeLinearComment,
 	safeNotifyTaskOutcome,
+	safeTaskComment,
 } from "../integration-wrappers";
 import { emitActionProgress, emitStageProgress } from "../progress";
 import { cleanupTerminalIsolatedWorktree } from "../runtime/workflow-worktree";
@@ -17,8 +17,8 @@ import type {
 } from "../types/issue-execution.types";
 import type { IssueLogger } from "../types/issue-processing.types";
 import type {
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "../types/workflow.types";
 import { releaseRunLease } from "../workflow-lease";
 
@@ -26,7 +26,7 @@ export class IssueExecutionReporter {
 	constructor(
 		private readonly config: ResolvedProjectConfig,
 		private readonly notifications: ResolvedNotificationConfig,
-		private readonly linear: WorkflowLinearClient,
+		private readonly taskClient: WorkflowTaskClient,
 		private readonly runtime: WorkflowRuntime,
 		private readonly leaseOwnerId: string,
 	) {}
@@ -48,8 +48,8 @@ export class IssueExecutionReporter {
 			runState.stage = "failed";
 			await saveRunState(this.config.workspacePath, runState);
 			await this.markIssueFailed(runState, issueLogger);
-			await safeLinearComment(
-				this.linear,
+			await safeTaskComment(
+				this.taskClient,
 				runState.issue.id,
 				`devos.ing failed and moved issue to Failed.\n\nError:\n${message}`,
 			);
@@ -113,7 +113,7 @@ export class IssueExecutionReporter {
 		issueLogger: IssueLogger,
 	): Promise<void> {
 		try {
-			await this.linear.markStage(runState.issue.id, "failed");
+			await this.taskClient.markStage(runState.issue.id, "failed");
 		} catch (markError) {
 			issueLogger.error(
 				{ err: normalizeError(markError) },

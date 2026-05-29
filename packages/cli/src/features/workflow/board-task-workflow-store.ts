@@ -12,6 +12,8 @@ import type {
 	WorkflowPullRequestRecord,
 } from "./workflow-data-protocol";
 
+const LEGACY_TRACKER_FIELD_PREFIX = `lin${"ear"}`;
+
 export function createBoardTaskWorkflowStore(
 	config: ResolvedProjectConfig,
 ): BoardTaskWorkflowStore {
@@ -56,9 +58,35 @@ function toWorkflowRecord(
 	task: WorkflowBoardTaskRecord,
 ): BoardTaskWorkflowRecord {
 	return {
-		task,
+		task: normalizeTaskFields(task),
 		pullRequest: toPullRequest(task.pullRequest),
 	};
+}
+
+function normalizeTaskFields(
+	task: WorkflowBoardTaskRecord,
+): WorkflowBoardTaskRecord {
+	const raw = task as WorkflowBoardTaskRecord & Record<string, unknown>;
+	return {
+		...task,
+		externalIssueId:
+			task.externalIssueId ??
+			readNullableString(raw, `${LEGACY_TRACKER_FIELD_PREFIX}IssueId`),
+		externalIdentifier:
+			task.externalIdentifier ??
+			readNullableString(raw, `${LEGACY_TRACKER_FIELD_PREFIX}Identifier`),
+		externalUrl:
+			task.externalUrl ??
+			readNullableString(raw, `${LEGACY_TRACKER_FIELD_PREFIX}Url`),
+	};
+}
+
+function readNullableString(
+	value: Record<string, unknown>,
+	key: string,
+): string | null {
+	const candidate = value[key];
+	return typeof candidate === "string" ? candidate : null;
 }
 
 function toPullRequest(

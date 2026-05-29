@@ -100,7 +100,7 @@ export function createLoadedConfig(
 
 export function createWorkflowRuntime(): WorkflowRuntime {
 	return {
-		createLinearClient: createBoardTaskWorkflowClient,
+		createTaskClient: createBoardTaskWorkflowClient,
 		createAgentAdapter: () => createPassingAgent(),
 		ensureBaseBranchFresh: async () => {},
 		ensureIssueWorktree: async (_config, _key, _pr, worktreePath) =>
@@ -159,24 +159,6 @@ function createProject(
 		workspacePath,
 		executionPath: workspacePath,
 		repo: { owner: "acme", name: "repo", baseBranch: "main" },
-		linear: {
-			apiKey: "fake",
-			apiUrl: "https://linear.example/graphql",
-			projectId: undefined,
-			pollLimit: 20,
-			statusMap: {
-				backlog: "backlog",
-				assigned: "plan",
-				plan: "plan",
-				in_progress: "in_progress",
-				in_review: "in_review",
-				canceled: "canceled",
-				failed: "failed",
-				done: "done",
-			},
-			labelMap: {},
-			autoCreateLabels: false,
-		},
 		github: { useGhCli: false, defaultBugLabel: "bug" },
 		server: { database: { databasePath, port: 54329 } },
 		codex: { binary: "codex", streamLogs: false },

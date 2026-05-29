@@ -25,10 +25,7 @@ export function pickProjects(
 		}
 		return [project];
 	}
-	if (usesAllProjectScope(options, polling)) {
-		return config.projects;
-	}
-	return config.projects.slice(0, 1);
+	return config.projects;
 }
 
 export function usesAllProjectScope(
@@ -73,7 +70,7 @@ export async function routeProjectContextsForTargetIssue<
 	issueArg: string,
 ): Promise<Array<ProjectWorkflowContext<TProject>>> {
 	const routeLogger = logger.child({ issueArg });
-	const issue = await contexts[0]?.linear.fetchIssueByIdentifier(issueArg);
+	const issue = await contexts[0]?.taskClient.fetchIssueByIdentifier(issueArg);
 	if (!issue) {
 		routeLogger.info("Target issue was not found; skipping run.");
 		return [];

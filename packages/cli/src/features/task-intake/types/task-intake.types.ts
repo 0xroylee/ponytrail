@@ -35,9 +35,9 @@ export interface TaskIntakeCreatedTask {
 	dueDate: string | null;
 	creatorId: string;
 	linkedPr: string | null;
-	linearIssueId: string | null;
-	linearIdentifier: string | null;
-	linearUrl: string | null;
+	externalIssueId: string | null;
+	externalIdentifier: string | null;
+	externalUrl: string | null;
 	createdAt: string;
 	updatedAt: string;
 }

@@ -17,8 +17,8 @@ import { shouldSquashMergePullRequestForComplexityScore } from "../planning/plan
 import { createWorkflowRuntime } from "../runtime/workflow-runtime";
 import { saveRunState, transitionStage } from "../state";
 import type {
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "../types/workflow.types";
 import { appendCodexUsage } from "../usage/usage-state";
 import { finalizeIssueAfterReviewMerge as finalizeIssueAfterReviewMergeInternal } from "./review-merge";
@@ -32,11 +32,11 @@ export async function handleReviewTestingStage(
 	config: ResolvedProjectConfig,
 	agent: AgentAdapter,
 	notifications: ResolvedNotificationConfig,
-	linear: WorkflowLinearClient,
+	taskClient: WorkflowTaskClient,
 	state: RunState,
 	runtime: WorkflowRuntime = createWorkflowRuntime(),
 ): Promise<void> {
-	await handleReviewTestingStageInternal(config, agent, linear, state, {
+	await handleReviewTestingStageInternal(config, agent, taskClient, state, {
 		runAgentWithChatLog,
 		appendCodexUsage,
 		transitionStage,
@@ -67,7 +67,7 @@ export async function handleReviewTestingStage(
 export async function finalizeIssueAfterReviewMerge(
 	config: ResolvedProjectConfig,
 	notifications: ResolvedNotificationConfig,
-	linear: WorkflowLinearClient,
+	taskClient: WorkflowTaskClient,
 	state: RunState,
 	deps?: {
 		saveRunState?: typeof saveRunState;
@@ -78,7 +78,7 @@ export async function finalizeIssueAfterReviewMerge(
 	await finalizeIssueAfterReviewMergeInternal(
 		config,
 		notifications,
-		linear,
+		taskClient,
 		state,
 		{
 			saveRunState: deps?.saveRunState ?? saveRunState,
@@ -100,7 +100,7 @@ export class ReviewMergeDecisionManager {
 	constructor(
 		private readonly config: ResolvedProjectConfig,
 		private readonly notifications: ResolvedNotificationConfig,
-		private readonly linear: WorkflowLinearClient,
+		private readonly taskClient: WorkflowTaskClient,
 		private readonly runtime: WorkflowRuntime,
 	) {}
 
@@ -119,7 +119,7 @@ export class ReviewMergeDecisionManager {
 		const reason = `PR merge conflict detected for ${state.issue.key}; skipping automated review/testing and requiring human review.`;
 		Object.assign(state, transitionStage(state, "in_review"));
 		if (!state.humanReviewNotifiedAt) {
-			await this.linear.comment(
+			await this.taskClient.comment(
 				state.issue.id,
 				[
 					"Hourly review skipped because the PR has merge conflicts.",
@@ -170,7 +170,7 @@ export class ReviewMergeDecisionManager {
 		await finalizeIssueAfterReviewMerge(
 			this.config,
 			this.notifications,
-			this.linear,
+			this.taskClient,
 			state,
 			undefined,
 			this.runtime,
@@ -185,7 +185,7 @@ export class ReviewMergeDecisionManager {
 		if (state.humanReviewNotifiedAt) {
 			return;
 		}
-		await this.linear.comment(
+		await this.taskClient.comment(
 			state.issue.id,
 			[
 				`Human PR approval required for ${state.issue.key}.`,

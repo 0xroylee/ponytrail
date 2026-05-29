@@ -13,30 +13,7 @@ const envDefaults: Record<string, string | undefined> = {
 	GITHUB_REPO_NAME: "github_repo_name",
 	GITHUB_BASE_BRANCH: "github_base_branch",
 	GITHUB_BUG_LABEL: undefined,
-	LINEAR_API_KEY: "linear_api_key",
-	LINEAR_API_URL: undefined,
-	LINEAR_PROJECT_ID: "linear_project_id",
-	LINEAR_TEAM_ID: "linear_team_id",
-	LINEAR_REQUIRED_LABEL: undefined,
-	LINEAR_AUTO_CREATE_LABELS: undefined,
 	PIV_POLL_LIMIT: undefined,
-	LINEAR_STATUS_BACKLOG: "linear_status_backlog",
-	LINEAR_STATUS_ASSIGNED: "linear_status_assigned",
-	LINEAR_STATUS_PLAN: undefined,
-	LINEAR_STATUS_PLANNING: undefined,
-	LINEAR_STATUS_IN_PROGRESS: undefined,
-	LINEAR_STATUS_IMPLEMENTING: undefined,
-	LINEAR_STATUS_IN_REVIEW: undefined,
-	LINEAR_STATUS_PR_CREATED: undefined,
-	LINEAR_STATUS_REVIEWING: undefined,
-	LINEAR_STATUS_TESTING: undefined,
-	LINEAR_STATUS_CANCELED: undefined,
-	LINEAR_STATUS_BLOCKED: undefined,
-	LINEAR_STATUS_FAILED: undefined,
-	LINEAR_STATUS_DONE: undefined,
-	LINEAR_LABEL_PR_CREATED: undefined,
-	LINEAR_LABEL_REVIEWING: undefined,
-	LINEAR_LABEL_TESTING: undefined,
 	PIV_WORKSPACE_PATH: undefined,
 	PIV_EXECUTION_PATH: "piv_execution_path",
 	CODEX_BINARY: undefined,
@@ -133,15 +110,6 @@ describe("loadConfig", () => {
 			expect(config.projects[0]?.repo.owner).toBe("github_repo_owner");
 			expect(config.projects[0]?.repo.name).toBe("github_repo_name");
 			expect(config.projects[0]?.repo.baseBranch).toBe("github_base_branch");
-			expect(config.projects[0]?.linear.apiKey).toBe("linear_api_key");
-			expect(config.projects[0]?.linear.projectId).toBe("linear_project_id");
-			expect(config.projects[0]?.linear.teamId).toBe("linear_team_id");
-			expect(config.projects[0]?.linear.statusMap.backlog).toBe(
-				"linear_status_backlog",
-			);
-			expect(config.projects[0]?.linear.statusMap.assigned).toBe(
-				"linear_status_assigned",
-			);
 			expect(config.projects[0]?.executionPath).toBe("piv_execution_path");
 			expect(config.polling.intervalMs).toBe(30000);
 			expect(config.polling.maxCycles).toBeUndefined();
@@ -236,9 +204,8 @@ describe("loadConfig", () => {
 			GITHUB_REPO_OWNER: "octo",
 			GITHUB_REPO_NAME: "demo",
 			GITHUB_BASE_BRANCH: "trunk",
-			LINEAR_API_KEY: "lin_sqlite_key",
 			PIV_POLL_INTERVAL_MS: "45000",
-			CODEX_PLUGINS: "github@openai-curated,linear@openai-curated",
+			CODEX_PLUGINS: "github@openai-curated,drive@openai-curated",
 			RESEND_API_KEY: "re_sqlite",
 			RESEND_FROM: "devos.ing <ops@example.com>",
 			RESEND_TO: "a@example.com,b@example.com",
@@ -246,7 +213,6 @@ describe("loadConfig", () => {
 		process.env.GITHUB_REPO_OWNER = undefined;
 		process.env.GITHUB_REPO_NAME = undefined;
 		process.env.GITHUB_BASE_BRANCH = undefined;
-		process.env.LINEAR_API_KEY = undefined;
 		process.env.PIV_POLL_INTERVAL_MS = undefined;
 		process.env.CODEX_PLUGINS = undefined;
 		process.env.RESEND_API_KEY = undefined;
@@ -260,10 +226,9 @@ describe("loadConfig", () => {
 				name: "demo",
 				baseBranch: "trunk",
 			});
-			expect(config.projects[0]?.linear.apiKey).toBe("lin_sqlite_key");
 			expect(config.projects[0]?.codex.plugins).toEqual([
 				"github@openai-curated",
-				"linear@openai-curated",
+				"drive@openai-curated",
 			]);
 			expect(config.polling.intervalMs).toBe(45000);
 			expect(config.notifications.email.enabled).toBe(true);
@@ -410,13 +375,13 @@ describe("loadConfig", () => {
 			path.join(process.cwd(), ".tmp-config-test-"),
 		);
 		await saveSqliteEnv(tempDir, {
-			LINEAR_API_KEY: "lin_sqlite_key",
+			GITHUB_BUG_LABEL: "sqlite-bug",
 		});
-		process.env.LINEAR_API_KEY = "lin_env_key";
+		process.env.GITHUB_BUG_LABEL = "env-bug";
 
 		try {
 			const config = await loadConfig(tempDir);
-			expect(config.projects[0]?.linear.apiKey).toBe("lin_env_key");
+			expect(config.projects[0]?.github.defaultBugLabel).toBe("env-bug");
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
 		}
@@ -426,11 +391,11 @@ describe("loadConfig", () => {
 		const tempDir = await mkdtemp(
 			path.join(process.cwd(), ".tmp-config-test-"),
 		);
-		process.env.LINEAR_API_KEY = "lin_env_key";
+		process.env.GITHUB_BUG_LABEL = "env-bug";
 
 		try {
 			const config = await loadConfig(tempDir);
-			expect(config.projects[0]?.linear.apiKey).toBe("lin_env_key");
+			expect(config.projects[0]?.github.defaultBugLabel).toBe("env-bug");
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
 		}
@@ -441,10 +406,10 @@ describe("loadConfig", () => {
 			path.join(process.cwd(), ".tmp-config-test-"),
 		);
 		await saveSqliteEnv(tempDir, {
-			LINEAR_API_KEY: "lin_sqlite_key",
+			GITHUB_BUG_LABEL: "sqlite-bug",
 		});
 		const dbPath = sqliteEnvDbPath(tempDir);
-		process.env.LINEAR_API_KEY = undefined;
+		process.env.GITHUB_BUG_LABEL = undefined;
 		const db = new Database(dbPath, { create: true });
 		try {
 			db.run("DROP TABLE env_config");

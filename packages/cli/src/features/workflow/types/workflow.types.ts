@@ -1,7 +1,7 @@
 import type { AgentAdapter } from "adapters";
 import type { RemoveWorktreeResult } from "../../../integrations/github";
-import type { CreatedLinearIssueRef } from "../../../integrations/linear";
 import type {
+	CreatedTaskRef,
 	ParentIssueRef,
 	PlannedSplitTask,
 	PullRequestRef,
@@ -72,7 +72,7 @@ export interface WorkflowFetchWorkOptions {
 	includeUnprojected?: boolean;
 }
 
-export interface WorkflowLinearClient {
+export interface WorkflowTaskClient {
 	fetchWork(
 		issueArg?: string,
 		options?: WorkflowFetchWorkOptions,
@@ -80,19 +80,16 @@ export interface WorkflowLinearClient {
 	fetchIssueByIdentifier(issueArg: string): Promise<WorkflowIssue | null>;
 	fetchReviewOnlyWork(): Promise<WorkflowIssue[]>;
 	isAssignedState(stateId: string): Promise<boolean>;
-	markStage(
-		issueId: string,
-		stage: keyof ResolvedProjectConfig["linear"]["statusMap"],
-	): Promise<void>;
+	markStage(issueId: string, stage: WorkflowStage): Promise<void>;
 	markCanceled(issueId: string): Promise<void>;
 	createBacklogTask(input: {
 		title: string;
 		description: string;
-	}): Promise<CreatedLinearIssueRef>;
+	}): Promise<CreatedTaskRef>;
 	createTodoIssueFromPlan(
 		parentIssue: ParentIssueRef,
 		task: PlannedSplitTask,
-	): Promise<CreatedLinearIssueRef>;
+	): Promise<CreatedTaskRef>;
 	applyStageLabel(issueId: string, stage: WorkflowStage): Promise<void>;
 	clearWorkflowStageLabels(issueId: string): Promise<void>;
 	comment(issueId: string, body: string): Promise<void>;
@@ -101,7 +98,7 @@ export interface WorkflowLinearClient {
 
 export interface WorkflowRuntime {
 	sleep?(ms: number): Promise<void>;
-	createLinearClient(config: ResolvedProjectConfig): WorkflowLinearClient;
+	createTaskClient(config: ResolvedProjectConfig): WorkflowTaskClient;
 	createAgentAdapter(config: ResolvedProjectConfig): AgentAdapter;
 	ensureBaseBranchFresh(config: ResolvedProjectConfig): Promise<void>;
 	ensureIssueWorktree(
@@ -171,6 +168,6 @@ export interface WorkflowRuntime {
 export interface ReviewOnlyQueueInput {
 	runStates: RunState[];
 	localIssues: WorkflowIssue[];
-	linearIssues: WorkflowIssue[];
+	taskIssues: WorkflowIssue[];
 	discoveredPullRequestsByIssueKey: Map<string, PullRequestRef | undefined>;
 }

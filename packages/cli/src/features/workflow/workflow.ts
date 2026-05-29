@@ -29,12 +29,12 @@ export async function runWorkflow(
 		usesAllProjectScope,
 		routeProjectContextsForTargetIssue,
 		handleNoProjectSelection,
-		runProjectCycle: ({ project, linear, cycle, polling }) =>
+		runProjectCycle: ({ project, taskClient, cycle, polling }) =>
 			new ProjectCycleRunner(
 				project,
 				config.notifications,
 				options,
-				linear,
+				taskClient,
 				polling,
 				runtime,
 			).run(cycle),

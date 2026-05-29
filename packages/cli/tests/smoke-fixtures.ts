@@ -1,9 +1,9 @@
 import type {
-	LinearIssue,
 	PullRequestRef,
 	ResolvedProjectConfig,
 	RunState,
 	WorkflowStage,
+	WorkflowTaskRecord,
 } from "../src/features/types";
 
 const now = "2026-05-11T00:00:00.000Z";
@@ -22,12 +22,12 @@ export const complexPlan = [
 	'SPLIT_TASKS_JSON: [{"title":"Part A"},{"title":"Part B"}]',
 ].join("\n");
 
-export function issue(key: string, projectId = "linear-default"): LinearIssue {
+export function issue(key: string, projectId = "default"): WorkflowTaskRecord {
 	return {
-		id: `lin_${key}`,
+		id: `task_${key}`,
 		identifier: key,
 		title: `${key} title`,
-		url: `https://linear.example/${key}`,
+		url: `devos://tasks/${key}`,
 		projectId,
 		priority: { value: 1, name: "High" },
 		state: { id: "assigned", name: "Assigned" },
@@ -46,7 +46,7 @@ export function state(
 		projectName: project.name,
 		workspacePath: project.executionPath,
 		repository: project.repo,
-		issue: { id: `lin_${key}`, key, title: `${key} title`, url: "#" },
+		issue: { id: `task_${key}`, key, title: `${key} title`, url: "#" },
 		stage: stage as WorkflowStage,
 		complexityScore: score,
 		reviewMode: "bot",
@@ -57,34 +57,13 @@ export function state(
 	};
 }
 
-export function project(
-	id: string,
-	linearProjectId = "linear-default",
-): ResolvedProjectConfig {
+export function project(id: string): ResolvedProjectConfig {
 	return {
 		id,
 		name: id,
 		workspacePath: "",
 		executionPath: "",
 		repo: { owner: "acme", name: id, baseBranch: "main" },
-		linear: {
-			apiKey: "fake",
-			apiUrl: "https://linear.example/graphql",
-			projectId: linearProjectId,
-			pollLimit: 20,
-			statusMap: {
-				backlog: "backlog",
-				assigned: "assigned",
-				plan: "plan",
-				in_progress: "in_progress",
-				in_review: "in_review",
-				canceled: "canceled",
-				failed: "failed",
-				done: "done",
-			},
-			labelMap: {},
-			autoCreateLabels: false,
-		},
 		github: { useGhCli: false, defaultBugLabel: "bug" },
 		server: {
 			database: {

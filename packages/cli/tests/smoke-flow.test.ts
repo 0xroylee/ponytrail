@@ -230,9 +230,9 @@ describe("deterministic workflow smoke flow", () => {
 		expect(h.agent("default").plans).toHaveLength(0);
 	});
 
-	it("routes default targeted runs to the matching Linear project", async () => {
+	it("routes default targeted runs to the matching task project", async () => {
 		const h = await createSmokeHarness();
-		h.addIssue("api", issue("API-1", "linear-api"));
+		h.addIssue("api", issue("API-1", "api"));
 		const apiAgent = h.agent("api");
 		apiAgent.plans.push(result(simplePlan, "session-api"));
 		apiAgent.resumes.push(result("implemented"));

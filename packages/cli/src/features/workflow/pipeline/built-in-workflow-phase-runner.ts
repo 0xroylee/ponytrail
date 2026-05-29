@@ -37,7 +37,7 @@ export class BuiltInWorkflowPhaseRunner {
 				handleImplementingStage(
 					input.config,
 					input.agent,
-					input.linear,
+					input.taskClient,
 					input.state,
 					this.runtime,
 				),
@@ -46,7 +46,7 @@ export class BuiltInWorkflowPhaseRunner {
 					input.config,
 					input.agent,
 					input.notifications,
-					input.linear,
+					input.taskClient,
 					input.state,
 					this.runtime,
 				),
@@ -58,7 +58,7 @@ export class BuiltInWorkflowPhaseRunner {
 			input.config,
 			input.agent,
 			input.notifications,
-			input.linear,
+			input.taskClient,
 			input.state,
 			{
 				runAgentWithChatLog,

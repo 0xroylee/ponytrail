@@ -1,8 +1,6 @@
 import type {
 	DeepPartial,
 	DevosRootConfig,
-	LinearStatusMap,
-	LinearStatusMapInput,
 	ProjectConfig,
 	ProjectRuntimeConfig,
 	ResolvedProjectConfig,
@@ -93,21 +91,6 @@ function mergeRuntime(
 			...(rootDefaults.repo ?? {}),
 			...(project.repo ?? {}),
 		},
-		linear: {
-			...base.linear,
-			...(rootDefaults.linear ?? {}),
-			...(project.linear ?? {}),
-			statusMap: mergeStatusMap(
-				base.linear.statusMap,
-				rootDefaults.linear?.statusMap,
-				project.linear?.statusMap,
-			),
-			labelMap: {
-				...base.linear.labelMap,
-				...(rootDefaults.linear?.labelMap ?? {}),
-				...(project.linear?.labelMap ?? {}),
-			},
-		},
 		github: {
 			...base.github,
 			...(rootDefaults.github ?? {}),
@@ -186,35 +169,5 @@ function mergeRuntime(
 			},
 		},
 		dryRun: project.dryRun ?? rootDefaults.dryRun ?? base.dryRun,
-	};
-}
-
-function mergeStatusMap(
-	base: LinearStatusMap,
-	rootDefaults?: LinearStatusMapInput,
-	project?: LinearStatusMapInput,
-): LinearStatusMap {
-	return normalizeStatusMap({
-		...base,
-		...(rootDefaults ?? {}),
-		...(project ?? {}),
-	});
-}
-
-function normalizeStatusMap(input: LinearStatusMapInput): LinearStatusMap {
-	return {
-		backlog: input.backlog ?? "Backlog",
-		assigned: input.assigned ?? "Todo",
-		plan: input.plan ?? input.planning ?? "In Progress",
-		in_progress: input.in_progress ?? input.implementing ?? "In Progress",
-		in_review:
-			input.in_review ??
-			input.reviewing ??
-			input.pr_created ??
-			input.testing ??
-			"In Review",
-		canceled: input.canceled ?? input.blocked ?? "Canceled",
-		failed: input.failed ?? "Failed",
-		done: input.done ?? "Done",
 	};
 }

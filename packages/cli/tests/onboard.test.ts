@@ -19,7 +19,6 @@ import {
 	DEFAULT_LABEL_MAP,
 	DEFAULT_REASONING_EFFORTS,
 	DEFAULT_STATUS_MAP,
-	LINEAR_API_KEY_SETTINGS_URL,
 	type OnboardCheckDeps,
 	type OnboardDraft,
 	collectOnboardChecks,
@@ -85,7 +84,6 @@ describe("onboard helpers", () => {
 		expect(env).not.toContain("Demo description");
 		expect(env).not.toContain("Demo Workspace");
 		expect(env).not.toContain("/tmp/demo");
-		expect(env).not.toContain("lin_secret_123");
 	});
 
 	it("uses low as default implementation reasoning effort", () => {
@@ -168,15 +166,7 @@ describe("onboard helpers", () => {
 		expect(DEFAULT_REASONING_EFFORTS.plan).toBe("low");
 	});
 
-	it("exports the Linear API key settings URL", () => {
-		expect(LINEAR_API_KEY_SETTINGS_URL).toBe(
-			"https://linear.app/settings/account/security",
-		);
-	});
-
 	it("maps typed onboarding prompts into the onboard draft", async () => {
-		const previousLinearApiKey = process.env.LINEAR_API_KEY;
-		process.env.LINEAR_API_KEY = "lin_secret_123";
 		const textPrompts: string[] = [];
 		const prompts = promptAdapter({
 			text: {
@@ -188,48 +178,36 @@ describe("onboard helpers", () => {
 			name: "demo",
 			baseBranch: "main",
 		}));
-		try {
-			const draft = await collectOnboardDraft("/tmp/demo", {
-				prompts: {
-					...prompts,
-					text: async (options) => {
-						textPrompts.push(options.message);
-						return prompts.text(options);
-					},
+		const draft = await collectOnboardDraft("/tmp/demo", {
+			prompts: {
+				...prompts,
+				text: async (options) => {
+					textPrompts.push(options.message);
+					return prompts.text(options);
 				},
-				inferGitHubDefaults,
-			});
+			},
+			inferGitHubDefaults,
+		});
 
-			expect(inferGitHubDefaults).not.toHaveBeenCalled();
-			expect(draft.workspaceName).toBe("Demo Workspace");
-			expect(draft.workspacePath).toBe("/tmp/demo");
-			expect(draft.executionPath).toBe("/tmp/demo");
-			expect(draft.linearApiKey).toBe("lin_secret_123");
-			expect(draft.notifications.email).toEqual({
-				enabled: false,
-				to: [],
-			});
-			expect(draft.workflow.isolatedWorktrees).toBe(true);
-			expect(draft.statusMap).toEqual(DEFAULT_STATUS_MAP);
-			expect(draft.codex.sandbox).toBe("workspace-write");
-			expect(draft.codex.reasoningEfforts).toMatchObject({
-				plan: "low",
-				implement: "low",
-				reviewTest: "medium",
-				githubComment: "medium",
-			});
-			expect(draft.codex.plugins).toEqual([
-				"github@openai-curated",
-				"linear@openai-curated",
-			]);
-			expect(textPrompts).toEqual(["Workspace name"]);
-		} finally {
-			if (previousLinearApiKey === undefined) {
-				process.env.LINEAR_API_KEY = undefined;
-			} else {
-				process.env.LINEAR_API_KEY = previousLinearApiKey;
-			}
-		}
+		expect(inferGitHubDefaults).not.toHaveBeenCalled();
+		expect(draft.workspaceName).toBe("Demo Workspace");
+		expect(draft.workspacePath).toBe("/tmp/demo");
+		expect(draft.executionPath).toBe("/tmp/demo");
+		expect(draft.notifications.email).toEqual({
+			enabled: false,
+			to: [],
+		});
+		expect(draft.workflow.isolatedWorktrees).toBe(true);
+		expect(draft.statusMap).toEqual(DEFAULT_STATUS_MAP);
+		expect(draft.codex.sandbox).toBe("workspace-write");
+		expect(draft.codex.reasoningEfforts).toMatchObject({
+			plan: "low",
+			implement: "low",
+			reviewTest: "medium",
+			githubComment: "medium",
+		});
+		expect(draft.codex.plugins).toEqual(["github@openai-curated"]);
+		expect(textPrompts).toEqual(["Workspace name"]);
 	});
 
 	it("does not write onboard files when onboarding prompts are cancelled", async () => {
@@ -302,21 +280,21 @@ describe("onboard helpers", () => {
 	});
 
 	it("merges env updates without dropping unrelated values", () => {
-		const merged = mergeEnvFile("KEEP_ME=yes\nLINEAR_API_KEY=old\n", {
-			LINEAR_API_KEY: "new secret",
+		const merged = mergeEnvFile("KEEP_ME=yes\nCUSTOM_SECRET=old\n", {
+			CUSTOM_SECRET: "new secret",
 		});
 		expect(merged).toContain("KEEP_ME=yes");
-		expect(merged).toContain('LINEAR_API_KEY="new secret"');
-		expect(merged).not.toContain("LINEAR_API_KEY=old");
+		expect(merged).toContain('CUSTOM_SECRET="new secret"');
+		expect(merged).not.toContain("CUSTOM_SECRET=old");
 	});
 
-	it("preserves existing Linear API key when onboarding has no env key", () => {
-		const merged = mergeEnvFile("LINEAR_API_KEY=old\nKEEP_ME=yes\n", {
-			LINEAR_API_KEY: undefined,
+	it("preserves existing env values when onboarding has no replacement", () => {
+		const merged = mergeEnvFile("CUSTOM_SECRET=old\nKEEP_ME=yes\n", {
+			CUSTOM_SECRET: undefined,
 			JWT_SECRET: "jwt",
 		});
 
-		expect(merged).toContain("LINEAR_API_KEY=old");
+		expect(merged).toContain("CUSTOM_SECRET=old");
 		expect(merged).toContain("KEEP_ME=yes");
 		expect(merged).toContain("JWT_SECRET=jwt");
 	});
@@ -334,7 +312,6 @@ describe("onboard helpers", () => {
 		try {
 			await writeOnboardFiles(tempDir, draft);
 			const sqliteEnv = await loadSqliteEnv(tempDir);
-			expect(sqliteEnv?.LINEAR_API_KEY).toBe("lin_secret_123");
 			expect(sqliteEnv?.PIV_ISOLATED_WORKTREES).toBe("1");
 			expect(sqliteEnv?.GITHUB_REPO_OWNER).toBeUndefined();
 			expect(sqliteEnv?.GITHUB_REPO_NAME).toBeUndefined();
@@ -657,18 +634,17 @@ describe("onboard helpers", () => {
 		});
 	});
 
-	it("ignores missing Linear API keys in onboard checks", async () => {
+	it("passes onboard checks without tracker API keys", async () => {
 		const checks = await collectOnboardChecks(
 			"/tmp/demo",
 			onboardCheckDeps({
-				loadConfig: async () => loadedConfig({ linearApiKey: "" }),
+				loadConfig: async () => loadedConfig({}),
 				access: async () => {},
 				readFile: async () => "",
 				runCommand: async () => okCommand(),
 			}),
 		);
 
-		expect(checks.map((check) => check.name)).not.toContain("Linear API key");
 		expect(checks.every((check) => check.status === "pass")).toBe(true);
 	});
 
@@ -851,13 +827,12 @@ describe("onboard helpers", () => {
 });
 
 function loadedConfig({
-	linearApiKey,
 	dockerEnabled = false,
 	agentBackend,
 	cursorApiKey,
 	cursorBinary = "cursor-agent",
 }: {
-	linearApiKey: string;
+	linearApiKey?: string;
 	dockerEnabled?: boolean;
 	agentBackend?: "codex" | "claude-code" | "cursor-agent";
 	cursorApiKey?: string;
@@ -874,14 +849,6 @@ function loadedConfig({
 					owner: checkRepoOwner,
 					name: checkRepoName,
 					baseBranch: checkBaseBranch,
-				},
-				linear: {
-					apiKey: linearApiKey,
-					apiUrl: "https://api.linear.app/graphql",
-					pollLimit: 10,
-					statusMap: DEFAULT_STATUS_MAP,
-					labelMap: DEFAULT_LABEL_MAP,
-					autoCreateLabels: true,
 				},
 				codex: {
 					...draft.codex,
@@ -952,7 +919,6 @@ function createTestDraft(): OnboardDraft {
 		workspaceName: "Demo Workspace",
 		workspacePath: "/tmp/demo",
 		executionPath: "/tmp/demo",
-		linearApiKey: "lin_secret_123",
 		instance: createDefaultOnboardInstanceDraft(),
 		notifications: {
 			email: {
@@ -980,7 +946,7 @@ function createTestDraft(): OnboardDraft {
 				reviewTest: "gpt-5.3-codex",
 				githubComment: "gpt-5.3-codex",
 			},
-			plugins: ["github@openai-curated", "linear@openai-curated"],
+			plugins: ["github@openai-curated"],
 			skillsets: ["devos"],
 			configOverrides: {
 				"features.codex_hooks": "true",

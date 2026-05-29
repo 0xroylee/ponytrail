@@ -116,7 +116,6 @@ function createTestDraft(): OnboardDraft {
 		workspaceName: "Demo Workspace",
 		workspacePath: "/tmp/demo",
 		executionPath: "/tmp/demo",
-		linearApiKey: "lin_secret_123",
 		instance: createDefaultOnboardInstanceDraft(),
 		notifications: {
 			email: {
@@ -142,7 +141,7 @@ function createTestDraft(): OnboardDraft {
 				reviewTest: "gpt-5.3-codex",
 				githubComment: "gpt-5.3-codex",
 			},
-			plugins: ["github@openai-curated", "linear@openai-curated"],
+			plugins: ["github@openai-curated"],
 			skillsets: ["devos"],
 			configOverrides: { "features.codex_hooks": "true" },
 			sandbox: "workspace-write",

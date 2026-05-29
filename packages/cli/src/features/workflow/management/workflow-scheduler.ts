@@ -51,7 +51,7 @@ export class WorkflowScheduler<TProject extends ResolvedProjectConfig> {
 			try {
 				totalIssues += await this.deps.runProjectCycle({
 					project: context.config,
-					linear: context.linear,
+					taskClient: context.taskClient,
 					cycle,
 					polling,
 				});

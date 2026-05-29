@@ -151,10 +151,7 @@ export function selectStaleRunIssueKeys(
 export function buildReviewOnlyIssueQueue(
 	input: ReviewOnlyQueueInput,
 ): ReviewOnlyQueueBuildResult {
-	const merged = dedupeIssuesByKey([
-		...input.localIssues,
-		...input.linearIssues,
-	]);
+	const merged = dedupeIssuesByKey([...input.localIssues, ...input.taskIssues]);
 	const runStateByKey = new Map(
 		input.runStates.map((state) => [normalizeIssueKey(state.issue.key), state]),
 	);

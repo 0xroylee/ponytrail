@@ -8,16 +8,16 @@ import type {
 } from "adapters";
 import type { LoadedConfig } from "../src/features/config";
 import type {
-	LinearIssue,
 	ResolvedProjectConfig,
 	RunOptions,
 	RunState,
+	WorkflowTaskRecord,
 } from "../src/features/types";
 import { createWorkflowRuntime } from "../src/features/workflow/runtime/workflow-runtime";
 import { loadRunState, saveRunState } from "../src/features/workflow/state";
 import type {
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "../src/features/workflow/types/workflow.types";
 import { pr, project } from "./smoke-fixtures";
 
@@ -32,15 +32,17 @@ export interface SmokeHarness {
 	project(projectId: string): ResolvedProjectConfig;
 	run(options: RunOptions): Promise<void>;
 	state(projectId: string, issueKey: string): Promise<RunState | null>;
-	addIssue(projectId: string, issue: LinearIssue): void;
+	addIssue(projectId: string, issue: WorkflowTaskRecord): void;
 	presetState(projectId: string, state: RunState): Promise<void>;
 }
 
 export async function createSmokeHarness(): Promise<SmokeHarness> {
 	const workspacePath = await mkdtemp(path.join(os.tmpdir(), "adhd-smoke-"));
-	const projects = [project("default"), project("api", "linear-api")].map(
-		(config) => ({ ...config, workspacePath, executionPath: workspacePath }),
-	);
+	const projects = [project("default"), project("api")].map((config) => ({
+		...config,
+		workspacePath,
+		executionPath: workspacePath,
+	}));
 	const config: LoadedConfig = {
 		projects,
 		server: {
@@ -57,14 +59,14 @@ export async function createSmokeHarness(): Promise<SmokeHarness> {
 		notifications: { email: { enabled: true, to: ["ops@example.invalid"] } },
 		workspace: { id: "owner-1", name: "Default Workspace" },
 	};
-	const allIssues = new Map<string, LinearIssue>();
+	const allIssues = new Map<string, WorkflowTaskRecord>();
 	const agents = new Map(projects.map((p) => [p.id, new FakeAgent()]));
 	const linears = new Map(
 		projects.map((p) => [p.id, new FakeLinear(p, allIssues)]),
 	);
 	const notifications: SmokeHarness["notifications"] = [];
 	const runtime = createWorkflowRuntime({
-		createLinearClient: (p) => linears.get(p.id) as WorkflowLinearClient,
+		createTaskClient: (p) => linears.get(p.id) as WorkflowTaskClient,
 		createAgentAdapter: (p) => agents.get(p.id) as FakeAgent,
 		ensureBaseBranchFresh: async () => {},
 		findOpenPullRequestForIssue: async (_p, key) => pr(key),
@@ -174,25 +176,27 @@ export class FakeLinear {
 
 	constructor(
 		private readonly project: ResolvedProjectConfig,
-		private readonly issues: Map<string, LinearIssue>,
+		private readonly issues: Map<string, WorkflowTaskRecord>,
 	) {}
 
-	async fetchWork(issueArg?: string): Promise<LinearIssue[]> {
+	async fetchWork(issueArg?: string): Promise<WorkflowTaskRecord[]> {
 		const issues = issueArg
 			? [this.issues.get(issueArg)].filter(Boolean)
 			: [...this.ownedIssueKeys].map((key) => this.issues.get(key));
-		return issues.filter((issue): issue is LinearIssue =>
+		return issues.filter((issue): issue is WorkflowTaskRecord =>
 			Boolean(issue && issue.state.id === "assigned" && this.inProject(issue)),
 		);
 	}
-	async fetchIssueByIdentifier(key: string): Promise<LinearIssue | null> {
+	async fetchIssueByIdentifier(
+		key: string,
+	): Promise<WorkflowTaskRecord | null> {
 		return this.issues.get(key) ?? null;
 	}
-	async fetchReviewOnlyWork(): Promise<LinearIssue[]> {
+	async fetchReviewOnlyWork(): Promise<WorkflowTaskRecord[]> {
 		const stages = new Set(["in_review", "done"]);
 		return [...this.ownedIssueKeys]
 			.map((key) => this.issues.get(key))
-			.filter((issue): issue is LinearIssue =>
+			.filter((issue): issue is WorkflowTaskRecord =>
 				Boolean(issue && stages.has(issue.state.id) && this.inProject(issue)),
 			);
 	}
@@ -231,10 +235,7 @@ export class FakeLinear {
 	async comment(_issueId: string, body: string): Promise<void> {
 		this.comments.push(body);
 	}
-	private inProject(issue: LinearIssue): boolean {
-		return (
-			!this.project.linear.projectId ||
-			issue.projectId === this.project.linear.projectId
-		);
+	private inProject(issue: WorkflowTaskRecord): boolean {
+		return issue.projectId === this.project.id;
 	}
 }

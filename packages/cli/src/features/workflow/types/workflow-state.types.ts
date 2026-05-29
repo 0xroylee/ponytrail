@@ -7,7 +7,7 @@ export type WorkflowStage =
 	| "done"
 	| "failed";
 
-export interface LinearIssue {
+export interface WorkflowTaskRecord {
 	id: string;
 	identifier: string;
 	title: string;
@@ -30,6 +30,13 @@ export interface LinearIssue {
 		id: string;
 		name: string;
 	}>;
+}
+
+export interface CreatedTaskRef {
+	id: string;
+	identifier: string;
+	title: string;
+	url: string;
 }
 
 export interface IssueRef {

@@ -2,15 +2,15 @@ import type { LoadedConfig } from "../../config";
 import type { ResolvedProjectConfig, RunOptions } from "../../types";
 import type {
 	PollingSettings,
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "./workflow.types";
 
 export interface ProjectWorkflowContext<
 	TProject extends ResolvedProjectConfig = ResolvedProjectConfig,
 > {
 	config: TProject;
-	linear: WorkflowLinearClient;
+	taskClient: WorkflowTaskClient;
 }
 
 export interface ProjectContextResolverDeps<
@@ -36,7 +36,7 @@ export interface ProjectContextResolverDeps<
 export interface WorkflowSchedulerDeps<TProject extends ResolvedProjectConfig> {
 	runProjectCycle(input: {
 		project: TProject;
-		linear: WorkflowLinearClient;
+		taskClient: WorkflowTaskClient;
 		cycle: number;
 		polling: PollingSettings;
 	}): Promise<number>;

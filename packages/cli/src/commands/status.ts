@@ -10,7 +10,7 @@ export function registerStatusCommand(
 		.command("status")
 		.description("inspect persisted run state")
 		.requiredOption("--project <PROJECT_ID>", "configured project identifier")
-		.requiredOption("--issue <LINEAR_KEY>", "Linear issue key")
+		.requiredOption("--issue <TASK_KEY>", "workflow task key")
 		.action(async (options: StatusCommanderOptions) => {
 			await withConfig(runtime, (config) =>
 				runtime.handleStatusCommand(config, {

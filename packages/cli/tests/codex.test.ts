@@ -10,27 +10,6 @@ const config: ResolvedProjectConfig = {
 	workspacePath: "/tmp/work",
 	executionPath: "/tmp/work/repo",
 	repo: { owner: "o", name: "n", baseBranch: "main" },
-	linear: {
-		apiKey: "x",
-		apiUrl: "https://api.linear.app/graphql",
-		pollLimit: 10,
-		statusMap: {
-			backlog: "z",
-			assigned: "a",
-			plan: "b",
-			in_progress: "c",
-			in_review: "e",
-			canceled: "g",
-			failed: "x",
-			done: "h",
-		},
-		labelMap: {
-			pr_created: "PR Created",
-			reviewing: "Reviewing",
-			testing: "Testing",
-		},
-		autoCreateLabels: true,
-	},
 	github: { useGhCli: true, defaultBugLabel: "bug" },
 	server: {
 		database: {

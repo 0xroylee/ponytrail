@@ -13,7 +13,7 @@ export function registerRunCommand(
 		.description("run workflow orchestration")
 		.option("--project <PROJECT_ID>", "select one configured project")
 		.option("--all-projects", "run across all configured projects")
-		.option("--issue <LINEAR_KEY_OR_URL>", "scope run to a Linear issue")
+		.option("--issue <TASK_KEY>", "scope run to a workflow task")
 		.option("--poll", "continue polling for new work")
 		.option("--poll-forever", "poll continuously")
 		.option("--no-exit-when-idle", "disable automatic exit while idle")

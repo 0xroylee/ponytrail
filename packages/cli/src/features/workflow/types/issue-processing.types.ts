@@ -6,8 +6,8 @@ import type {
 } from "../../types";
 import type {
 	WorkflowIssue,
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "./workflow.types";
 
 export interface IssueRunStateResolution {
@@ -25,7 +25,7 @@ export interface IssueLogger {
 export interface IssueProcessorInput {
 	config: ResolvedProjectConfig;
 	notifications: ResolvedNotificationConfig;
-	linear: WorkflowLinearClient;
+	taskClient: WorkflowTaskClient;
 	options: RunOptions;
 	effectiveConcurrency: number;
 	leaseTimeoutMs: number;

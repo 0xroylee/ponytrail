@@ -9,23 +9,6 @@ function createConfig(): ResolvedProjectConfig {
 		workspacePath: "/tmp/work",
 		executionPath: "/tmp/work/repo",
 		repo: { owner: "acme", name: "repo", baseBranch: "main" },
-		linear: {
-			apiKey: "x",
-			apiUrl: "https://api.linear.app/graphql",
-			pollLimit: 10,
-			statusMap: {
-				backlog: "backlog",
-				assigned: "assigned",
-				plan: "plan",
-				in_progress: "in_progress",
-				in_review: "in_review",
-				canceled: "canceled",
-				failed: "failed",
-				done: "done",
-			},
-			labelMap: {},
-			autoCreateLabels: true,
-		},
 		github: { useGhCli: true, defaultBugLabel: "bug" },
 		server: {
 			database: {

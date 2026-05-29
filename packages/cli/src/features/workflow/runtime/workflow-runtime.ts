@@ -24,7 +24,7 @@ export function createWorkflowRuntime(
 	overrides: Partial<WorkflowRuntime> = {},
 ): WorkflowRuntime {
 	return {
-		createLinearClient: createBoardTaskWorkflowClient,
+		createTaskClient: createBoardTaskWorkflowClient,
 		createAgentAdapter: createAgentAdapter,
 		ensureBaseBranchFresh,
 		ensureIssueWorktree,

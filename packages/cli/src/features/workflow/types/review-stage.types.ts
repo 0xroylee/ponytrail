@@ -78,7 +78,7 @@ export interface FinalizeReviewMergeDeps {
 	) => Promise<void>;
 }
 
-export interface ReviewLinearClient {
+export interface ReviewTaskClient {
 	markStage(issueId: string, stage: string): Promise<void>;
 	applyStageLabel(issueId: string, stage: string): Promise<void>;
 	clearWorkflowStageLabels(issueId: string): Promise<void>;

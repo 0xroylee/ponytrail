@@ -176,7 +176,7 @@ export async function createDraftPrFromWorktree(
 	});
 	const prTitle = `[codex] ${issueKey}: ${issueTitle}`;
 	const prBody = [
-		`Linear issue: ${issueKey}`,
+		`Workflow task: ${issueKey}`,
 		"",
 		"This PR was created by the devos.ing ADHD (Agentic Development Hub & Daemon) workflow.",
 		"",
@@ -667,13 +667,13 @@ export async function getPullRequestMergeStatus(
 export function buildBugIssueBody(
 	bugTitle: string,
 	bugBody: string,
-	linearIssueUrl: string,
+	sourceTaskUrl: string,
 	prUrl?: string,
 ): string {
 	const lines = [
 		"Source workflow reported a bug.",
 		"",
-		`Linear: ${linearIssueUrl}`,
+		`Task: ${sourceTaskUrl}`,
 	];
 	if (prUrl) {
 		lines.push(`PR: ${prUrl}`);
@@ -686,11 +686,11 @@ export async function createBugIssue(
 	config: ResolvedProjectConfig,
 	bugTitle: string,
 	bugBody: string,
-	linearIssueUrl: string,
+	sourceTaskUrl: string,
 	prUrl?: string,
 ): Promise<string | undefined> {
 	await ensureGhAuth(config);
-	const body = buildBugIssueBody(bugTitle, bugBody, linearIssueUrl, prUrl);
+	const body = buildBugIssueBody(bugTitle, bugBody, sourceTaskUrl, prUrl);
 	const result = await runCommand(
 		"gh",
 		[
@@ -712,7 +712,7 @@ export async function createBugIssue(
 export async function createBugIssues(
 	config: ResolvedProjectConfig,
 	bugs: BugRecord[],
-	linearIssueUrl: string,
+	sourceTaskUrl: string,
 	prUrl?: string,
 ): Promise<BugRecord[]> {
 	const created: BugRecord[] = [];
@@ -721,7 +721,7 @@ export async function createBugIssues(
 			config,
 			bug.title,
 			bug.body,
-			linearIssueUrl,
+			sourceTaskUrl,
 			prUrl,
 		);
 		created.push({ ...bug, issueUrl });

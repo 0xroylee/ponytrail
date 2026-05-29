@@ -5,19 +5,19 @@ import type {
 } from "../../types";
 import type {
 	FinalizeReviewMergeDeps,
-	ReviewLinearClient,
+	ReviewTaskClient,
 } from "../types/review-stage.types";
 
 export async function finalizeIssueAfterReviewMerge(
 	config: ResolvedProjectConfig,
 	notifications: ResolvedNotificationConfig,
-	linear: ReviewLinearClient,
+	taskClient: ReviewTaskClient,
 	state: RunState,
 	deps: FinalizeReviewMergeDeps,
 ): Promise<void> {
-	await linear.markStage(state.issue.id, "done");
-	await linear.clearWorkflowStageLabels(state.issue.id);
-	await linear.comment(
+	await taskClient.markStage(state.issue.id, "done");
+	await taskClient.clearWorkflowStageLabels(state.issue.id);
+	await taskClient.comment(
 		state.issue.id,
 		"PR squash-merged after completed review.",
 	);

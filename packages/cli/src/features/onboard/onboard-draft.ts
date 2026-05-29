@@ -31,11 +31,6 @@ export async function collectOnboardDraft(
 		"Workspace name",
 		defaultWorkspaceName(executionPath),
 	);
-	const linearApiKey = await promptSecret(
-		prompts,
-		"Linear API key",
-		process.env.LINEAR_API_KEY ?? "",
-	);
 	const notifications = await collectNotificationDraft(prompts);
 	const isolatedWorktrees = await prompts.confirm({
 		message: "Use isolated worktrees?",
@@ -47,7 +42,6 @@ export async function collectOnboardDraft(
 		workspaceName: workspaceName.trim() || DEFAULT_WORKSPACE_NAME,
 		workspacePath: executionPath,
 		executionPath,
-		linearApiKey,
 		instance,
 		notifications,
 		workflow: {
@@ -68,7 +62,7 @@ export async function collectOnboardDraft(
 				reviewTest: DEFAULT_CODEX_MODELS.reviewTest,
 				githubComment: DEFAULT_CODEX_MODELS.reviewTest,
 			},
-			plugins: ["github@openai-curated", "linear@openai-curated"],
+			plugins: ["github@openai-curated"],
 			skillsets: ["devos"],
 			configOverrides: { "features.codex_hooks": "true" },
 			sandbox: "workspace-write",

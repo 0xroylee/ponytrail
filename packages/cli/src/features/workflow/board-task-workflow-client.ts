@@ -1,5 +1,5 @@
-import type { CreatedLinearIssueRef } from "../../integrations/linear";
 import type {
+	CreatedTaskRef,
 	ParentIssueRef,
 	PlannedSplitTask,
 	PullRequestRef,
@@ -14,7 +14,7 @@ import type {
 import type {
 	WorkflowFetchWorkOptions,
 	WorkflowIssue,
-	WorkflowLinearClient,
+	WorkflowTaskClient,
 } from "./types/workflow.types";
 
 const BACKLOG_STATUS = "backlog";
@@ -32,11 +32,11 @@ const DEFAULT_CREATOR_ID = "member-1";
 
 export function createBoardTaskWorkflowClient(
 	config: ResolvedProjectConfig,
-): WorkflowLinearClient {
+): WorkflowTaskClient {
 	return new BoardTaskWorkflowClient(config);
 }
 
-class BoardTaskWorkflowClient implements WorkflowLinearClient {
+class BoardTaskWorkflowClient implements WorkflowTaskClient {
 	private readonly store: BoardTaskWorkflowStore;
 
 	constructor(private readonly config: ResolvedProjectConfig) {
@@ -98,14 +98,14 @@ class BoardTaskWorkflowClient implements WorkflowLinearClient {
 	async createBacklogTask(input: {
 		title: string;
 		description: string;
-	}): Promise<CreatedLinearIssueRef> {
+	}): Promise<CreatedTaskRef> {
 		return this.createTask(input.title, input.description, BACKLOG_STATUS);
 	}
 
 	async createTodoIssueFromPlan(
 		parentIssue: ParentIssueRef,
 		task: PlannedSplitTask,
-	): Promise<CreatedLinearIssueRef> {
+	): Promise<CreatedTaskRef> {
 		const description = [
 			task.description?.trim() || "No task summary provided by planner.",
 			"",
@@ -141,7 +141,7 @@ class BoardTaskWorkflowClient implements WorkflowLinearClient {
 		title: string,
 		content: string,
 		status: string,
-	): Promise<CreatedLinearIssueRef> {
+	): Promise<CreatedTaskRef> {
 		const created = await this.store.createTask({
 			projectId: this.config.id,
 			title,
@@ -151,9 +151,9 @@ class BoardTaskWorkflowClient implements WorkflowLinearClient {
 			dueDate: null,
 			creatorId: DEFAULT_CREATOR_ID,
 			linkedPr: null,
-			linearIssueId: null,
-			linearIdentifier: null,
-			linearUrl: null,
+			externalIssueId: null,
+			externalIdentifier: null,
+			externalUrl: null,
 		});
 		return toCreatedRef(created.id, created.taskKey, created.title);
 	}
@@ -212,7 +212,7 @@ function toCreatedRef(
 	id: string,
 	taskKey: string,
 	title: string,
-): CreatedLinearIssueRef {
+): CreatedTaskRef {
 	return {
 		id,
 		identifier: taskKey,

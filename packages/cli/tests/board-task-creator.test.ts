@@ -74,9 +74,9 @@ function createdTask(title: string) {
 		dueDate: null,
 		creatorId: "owner-1",
 		linkedPr: null,
-		linearIssueId: null,
-		linearIdentifier: null,
-		linearUrl: null,
+		externalIssueId: null,
+		externalIdentifier: null,
+		externalUrl: null,
 		createdAt: "2026-05-12T00:00:00.000Z",
 		updatedAt: "2026-05-12T00:00:00.000Z",
 	};

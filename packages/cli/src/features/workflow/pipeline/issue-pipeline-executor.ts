@@ -7,8 +7,8 @@ import type {
 import { ReviewMergeDecisionManager } from "../review/review-orchestrator";
 import { saveRunState, transitionStage } from "../state";
 import type {
-	WorkflowLinearClient,
 	WorkflowRuntime,
+	WorkflowTaskClient,
 } from "../types/workflow.types";
 import { heartbeatRunLease } from "../workflow-lease";
 import { isReviewOnlyExecutableStage } from "../workflow-queue";
@@ -21,7 +21,7 @@ export class IssuePipelineExecutor {
 	constructor(
 		private readonly config: ResolvedProjectConfig,
 		private readonly notifications: ResolvedNotificationConfig,
-		private readonly linear: WorkflowLinearClient,
+		private readonly taskClient: WorkflowTaskClient,
 		private readonly options: RunOptions,
 		private readonly leaseOwnerId: string,
 		private readonly leaseTimeoutMs: number,
@@ -50,7 +50,7 @@ export class IssuePipelineExecutor {
 							config: this.config,
 							agent,
 							notifications: this.notifications,
-							linear: this.linear,
+							taskClient: this.taskClient,
 							state,
 						});
 						return {
@@ -108,14 +108,17 @@ export class IssuePipelineExecutor {
 		return new ReviewMergeDecisionManager(
 			this.config,
 			this.notifications,
-			this.linear,
+			this.taskClient,
 			this.runtime,
 		);
 	}
 
 	private async handleReceivedStage(state: RunState): Promise<void> {
-		await this.linear.markStage(state.issue.id, "plan");
-		await this.linear.comment(state.issue.id, "devos.ing started planning.");
+		await this.taskClient.markStage(state.issue.id, "plan");
+		await this.taskClient.comment(
+			state.issue.id,
+			"devos.ing started planning.",
+		);
 		Object.assign(state, transitionStage(state, "plan"));
 		await saveRunState(this.config.workspacePath, state);
 	}
