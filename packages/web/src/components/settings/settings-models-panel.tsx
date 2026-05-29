@@ -88,9 +88,6 @@ export function SettingsModelsPanel(): ReactElement {
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<Typography variant="sectionTitle">Workflow Models</Typography>
-					<Typography className="mt-1" variant="description">
-						Set Codex model and reasoning defaults per workflow phase.
-					</Typography>
 				</div>
 				<div className="flex gap-2">
 					<Button
@@ -143,11 +140,7 @@ function SettingsPanelShell({
 }: {
 	children: ReactNode;
 }): ReactElement {
-	return (
-		<section className="grid gap-4 rounded-lg border border-border bg-card p-4 text-zinc-100">
-			{children}
-		</section>
-	);
+	return <section className="grid gap-4 text-zinc-100">{children}</section>;
 }
 
 function SettingsModelRow({
@@ -175,10 +168,10 @@ function SettingsModelRow({
 	return (
 		<div className="grid gap-3 rounded-md border border-border bg-surface-panel p-3 md:grid-cols-[minmax(8rem,0.75fr)_minmax(12rem,1fr)_minmax(10rem,0.75fr)_auto] md:items-end">
 			<div className="min-w-0">
-				<Typography className="truncate" variant="label">
+				<Typography className="block truncate" variant="label">
 					{stage.label}
 				</Typography>
-				<Typography className="mt-1 truncate" variant="muted">
+				<Typography className="mt-1 block truncate" variant="muted">
 					{stage.model ?? "Inherited model"}
 				</Typography>
 			</div>
