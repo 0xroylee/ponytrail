@@ -25,6 +25,7 @@ import { useChatRoomDraftState } from "./chat-room-panel-draft-state";
 import { ChatRoomPanelView } from "./chat-room-panel-view";
 import { selectChatSession } from "./chat-room-selection";
 import { resolveChatRoomStreamState } from "./chat-room-stream-state";
+import { activeChatStreamSessionIds } from "./chat-room-stream-utils";
 import { useWorkingSectionState } from "./chat-working-section-state";
 import type * as CRT from "./types/chat-room.types";
 import { useChatTaskDetailPanelState } from "./use-chat-task-detail-panel-state";
@@ -81,6 +82,7 @@ export function ChatRoomPanel({
 	const chatStreamsByRunId = useRealtimeStore(
 		(state) => state.chatStreamsByRunId,
 	);
+	const runningSessionIds = activeChatStreamSessionIds(chatStreamsByRunId);
 	const { activityStartedAt, isThinking, streamLines } =
 		resolveChatRoomStreamState(
 			commandLines,
@@ -208,6 +210,7 @@ export function ChatRoomPanel({
 			pendingAnswers={pendingAnswers}
 			pendingQuestionIndex={pendingQuestionIndex}
 			projects={projectsQuery.data ?? []}
+			runningSessionIds={runningSessionIds}
 			selectedSession={selectedSession}
 			sidebarControlId={SIDEBAR_CONTROL_ID}
 			sidebarToggleRef={sidebarToggleRef}

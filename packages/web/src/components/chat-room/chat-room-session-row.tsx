@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Pin, PinOff } from "lucide-react";
+import { Archive, Loader2, Pin, PinOff } from "lucide-react";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import type { ChatRoomSessionRowProps } from "./types/chat-room-sidebar.types";
 export function ChatRoomSessionRow({
 	activeSessionId,
 	isPinned,
+	isRunning,
 	session,
 	onArchiveSession,
 	onPinSession,
@@ -40,14 +41,15 @@ export function ChatRoomSessionRow({
 	return (
 		<div
 			className={cn(
-				"group grid min-w-0 grid-cols-[minmax(0,1fr)_2rem_2rem] gap-0.5 rounded-md hover:bg-surface-active hover:text-zinc-200",
+				"group grid min-w-0 grid-cols-[minmax(0,1fr)_2rem_2rem] gap-0.5 rounded-md border border-transparent hover:bg-surface-active hover:text-zinc-200",
+				isRunning && "border-emerald-400/30 bg-emerald-500/5",
 				session.id === activeSessionId
 					? "bg-[#111110] text-zinc-100"
 					: "text-zinc-400",
 			)}
 		>
 			<Button
-				className="h-auto min-w-0 justify-start px-2 py-2 text-left text-sm"
+				className="h-auto min-w-0 justify-start gap-2 px-2 py-2 text-left text-sm"
 				onClick={() => onSelectSession(session.id)}
 				type="button"
 				variant="ghost"
@@ -57,6 +59,15 @@ export function ChatRoomSessionRow({
 						{session.title}
 					</Typography>
 				</span>
+				{isRunning ? (
+					<span
+						className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-emerald-300"
+						title="AI model running"
+					>
+						<Loader2 aria-hidden="true" className="animate-spin" size={14} />
+						<span className="sr-only">AI model running</span>
+					</span>
+				) : null}
 			</Button>
 			<Button
 				aria-label={pinLabel}

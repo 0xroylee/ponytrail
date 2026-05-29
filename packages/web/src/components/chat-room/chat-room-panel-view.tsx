@@ -28,6 +28,7 @@ export function ChatRoomPanelView({
 	pendingAnswers,
 	pendingQuestionIndex,
 	projects,
+	runningSessionIds,
 	selectedSession,
 	sidebarControlId,
 	sidebarToggleRef,
@@ -77,6 +78,7 @@ export function ChatRoomPanelView({
 				isCreating={isCreatingSession}
 				isLoading={isSessionListLoading}
 				projects={projects}
+				runningSessionIds={runningSessionIds}
 				sidebarControlId={sidebarControlId}
 				sessions={sessions}
 				onArchiveSession={onArchiveSession}
