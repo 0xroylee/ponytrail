@@ -1,6 +1,8 @@
-import { cp, readFile, stat } from "node:fs/promises";
+import { chmod, cp, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { printCliError, readOptionValue, resolveDatabasePath } from "./cli";
+
+const COPIED_RUNTIME_FILES = ["postmaster.pid", "postmaster.opts"];
 
 export interface BackupDatabaseOptions {
 	dbPath?: string;
@@ -61,7 +63,25 @@ export async function backupDatabase(
 		throw new Error(`Backup path already exists: ${backupPath}`);
 	}
 	await cp(sourcePath, backupPath, { recursive: true });
+	await copyDirectoryPermissions(sourcePath, backupPath);
+	await removeCopiedRuntimeFiles(backupPath);
 	return { backupPath, sourcePath };
+}
+
+async function copyDirectoryPermissions(
+	sourcePath: string,
+	backupPath: string,
+): Promise<void> {
+	const sourceStats = await stat(sourcePath);
+	await chmod(backupPath, sourceStats.mode & 0o777);
+}
+
+async function removeCopiedRuntimeFiles(backupPath: string): Promise<void> {
+	await Promise.all(
+		COPIED_RUNTIME_FILES.map((fileName) =>
+			rm(path.join(backupPath, fileName), { force: true }),
+		),
+	);
 }
 
 async function ensureClusterIsStopped(sourcePath: string): Promise<void> {
