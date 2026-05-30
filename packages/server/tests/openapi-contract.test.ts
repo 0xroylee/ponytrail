@@ -70,6 +70,54 @@ function extractOpenApiRoutes(openApiDocument: string): Set<string> {
 	return routes;
 }
 
+function findUntypedNullableSchemaLines(openApiDocument: string): number[] {
+	const lines = openApiDocument.split("\n");
+	const untypedLines: number[] = [];
+	for (const [index, line] of lines.entries()) {
+		const nullableMatch = line.match(/^(\s*)nullable:\s*true\s*$/);
+		if (!nullableMatch?.[1]) {
+			continue;
+		}
+		const indent = nullableMatch[1].length;
+		if (!schemaBlockHasSiblingType(lines, index, indent)) {
+			untypedLines.push(index + 1);
+		}
+	}
+	return untypedLines;
+}
+
+function schemaBlockHasSiblingType(
+	lines: string[],
+	nullableIndex: number,
+	indent: number,
+): boolean {
+	for (let index = nullableIndex - 1; index >= 0; index -= 1) {
+		const line = lines[index] ?? "";
+		const lineIndent = leadingSpaceCount(line);
+		if (line.trim() && lineIndent < indent) {
+			break;
+		}
+		if (lineIndent === indent && line.trim().startsWith("type:")) {
+			return true;
+		}
+	}
+	for (let index = nullableIndex + 1; index < lines.length; index += 1) {
+		const line = lines[index] ?? "";
+		const lineIndent = leadingSpaceCount(line);
+		if (line.trim() && lineIndent < indent) {
+			break;
+		}
+		if (lineIndent === indent && line.trim().startsWith("type:")) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function leadingSpaceCount(line: string): number {
+	return line.match(/^ */)?.[0].length ?? 0;
+}
+
 describe("openapi contract", () => {
 	it("includes all implemented Express routes", () => {
 		const root = path.resolve(__dirname, "../..", "..");
@@ -84,5 +132,13 @@ describe("openapi contract", () => {
 		for (const implementedPath of READ_ONLY_SERVER_PATHS) {
 			expect(documentedRoutes.has(`GET ${implementedPath}`)).toBeTrue();
 		}
+	});
+
+	it("keeps nullable schemas compatible with the OpenAPI validator", () => {
+		const root = path.resolve(__dirname, "../..", "..");
+		const openApiPath = path.join(root, "openapi.yaml");
+		const openApiText = readFileSync(openApiPath, "utf-8");
+
+		expect(findUntypedNullableSchemaLines(openApiText)).toEqual([]);
 	});
 });

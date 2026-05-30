@@ -714,6 +714,7 @@ components:
           type: string
           nullable: true
         reasoningEffort:
+          type: string
           nullable: true
           allOf:
             - $ref: '#/components/schemas/SettingsReasoningEffort'
