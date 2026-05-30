@@ -49,6 +49,7 @@ export function ChatRoomPanelView({
 		hasSelectedSession: Boolean(selectedSession),
 		isMessagesLoading,
 	});
+	// const showLoadingShell = true
 	const showMissionSkeleton = shouldShowMissionProgressSkeleton({
 		hasActiveTask: Boolean(activeTaskId),
 		isChatRoomLoading: showLoadingShell,

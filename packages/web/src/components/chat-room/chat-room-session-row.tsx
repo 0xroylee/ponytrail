@@ -1,7 +1,8 @@
 "use client";
 
 import { Archive, Loader2, Pin, PinOff } from "lucide-react";
-import type { ReactElement } from "react";
+import Link from "next/link";
+import type { MouseEvent, ReactElement } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ export function ChatRoomSessionRow({
 	onUnpinSession,
 }: ChatRoomSessionRowProps): ReactElement {
 	const pinLabel = isPinned ? `Unpin ${session.title}` : `Pin ${session.title}`;
+	const sessionHref = `/session/${encodeURIComponent(session.id)}`;
 
 	function handlePinClick(): void {
 		if (isPinned) {
@@ -36,6 +38,21 @@ export function ChatRoomSessionRow({
 			return;
 		}
 		onPinSession(session.id);
+	}
+
+	function handleSessionClick(event: MouseEvent<HTMLAnchorElement>): void {
+		if (
+			event.defaultPrevented ||
+			event.button !== 0 ||
+			event.metaKey ||
+			event.altKey ||
+			event.ctrlKey ||
+			event.shiftKey
+		) {
+			return;
+		}
+		event.preventDefault();
+		onSelectSession(session.id);
 	}
 
 	return (
@@ -48,13 +65,13 @@ export function ChatRoomSessionRow({
 					: "text-zinc-400",
 			)}
 		>
-			<a
+			<Link
 				className={cn(
 					buttonVariants({ variant: "ghost" }),
 					"h-auto min-w-0 justify-start gap-2 pl-2 pr-0 py-2 text-left text-sm",
 				)}
-				href={`/session/${encodeURIComponent(session.id)}`}
-				onClick={() => onSelectSession(session.id)}
+				href={sessionHref}
+				onClick={handleSessionClick}
 			>
 				{isRunning ? (
 					<span
@@ -70,7 +87,7 @@ export function ChatRoomSessionRow({
 						{session.title}
 					</Typography>
 				</span>
-			</a>
+			</Link>
 			<Button
 				aria-label={pinLabel}
 				aria-pressed={isPinned}

@@ -1,5 +1,11 @@
 import type { ServerDatabase } from "devos-db";
 import {
+	DefaultAgentsError,
+	getDefaultAgent,
+	listDefaultAgents,
+	updateDefaultAgent,
+} from "../agents/default-agents";
+import {
 	validateAgentCreatePayload,
 	validateAgentUpdatePayload,
 } from "./entity-crud-agent";
@@ -34,6 +40,7 @@ const SKILL_UPDATE_FIELDS = [
 
 interface EntityCrudDeps {
 	db: ServerDatabase["db"];
+	workspacePath: string;
 }
 
 export function matchCrudRoute(pathname: string): CrudRouteMatch | null {
@@ -50,20 +57,32 @@ export async function handleEntityCrudRequest(
 	route: CrudRouteMatch,
 ): Promise<CrudResponseResult> {
 	const service = createEntityCrudService(createEntityCrudRepository(deps.db));
-	if (route.entity === "agents") {
-		return handleAgentRequest(request, service, route.id);
+	try {
+		if (route.entity === "agents") {
+			return handleAgentRequest(request, service, route.id, deps.workspacePath);
+		}
+		return handleSkillRequest(request, service, route.id);
+	} catch (error) {
+		if (error instanceof DefaultAgentsError) {
+			return { status: error.status, body: { error: error.message } };
+		}
+		throw error;
 	}
-	return handleSkillRequest(request, service, route.id);
 }
 
 async function handleAgentRequest(
 	request: Request,
 	service: ReturnType<typeof createEntityCrudService>,
 	id: string | null,
+	workspacePath: string,
 ): Promise<CrudResponseResult> {
 	if (id === null) {
 		if (request.method === "GET") {
-			return mapEntityResult(await service.listAgents());
+			const result = await service.listAgents();
+			if (result.status === "ok" && result.value.length === 0) {
+				return { status: 200, body: await listDefaultAgents(workspacePath) };
+			}
+			return mapEntityResult(result);
 		}
 		if (request.method === "POST") {
 			const parsed = await parseJsonBody(request);
@@ -80,7 +99,14 @@ async function handleAgentRequest(
 	}
 
 	if (request.method === "GET") {
-		return mapEntityResult(await service.getAgent(id));
+		const result = await service.getAgent(id);
+		if (result.status === "ok") {
+			return mapEntityResult(result);
+		}
+		const defaultAgent = await getDefaultAgent(workspacePath, id);
+		return defaultAgent
+			? { status: 200, body: defaultAgent }
+			: mapEntityResult(result);
 	}
 
 	if (request.method === "PATCH") {
@@ -92,7 +118,18 @@ async function handleAgentRequest(
 		if (!validated.ok) {
 			return { status: 400, body: { error: validated.error } };
 		}
-		return mapEntityResult(await service.updateAgent(id, validated.value));
+		const result = await service.updateAgent(id, validated.value);
+		if (result.status === "ok") {
+			return mapEntityResult(result);
+		}
+		const defaultAgent = await updateDefaultAgent(
+			workspacePath,
+			id,
+			validated.value,
+		);
+		return defaultAgent
+			? { status: 200, body: defaultAgent }
+			: mapEntityResult(result);
 	}
 
 	if (request.method === "DELETE") {

@@ -76,6 +76,13 @@ export interface VisibleProjectSessions {
 	sessions: ChatSessionRecord[];
 }
 
+export type ProjectSessionListToggleMode = "collapsed" | "expanded";
+
+export interface BuildProjectSessionListToggleModeInput {
+	isExpanded: boolean;
+	visibleProjectSessions: VisibleProjectSessions;
+}
+
 export interface ChatRoomSessionRowProps {
 	activeSessionId: string;
 	isPinned: boolean;

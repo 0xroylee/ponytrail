@@ -80,7 +80,7 @@ export function AgentsPanel(): ReactElement {
 	}
 
 	return (
-		<section className="grid h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border bg-card text-zinc-100">
+		<section className="flex flex-col h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border bg-card text-zinc-100">
 			<header className="grid gap-4 border-b border-border p-4">
 				<div className="flex flex-wrap items-center gap-3">
 					<div className="relative min-w-[16rem] flex-1">

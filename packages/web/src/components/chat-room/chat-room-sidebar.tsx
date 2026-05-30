@@ -10,7 +10,12 @@ import { cn } from "@/lib/utils";
 import { ChatRoomSessionList } from "./chat-room-session-list";
 import { ChatRoomSettingsSidebar } from "./chat-room-settings-sidebar";
 import { ChatRoomSidebarHeader } from "./chat-room-sidebar-header";
-import { buildChatSessionSidebarContent } from "./chat-room-sidebar-utils";
+import {
+	buildChatSessionSidebarContent,
+	getBrowserChatRoomSidebarViewStorage,
+	readStoredChatRoomSidebarView,
+	writeStoredChatRoomSidebarView,
+} from "./chat-room-sidebar-utils";
 import type { ChatRoomSidebarProps } from "./types/chat-room-sidebar.types";
 import type { ChatRoomSidebarView } from "./types/chat-room.types";
 
@@ -31,7 +36,9 @@ export function ChatRoomSidebar({
 	onSelectSession,
 	onToggleCollapsed,
 }: ChatRoomSidebarProps): ReactElement {
-	const [sidebarView, setSidebarView] = useState<ChatRoomSidebarView>("main");
+	const [sidebarView, setSidebarViewState] = useState<ChatRoomSidebarView>(() =>
+		readStoredChatRoomSidebarView(getBrowserChatRoomSidebarViewStorage()),
+	);
 	const [collapsedProjectIds, setCollapsedProjectIds] = useState<Set<string>>(
 		() => new Set(),
 	);
@@ -45,6 +52,16 @@ export function ChatRoomSidebar({
 		projects,
 		sessions,
 	});
+
+	function setSidebarView(view: ChatRoomSidebarView): void {
+		if (view !== sidebarView) {
+			setSidebarViewState(view);
+		}
+		writeStoredChatRoomSidebarView(
+			getBrowserChatRoomSidebarViewStorage(),
+			view,
+		);
+	}
 
 	function showMainSidebar(): void {
 		setSidebarView("main");
@@ -100,7 +117,7 @@ export function ChatRoomSidebar({
 			className={cn(
 				"fixed inset-y-0 left-0 z-40 grid min-h-0 w-[18rem] max-w-[calc(100vw-2rem)] border-r border-border bg-surface-panel transition-[transform,width] md:static md:z-auto md:max-w-none md:transform-none",
 				isMobileOpen ? "transform-none" : "-translate-x-full",
-				isCollapsed ? "md:w-[5.5rem]" : "md:w-[18rem]",
+				isCollapsed ? "md:w-[4rem]" : "md:w-[18rem]",
 			)}
 		>
 			<div className="relative h-full min-h-0 overflow-hidden">

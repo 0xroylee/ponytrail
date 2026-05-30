@@ -46,6 +46,25 @@ const IMPLEMENTED_ROUTES = [
 	["PATCH", "/api/settings/models"],
 ] as const;
 
+const AGENT_UPDATE_FIELDS = [
+	"name",
+	"description",
+	"logo",
+	"runtime",
+	"backend",
+	"model",
+	"reasoningEffort",
+	"status",
+	"concurrency",
+	"owner",
+	"createdAt",
+	"updatedAt",
+	"skills",
+	"recentWork",
+	"activity",
+	"instructions",
+] as const;
+
 function extractOpenApiRoutes(openApiDocument: string): Set<string> {
 	const pathsSection = openApiDocument.match(
 		/(^|\n)paths:\n([\s\S]*?)(\n[a-zA-Z0-9_-]+:|\n?$)/,
@@ -114,6 +133,16 @@ function schemaBlockHasSiblingType(
 	return false;
 }
 
+function extractSchemaBlock(
+	openApiDocument: string,
+	schemaName: string,
+): string {
+	const schemaMatch = openApiDocument.match(
+		new RegExp(`\\n    ${schemaName}:\\n([\\s\\S]*?)(\\n    [A-Za-z0-9]+:|$)`),
+	);
+	return schemaMatch?.[1] ?? "";
+}
+
 function leadingSpaceCount(line: string): number {
 	return line.match(/^ */)?.[0].length ?? 0;
 }
@@ -140,5 +169,19 @@ describe("openapi contract", () => {
 		const openApiText = readFileSync(openApiPath, "utf-8");
 
 		expect(findUntypedNullableSchemaLines(openApiText)).toEqual([]);
+	});
+
+	it("documents all implemented agent update fields", () => {
+		const root = path.resolve(__dirname, "../..", "..");
+		const openApiPath = path.join(root, "openapi.yaml");
+		const openApiText = readFileSync(openApiPath, "utf-8");
+		const agentPatchFields = extractSchemaBlock(
+			openApiText,
+			"AgentPatchFields",
+		);
+
+		for (const field of AGENT_UPDATE_FIELDS) {
+			expect(agentPatchFields).toContain(`${field}:`);
+		}
 	});
 });

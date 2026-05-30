@@ -93,7 +93,7 @@ export function createAppRoutes(deps: AppDeps): RouteRegistryEntry[] {
 			handleSettingsRoute(request, pathname, workspacePath),
 		),
 		route("entity-crud", (request, { pathname }) =>
-			handleEntityCrudRoute(request, deps, pathname),
+			handleEntityCrudRoute(request, deps, pathname, workspacePath),
 		),
 		route("notifications", (request, { pathname }) =>
 			handleNotificationRoute(request, deps, pathname),
@@ -135,6 +135,7 @@ async function handleEntityCrudRoute(
 	request: Request,
 	deps: AppDeps,
 	pathname: string,
+	workspacePath: string,
 ): Promise<Response | null> {
 	const crudRoute = matchCrudRoute(pathname);
 	if (!crudRoute) {
@@ -145,7 +146,7 @@ async function handleEntityCrudRoute(
 	}
 	const result = await handleEntityCrudRequest(
 		request,
-		{ db: deps.db },
+		{ db: deps.db, workspacePath },
 		crudRoute,
 	);
 	return result.body === undefined

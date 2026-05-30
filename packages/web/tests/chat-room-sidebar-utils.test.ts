@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 import {
 	buildChatSessionProjectGroups,
 	buildChatSessionSidebarContent,
+	buildProjectSessionListToggleMode,
 	buildVisibleProjectSessions,
 } from "../src/components/chat-room/chat-room-sidebar-utils";
 import type { ChatSessionRecord, WorkspaceProjectRecord } from "../src/lib/api";
@@ -189,6 +190,40 @@ describe("chat room sidebar utilities", () => {
 
 		expect(result.sessions).toEqual(sessions.slice(0, 5));
 		expect(result.hiddenSessionCount).toBe(1);
+	});
+
+	it("enables the overflow session-list toggle only when a project has hidden sessions", () => {
+		const visibleProjectSessions = buildVisibleProjectSessions({
+			isExpanded: false,
+			sessions: buildSessionList(7),
+		});
+		const expandedProjectSessions = buildVisibleProjectSessions({
+			isExpanded: true,
+			sessions: buildSessionList(7),
+		});
+		const shortProjectSessions = buildVisibleProjectSessions({
+			isExpanded: false,
+			sessions: buildSessionList(5),
+		});
+
+		expect(
+			buildProjectSessionListToggleMode({
+				isExpanded: false,
+				visibleProjectSessions,
+			}),
+		).toBe("collapsed");
+		expect(
+			buildProjectSessionListToggleMode({
+				isExpanded: true,
+				visibleProjectSessions: expandedProjectSessions,
+			}),
+		).toBe("expanded");
+		expect(
+			buildProjectSessionListToggleMode({
+				isExpanded: false,
+				visibleProjectSessions: shortProjectSessions,
+			}),
+		).toBeNull();
 	});
 });
 

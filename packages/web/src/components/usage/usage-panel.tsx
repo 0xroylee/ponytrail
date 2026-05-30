@@ -55,7 +55,7 @@ export function UsagePanel(): ReactElement {
 						Token activity and workflow volume.
 					</Typography>
 				</div>
-				<Typography className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2">
+				<Typography className="inline-flex items-center gap-2 rounded-md px-3 py-2">
 					<RefreshCw size={15} />
 					{formatRefreshedAt(usageQuery.dataUpdatedAt)}
 				</Typography>
@@ -165,7 +165,7 @@ function UsageCostPanel({
 					Available when usage rows include cost estimates.
 				</Typography>
 			</div>
-			<Typography className="text-xl text-zinc-100" variant="cardTitle">
+			<Typography className="text-lg text-zinc-100" variant="cardTitle">
 				{formatEstimatedCostMicrousd(value)}
 			</Typography>
 		</section>

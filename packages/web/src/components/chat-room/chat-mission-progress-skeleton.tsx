@@ -10,7 +10,7 @@ export function ChatMissionProgressSkeleton(): ReactElement {
 	return (
 		<section
 			aria-label="Loading mission progress"
-			className={`${missionPanelWidthClass(false)} mx-auto z-20 grid w-full max-w-full justify-self-center gap-3 rounded-md border border-border bg-surface-input/95 px-3 py-3 backdrop-blur`}
+			className={`${missionPanelWidthClass(false)} mx-auto z-20 grid w-full justify-self-center gap-3 rounded-md border border-border bg-surface-input/95 px-3 py-3 backdrop-blur`}
 			data-chat-mission-progress="true"
 			data-chat-mission-progress-sticky="true"
 		>

@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
 import { ChatRoomSessionRow } from "./chat-room-session-row";
-import { buildVisibleProjectSessions } from "./chat-room-sidebar-utils";
+import {
+	buildProjectSessionListToggleMode,
+	buildVisibleProjectSessions,
+} from "./chat-room-sidebar-utils";
 import type { ChatRoomSessionListProps } from "./types/chat-room-sidebar.types";
 
 export function ChatRoomSessionList({
@@ -83,6 +86,10 @@ export function ChatRoomSessionList({
 								isExpanded: isSessionListExpanded,
 								sessions: group.sessions,
 							});
+							const sessionListToggleMode = buildProjectSessionListToggleMode({
+								isExpanded: isSessionListExpanded,
+								visibleProjectSessions: visibleSessions,
+							});
 							const SessionListIcon = isSessionListExpanded
 								? ChevronUp
 								: ChevronDown;
@@ -135,11 +142,11 @@ export function ChatRoomSessionList({
 													session={session}
 												/>
 											))}
-											{/* {visibleSessions.hasOverflow ? (
+											{sessionListToggleMode ? (
 												<Button
 													aria-expanded={isSessionListExpanded}
 													aria-label={
-														isSessionListExpanded
+														sessionListToggleMode === "expanded"
 															? `Show fewer ${group.label} sessions`
 															: `Show ${visibleSessions.hiddenSessionCount} more ${group.label} sessions`
 													}
@@ -159,12 +166,12 @@ export function ChatRoomSessionList({
 														as="span"
 														className="min-w-0 flex-1 truncate text-left"
 													>
-														{isSessionListExpanded
+														{sessionListToggleMode === "expanded"
 															? "Show fewer"
 															: `Show ${visibleSessions.hiddenSessionCount} more`}
 													</Typography>
 												</Button>
-											) : null} */}
+											) : null}
 										</div>
 									) : null}
 								</div>
