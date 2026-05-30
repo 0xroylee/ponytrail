@@ -1,4 +1,4 @@
-import { cp, readFile, rm, stat } from "node:fs/promises";
+import { chmod, cp, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { printCliError, readOptionValue, resolveDatabasePath } from "./cli";
 
@@ -63,8 +63,17 @@ export async function backupDatabase(
 		throw new Error(`Backup path already exists: ${backupPath}`);
 	}
 	await cp(sourcePath, backupPath, { recursive: true });
+	await copyDirectoryPermissions(sourcePath, backupPath);
 	await removeCopiedRuntimeFiles(backupPath);
 	return { backupPath, sourcePath };
+}
+
+async function copyDirectoryPermissions(
+	sourcePath: string,
+	backupPath: string,
+): Promise<void> {
+	const sourceStats = await stat(sourcePath);
+	await chmod(backupPath, sourceStats.mode & 0o777);
 }
 
 async function removeCopiedRuntimeFiles(backupPath: string): Promise<void> {
