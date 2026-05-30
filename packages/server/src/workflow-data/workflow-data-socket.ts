@@ -10,9 +10,11 @@ import type {
 import type {
 	WorkflowDataRequestFrame,
 	WorkflowDataResponseFrame,
+} from "./types/workflow-data.types";
+import type {
 	WorkflowSocketInboundFrame,
 	WorkflowSocketOutboundFrame,
-} from "./types/workflow-data.types";
+} from "./types/workflow-socket-frame.types";
 import {
 	WorkflowDataError,
 	createWorkflowDataService,

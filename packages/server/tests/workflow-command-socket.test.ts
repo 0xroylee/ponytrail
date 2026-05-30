@@ -54,9 +54,11 @@ describe("workflow command websocket routing", () => {
 		socket.emitMessage(
 			JSON.stringify({ type: "complete", requestId: "cmd-2", result: {} }),
 		);
+		socket.emitMessage(JSON.stringify({ type: "pong", requestId: "ping-2" }));
 		expect(broker.registeredWorkerId).toBe("worker-1");
 		expect(broker.workerFrames).toEqual([
 			{ type: "complete", requestId: "cmd-2", result: {} },
+			{ type: "pong", requestId: "ping-2" },
 		]);
 		expect(broker.registeredComputer).toEqual({
 			id: "roys-macbook",
@@ -129,6 +131,7 @@ function createFakeCommandBroker(): WorkflowCommandBroker & {
 		execute: async (request) => ({ status: "succeeded", request }),
 		executeStream: async (request) => ({ status: "succeeded", request }),
 		getHistory: () => [],
+		isRuntimeReachable: async () => true,
 		listComputers: () => [],
 		handleWorkerFrame: (frame) => {
 			broker.workerFrames.push(frame);

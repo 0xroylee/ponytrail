@@ -62,7 +62,7 @@ export function ChatClarificationComposer({
 						{step.currentQuestion.question}
 					</Typography>
 					{step.currentQuestion.options?.length ? (
-						<div className="flex flex-wrap gap-2">
+						<div className="flex flex-col gap-2">
 							{step.currentQuestion.options.map((option) => (
 								<ClarificationOptionButton
 									disabled={controlsDisabled}

@@ -7,6 +7,7 @@ import {
 	loadInstanceConfig,
 	renderInstanceConfigDocument,
 } from "devos/features/onboard/instance-config";
+import type { AppDeps } from "../src/types/app.types";
 import { createJsonRequest, createServerTestApp } from "./app-test-helpers";
 import {
 	type DrizzleServerTestDatabase,
@@ -110,6 +111,18 @@ describe("config-backed default agents", () => {
 		expect(loaded.config.codex?.models?.brainstorm).toBe("gpt-5.4-mini");
 		expect(loaded.config.codex?.reasoningEfforts?.brainstorm).toBe("xhigh");
 	});
+
+	it("forces config-backed default agents offline when the CLI runtime is unreachable", async () => {
+		await writeInstanceConfig();
+		const response = await (
+			await createApp({ cliExecutor: runtimeOfflineCliExecutor() })
+		)(new Request("http://localhost/api/agents"));
+
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as Array<{ status: string }>;
+		expect(body).toHaveLength(4);
+		expect(body.every((agent) => agent.status === "offline")).toBe(true);
+	});
 });
 
 async function writeInstanceConfig(
@@ -123,9 +136,22 @@ async function writeInstanceConfig(
 	await writeFile(instanceConfigPath(), renderInstanceConfigDocument(config));
 }
 
-async function createApp() {
+function runtimeOfflineCliExecutor(): AppDeps["cliExecutor"] {
+	return {
+		execute: async (request) => ({ status: "succeeded" as const, request }),
+		executeStream: async (request) => ({
+			status: "succeeded" as const,
+			request,
+		}),
+		getHistory: () => [],
+		isRuntimeReachable: async () => false,
+	};
+}
+
+async function createApp(overrides: Partial<AppDeps> = {}) {
 	testDatabase = await createDrizzleServerTestDatabase();
 	return createServerTestApp(testDatabase.db, {
 		workspacePath: WORKSPACE_PATH,
+		...overrides,
 	});
 }

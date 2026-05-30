@@ -146,7 +146,11 @@ async function handleEntityCrudRoute(
 	}
 	const result = await handleEntityCrudRequest(
 		request,
-		{ db: deps.db, workspacePath },
+		{
+			db: deps.db,
+			isRuntimeReachable: deps.cliExecutor.isRuntimeReachable,
+			workspacePath,
+		},
 		crudRoute,
 	);
 	return result.body === undefined

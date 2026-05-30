@@ -46,12 +46,12 @@ export function ChatNoSessionHome({
 			</Button>
 			<div className="grid w-full max-w-5xl -translate-y-8 gap-8">
 				<div className="flex flex-wrap items-center justify-center gap-4 text-center">
-					<DevosMark size={44} />
+					{/* <DevosMark size={44} /> */}
 					<Typography
 						className="font-serif text-4xl font-normal leading-tight text-zinc-300 sm:text-5xl"
 						variant="pageTitle"
 					>
-						Back at it, roy
+						DEVOS.ING
 					</Typography>
 				</div>
 				<ChatComposer

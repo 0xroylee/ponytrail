@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
 import { WebSocket } from "ws";
 import type { WorkflowDataSocket } from "../src/workflow-data/types/workflow-data-socket.types";
-import type { WorkflowCommandStreamFrame } from "../src/workflow-data/types/workflow-data.types";
+import type { WorkflowCommandStreamFrame } from "../src/workflow-data/types/workflow-socket-frame.types";
 import { createWorkflowCommandBroker } from "../src/workflow-data/workflow-command-broker";
 
 describe("workflow command broker", () => {
@@ -32,6 +32,12 @@ describe("workflow command broker", () => {
 			},
 		]);
 		expect(broker.getHistory()).toHaveLength(1);
+	});
+
+	it("reports runtime unreachable when no CLI worker is connected", async () => {
+		const broker = createWorkflowCommandBroker();
+
+		expect(await broker.isRuntimeReachable()).toBe(false);
 	});
 
 	it("forwards commands to the active CLI worker and returns stream frames", async () => {
@@ -89,6 +95,26 @@ describe("workflow command broker", () => {
 			workerId: "worker-1",
 			status: "online",
 		});
+	});
+
+	it("reports runtime reachable after the active worker answers ping", async () => {
+		const broker = createWorkflowCommandBroker();
+		const worker = new FakeWorkflowSocket();
+		broker.registerWorker(worker, "worker-1");
+
+		const reachable = broker.isRuntimeReachable();
+		const pingFrame = JSON.parse(worker.sent[0] ?? "") as {
+			type: string;
+			requestId: string;
+		};
+		expect(pingFrame.type).toBe("ping");
+
+		broker.handleWorkerFrame({
+			type: "pong",
+			requestId: pingFrame.requestId,
+		});
+
+		await expect(reachable).resolves.toBe(true);
 	});
 
 	it("queues later commands until the active CLI command completes", async () => {

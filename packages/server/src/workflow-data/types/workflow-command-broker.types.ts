@@ -8,14 +8,18 @@ import type { WorkflowDataSocket } from "./workflow-data-socket.types";
 import type {
 	WorkflowClientCommandFrame,
 	WorkflowCommandStreamFrame,
-} from "./workflow-data.types";
+	WorkflowPongFrame,
+} from "./workflow-socket-frame.types";
 
 export interface WorkflowCommandBroker extends CliExecutor {
 	dispatchCommand(
 		frame: WorkflowClientCommandFrame,
 		emit: (frame: WorkflowCommandStreamFrame) => void,
 	): Promise<CliCommandExecutionResult>;
-	handleWorkerFrame(frame: WorkflowCommandStreamFrame): void;
+	handleWorkerFrame(
+		frame: WorkflowCommandStreamFrame | WorkflowPongFrame,
+	): void;
+	isRuntimeReachable(): Promise<boolean>;
 	listComputers(): RegisteredWorkflowComputer[];
 	registerWorker(
 		socket: WorkflowDataSocket,

@@ -2,7 +2,6 @@ import type {
 	CliCommandExecutionHistoryEntry,
 	CliCommandExecutionResult,
 	CliCommandRequest,
-	CliCommandStreamEmit,
 } from "devos/features/server";
 import { WebSocket } from "ws";
 import type { WorkflowCommandBroker } from "./types/workflow-command-broker.types";
@@ -14,11 +13,18 @@ import type { WorkflowDataSocket } from "./types/workflow-data-socket.types";
 import type {
 	WorkflowCliCommandExecutionResult,
 	WorkflowCliCommandRequest,
+} from "./types/workflow-data.types";
+import type {
 	WorkflowClientCommandFrame,
 	WorkflowCommandStreamFrame,
 	WorkflowWorkerDispatchFrame,
-} from "./types/workflow-data.types";
+} from "./types/workflow-socket-frame.types";
+import {
+	failedResult,
+	toCommandStreamEvent,
+} from "./workflow-command-broker-results";
 import { recordWorkflowCommandHistory } from "./workflow-command-history";
+import { createWorkflowRuntimePing } from "./workflow-runtime-ping";
 
 const DEFAULT_HISTORY_LIMIT = 100;
 const NO_WORKER_ERROR = "No CLI worker connected to /api/workflow";
@@ -43,6 +49,7 @@ export function createWorkflowCommandBroker(
 	const computers = new Map<string, RegisteredWorkflowComputer>();
 	const pending = new Map<string, PendingCommand>();
 	const queuedRequestIds: string[] = [];
+	const runtimePing = createWorkflowRuntimePing();
 	let activeWorker: ActiveWorker | undefined;
 	let activeRequestId: string | undefined;
 
@@ -55,11 +62,17 @@ export function createWorkflowCommandBroker(
 				emit(toCommandStreamEvent(frame)),
 			),
 		getHistory: () => [...history],
+		isRuntimeReachable: () => runtimePing.ping(activeWorker?.socket),
 		listComputers: () =>
 			[...computers.values()].sort((left, right) =>
 				left.name.localeCompare(right.name),
 			),
 		handleWorkerFrame(frame) {
+			if (frame.type === "pong") {
+				runtimePing.handlePong(frame.requestId);
+				touchActiveComputer();
+				return;
+			}
 			touchActiveComputer();
 			const command = pending.get(frame.requestId);
 			if (!command) {
@@ -157,6 +170,7 @@ export function createWorkflowCommandBroker(
 	}
 
 	function failPending(error: string): void {
+		runtimePing.failAll();
 		for (const [requestId, command] of pending) {
 			const result = failedResult(command.request, error);
 			command.emit({ type: "error", requestId, error });
@@ -229,18 +243,4 @@ export function createWorkflowCommandBroker(
 	}
 
 	return broker;
-}
-
-function failedResult(
-	request: CliCommandRequest,
-	error: string,
-): CliCommandExecutionResult {
-	return { status: "failed", request, error };
-}
-
-function toCommandStreamEvent(
-	frame: WorkflowCommandStreamFrame,
-): Parameters<CliCommandStreamEmit>[0] {
-	const { requestId: _requestId, ...event } = frame;
-	return event as Parameters<CliCommandStreamEmit>[0];
 }

@@ -5,6 +5,7 @@ import {
 	listDefaultAgents,
 	updateDefaultAgent,
 } from "../agents/default-agents";
+import { applyRuntimeAgentStatus } from "./agent-runtime-status";
 import {
 	validateAgentCreatePayload,
 	validateAgentUpdatePayload,
@@ -40,6 +41,7 @@ const SKILL_UPDATE_FIELDS = [
 
 interface EntityCrudDeps {
 	db: ServerDatabase["db"];
+	isRuntimeReachable?: () => Promise<boolean>;
 	workspacePath: string;
 }
 
@@ -59,7 +61,13 @@ export async function handleEntityCrudRequest(
 	const service = createEntityCrudService(createEntityCrudRepository(deps.db));
 	try {
 		if (route.entity === "agents") {
-			return handleAgentRequest(request, service, route.id, deps.workspacePath);
+			const result = await handleAgentRequest(
+				request,
+				service,
+				route.id,
+				deps.workspacePath,
+			);
+			return applyRuntimeAgentStatus(result, deps.isRuntimeReachable);
 		}
 		return handleSkillRequest(request, service, route.id);
 	} catch (error) {

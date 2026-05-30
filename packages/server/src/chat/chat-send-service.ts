@@ -10,6 +10,7 @@ import {
 	applyRequirementResult,
 	updateSessionAfterRequirement,
 } from "./chat-requirement-result";
+import { queueChatSessionCompletion } from "./chat-session-send-queue";
 import {
 	completeWorkflowClarificationAnswer,
 	shouldCompleteWorkflowClarification,
@@ -51,19 +52,18 @@ export async function queueChatMessage(
 	if (!accepted) {
 		return null;
 	}
+	const completion = shouldCompleteWorkflowClarification(accepted)
+		? completeChatMessage(repository, deps, sessionId, accepted, stream)
+		: queueChatSessionCompletion(sessionId, () =>
+				completeChatMessage(repository, deps, sessionId, accepted, stream),
+			);
 	return {
 		accepted: {
 			issue: accepted.issue,
 			messages: [accepted.userRecord],
 			session: mapSession(accepted.session),
 		},
-		completion: completeChatMessage(
-			repository,
-			deps,
-			sessionId,
-			accepted,
-			stream,
-		),
+		completion,
 	};
 }
 

@@ -20,6 +20,7 @@ export interface CliExecutor {
 		emit: CliCommandStreamEmit,
 	): Promise<CliCommandExecutionResult>;
 	getHistory(): CliCommandExecutionHistoryEntry[];
+	isRuntimeReachable?(): Promise<boolean>;
 	listComputers?(): RegisteredWorkflowComputer[];
 }
 

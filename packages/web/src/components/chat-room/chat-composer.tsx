@@ -139,7 +139,7 @@ export function ChatComposer({
 								showCommands={showCommands}
 							/>
 							<div className="flex min-w-0 items-center justify-between gap-3">
-								<Button
+								{/* <Button
 									aria-label="Add"
 									disabled={disabled}
 									size="iconLg"
@@ -147,13 +147,14 @@ export function ChatComposer({
 									variant="ghost"
 								>
 									<Plus size={18} />
-								</Button>
+								</Button> */}
+								<div/>
 								<div className="flex min-w-0 items-center gap-2">
 									<Typography
 										className="hidden truncate sm:inline"
 										variant="description"
 									>
-										devos agent
+										devos default workflow
 									</Typography>
 									<Button
 										aria-label="Send"

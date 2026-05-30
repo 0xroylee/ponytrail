@@ -7,7 +7,6 @@ import type {
 	CreateTaskPayload,
 	UpdateTaskPayload,
 } from "../../http/types/project-task-api.types";
-import type { WorkflowComputerRegistration } from "./workflow-computer.types";
 
 export const WORKFLOW_DATA_WS_PATH = "/api/workflow";
 
@@ -215,51 +214,6 @@ export type WorkflowCliCommandStreamEvent =
 	| { type: "progress"; event: unknown }
 	| { type: "error"; error: string }
 	| { type: "complete"; result: WorkflowCliCommandExecutionResult };
-
-export interface WorkflowPingFrame {
-	type: "ping";
-	requestId: string;
-}
-
-export interface WorkflowPongFrame {
-	type: "pong";
-	requestId: string;
-}
-
-export interface WorkflowClientCommandFrame {
-	type: "command";
-	requestId: string;
-	request: WorkflowCliCommandRequest;
-}
-
-export interface WorkflowWorkerReadyFrame {
-	type: "cli.worker.ready";
-	workerId: string;
-	computer?: WorkflowComputerRegistration;
-}
-
-export interface WorkflowWorkerDispatchFrame {
-	type: "cli.dispatch";
-	requestId: string;
-	request: WorkflowCliCommandRequest;
-}
-
-export type WorkflowCommandStreamFrame = WorkflowCliCommandStreamEvent & {
-	requestId: string;
-};
-
-export type WorkflowSocketInboundFrame =
-	| WorkflowDataRequestFrame
-	| WorkflowPingFrame
-	| WorkflowClientCommandFrame
-	| WorkflowWorkerReadyFrame
-	| WorkflowCommandStreamFrame;
-
-export type WorkflowSocketOutboundFrame =
-	| WorkflowDataResponseFrame
-	| WorkflowPongFrame
-	| WorkflowWorkerDispatchFrame
-	| WorkflowCommandStreamFrame;
 
 export type WorkflowTaskCreatePayload = CreateTaskPayload;
 export type WorkflowTaskUpdatePayload = UpdateTaskPayload;

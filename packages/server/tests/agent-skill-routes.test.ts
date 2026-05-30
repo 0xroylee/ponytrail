@@ -3,6 +3,7 @@ import type {
 	AgentCreatePayload,
 	SkillCreatePayload,
 } from "../src/routes/types/entity-crud.types";
+import type { AppDeps } from "../src/types/app.types";
 import { createJsonRequest, createServerTestApp } from "./app-test-helpers";
 import {
 	type DrizzleServerTestDatabase,
@@ -132,6 +133,32 @@ describe("agent and skill CRUD routes", () => {
 			reasoningEffort: null,
 			status: "online",
 			instructions: "",
+		});
+	});
+
+	it("forces persisted agents offline when the CLI runtime is unreachable", async () => {
+		const app = await createApp({ cliExecutor: runtimeOfflineCliExecutor() });
+		const payload: AgentCreatePayload = {
+			id: "agent-runtime-offline",
+			name: "codex-main",
+			backend: "codex",
+			model: "gpt-5",
+			status: "online",
+			createdAt: "2026-05-12 00:02:00",
+		};
+
+		const createResponse = await app(
+			createJsonRequest("POST", "/api/agents", payload),
+		);
+		expect(createResponse.status).toBe(201);
+
+		const listResponse = await app(new Request("http://localhost/api/agents"));
+		expect(listResponse.status).toBe(200);
+		const agents = (await listResponse.json()) as AgentCreatePayload[];
+		expect(agents).toHaveLength(1);
+		expect(agents[0]).toMatchObject({
+			id: "agent-runtime-offline",
+			status: "offline",
 		});
 	});
 
@@ -285,7 +312,19 @@ describe("agent and skill CRUD routes", () => {
 	});
 });
 
-async function createApp() {
+function runtimeOfflineCliExecutor(): AppDeps["cliExecutor"] {
+	return {
+		execute: async (request) => ({ status: "succeeded" as const, request }),
+		executeStream: async (request) => ({
+			status: "succeeded" as const,
+			request,
+		}),
+		getHistory: () => [],
+		isRuntimeReachable: async () => false,
+	};
+}
+
+async function createApp(overrides: Partial<AppDeps> = {}) {
 	testDatabase = await createDrizzleServerTestDatabase();
-	return createServerTestApp(testDatabase.db);
+	return createServerTestApp(testDatabase.db, overrides);
 }

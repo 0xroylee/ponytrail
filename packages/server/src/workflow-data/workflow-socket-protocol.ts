@@ -1,14 +1,17 @@
 import type {
 	WorkflowCliCommandRequest,
-	WorkflowClientCommandFrame,
-	WorkflowCommandStreamFrame,
 	WorkflowDataAction,
 	WorkflowDataRequestFrame,
 	WorkflowDataResponseFrame,
+} from "./types/workflow-data.types";
+import type {
+	WorkflowClientCommandFrame,
+	WorkflowCommandStreamFrame,
 	WorkflowPingFrame,
+	WorkflowPongFrame,
 	WorkflowSocketInboundFrame,
 	WorkflowWorkerReadyFrame,
-} from "./types/workflow-data.types";
+} from "./types/workflow-socket-frame.types";
 import { parseComputerRegistration } from "./workflow-computer-registration";
 
 const WORKFLOW_ACTIONS = new Set<string>([
@@ -59,6 +62,9 @@ export function parseWorkflowSocketFrame(
 	}
 	if (value.type === "ping") {
 		return parsePing(value);
+	}
+	if (value.type === "pong") {
+		return parsePong(value);
 	}
 	if (value.type === "cli.worker.ready") {
 		return parseWorkerReady(value);
@@ -139,6 +145,18 @@ function parsePing(
 		return errorParseFrame("invalid_request_id", "requestId is required");
 	}
 	return { status: "ok", frame: { type: "ping", requestId } };
+}
+
+function parsePong(
+	value: Record<string, unknown>,
+):
+	| { status: "ok"; frame: WorkflowPongFrame }
+	| { status: "error"; frame: WorkflowDataResponseFrame } {
+	const requestId = readRequestId(value);
+	if (!requestId) {
+		return errorParseFrame("invalid_request_id", "requestId is required");
+	}
+	return { status: "ok", frame: { type: "pong", requestId } };
 }
 
 function parseWorkerReady(
