@@ -10,6 +10,8 @@ export interface ProjectFormState {
 	repositoryMode: ProjectRepositoryMode;
 	selectedRepository: string;
 	manualRepository: string;
+	originalManualRepository: string;
+	baseBranch: string;
 	lead: string;
 	priority: string;
 }

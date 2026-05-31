@@ -1,33 +1,18 @@
 import { describe, expect, it } from "bun:test";
-import { resolveRepositorySelectorState } from "../src/components/projects/project-create-dialog-fields";
 import {
 	DEFAULT_PROJECT_EMOJI,
 	EMPTY_PROJECT_FORM_STATE,
 	buildProjectCreateRequest,
+	buildProjectEditFormState,
 	buildProjectUpdateRequest,
 } from "../src/components/projects/projects-panel-utils";
+import type { ProjectFormState } from "../src/components/projects/types/projects-panel.types";
 import type {
-	ProjectFormState,
-	RepositorySelectorState,
-	RepositorySelectorStateInput,
-} from "../src/components/projects/types/projects-panel.types";
-import type { GitHubRepositoryRecord } from "../src/lib/api";
+	GitHubRepositoryRecord,
+	WorkspaceProjectRecord,
+} from "../src/lib/api";
 
 const defaults = { boardId: "board-1", ownerId: "owner-1" };
-const connected = {
-	isConfigured: true,
-	isConnected: true,
-	login: "octo",
-	unavailableReason: null,
-};
-const CONNECTION_UNAVAILABLE =
-	"GitHub connection unavailable; manual entry is still available.";
-const OAUTH_UNCONFIGURED =
-	"GitHub OAuth is not configured; manual entry is still available.";
-const REPOSITORIES_UNAVAILABLE =
-	"GitHub repositories unavailable; manual entry is still available.";
-const NO_REPOSITORIES =
-	"No repositories found; manual entry is still available.";
 
 describe("projects panel utils", () => {
 	it("builds project requests from manual and selected repositories", () => {
@@ -109,6 +94,24 @@ describe("projects panel utils", () => {
 				priority: " ",
 			}),
 		);
+		const preservedBranch = buildProjectUpdateRequest(
+			projectForm({
+				name: "Web Project",
+				repositoryMode: "manual",
+				manualRepository: "octo/demo",
+				originalManualRepository: "octo/demo",
+				baseBranch: "develop",
+			}),
+		);
+		const changedRepository = buildProjectUpdateRequest(
+			projectForm({
+				name: "Web Project",
+				repositoryMode: "manual",
+				manualRepository: "octo/new",
+				originalManualRepository: "octo/demo",
+				baseBranch: "develop",
+			}),
+		);
 
 		expect(updated).toMatchObject({
 			name: "Web Project Updated",
@@ -126,6 +129,8 @@ describe("projects panel utils", () => {
 			repoName: null,
 			priority: null,
 		});
+		expect(preservedBranch.baseBranch).toBe("develop");
+		expect(changedRepository.baseBranch).toBe("main");
 		expect(() =>
 			buildProjectUpdateRequest(
 				projectForm({ name: "Web Project", priority: "high" }),
@@ -133,32 +138,22 @@ describe("projects panel utils", () => {
 		).toThrow("Priority must be a whole number");
 	});
 
-	it("resolves GitHub connection and repository loading states", () => {
-		expectSelectorStatus(
-			{ connection: undefined, isConnectionError: true },
-			CONNECTION_UNAVAILABLE,
-			{ shouldShowRetry: true },
+	it("preserves the existing branch when saving an edited manual repository", () => {
+		const hydratedForm = buildProjectEditFormState(
+			projectRecord({
+				repoOwner: "octo",
+				repoName: "demo",
+				baseBranch: "develop",
+			}),
 		);
-		expectSelectorStatus({ connection: disconnected() }, OAUTH_UNCONFIGURED);
-		expectSelectorStatus(
-			{ connection: { ...connected, isConnected: false, login: null } },
-			"Connect GitHub to list repositories.",
-			{ shouldShowConnect: true },
-		);
-		expectSelectorStatus(
-			{ isRepositoryLoading: true },
-			"Loading repositories.",
-		);
-		expectSelector(
-			{ hasRepositoryOptions: true },
-			{ canSelectRepository: true },
-		);
-		expectSelectorStatus(
-			{ isRepositoryError: true },
-			REPOSITORIES_UNAVAILABLE,
-			{ shouldShowRetry: true },
-		);
-		expectSelectorStatus({}, NO_REPOSITORIES);
+
+		expect(buildProjectUpdateRequest(hydratedForm).baseBranch).toBe("develop");
+		expect(
+			buildProjectUpdateRequest({
+				...hydratedForm,
+				manualRepository: "octo/new",
+			}).baseBranch,
+		).toBe("main");
 	});
 });
 
@@ -180,55 +175,26 @@ function repositoryOption(
 	};
 }
 
-function expectSelector(
-	inputOverrides: Partial<RepositorySelectorStateInput>,
-	expectedOverrides: Partial<RepositorySelectorState>,
-): void {
-	expect(resolveRepositorySelectorState(selectorInput(inputOverrides))).toEqual(
-		selectorState(expectedOverrides),
-	);
-}
-
-function expectSelectorStatus(
-	inputOverrides: Partial<RepositorySelectorStateInput>,
-	statusMessage: string,
-	expectedOverrides: Partial<RepositorySelectorState> = {},
-): void {
-	expectSelector(inputOverrides, { ...expectedOverrides, statusMessage });
-}
-
-function disconnected(): RepositorySelectorStateInput["connection"] {
+function projectRecord(
+	overrides: Partial<WorkspaceProjectRecord> = {},
+): WorkspaceProjectRecord {
 	return {
-		isConfigured: false,
-		isConnected: false,
-		login: null,
-		unavailableReason: "GitHub OAuth is not configured",
-	};
-}
-
-function selectorInput(
-	overrides: Partial<RepositorySelectorStateInput>,
-): RepositorySelectorStateInput {
-	return {
-		connection: connected,
-		hasRepositoryOptions: false,
-		isConnectionError: false,
-		isConnectionLoading: false,
-		isRepositoryLoading: false,
-		isRepositoryError: false,
-		repositoryUnavailableReason: null,
-		...overrides,
-	};
-}
-
-function selectorState(
-	overrides: Partial<RepositorySelectorState>,
-): RepositorySelectorState {
-	return {
-		canSelectRepository: false,
-		shouldShowConnect: false,
-		shouldShowRetry: false,
-		statusMessage: null,
+		id: "project-1",
+		boardId: "board-1",
+		workspaceId: "workspace-1",
+		externalProjectId: null,
+		name: "Project",
+		emoji: null,
+		description: null,
+		repoOwner: null,
+		repoName: null,
+		baseBranch: null,
+		localFolder: null,
+		lead: null,
+		category: null,
+		priority: null,
+		createdAt: "2026-05-31T00:00:00.000Z",
+		updatedAt: "2026-05-31T00:00:00.000Z",
 		...overrides,
 	};
 }

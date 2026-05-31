@@ -74,25 +74,21 @@ export function ProjectsPanel(): ReactElement {
 	const projectsWithRepository = projects.filter(
 		(project) => project.repoOwner && project.repoName,
 	).length;
-
 	function updateField(field: keyof ProjectFormState, value: string): void {
 		setForm((current) => ({ ...current, [field]: value }));
 	}
-
 	function openCreateDialog(): void {
 		setForm({ ...EMPTY_PROJECT_FORM_STATE });
 		setFormError(null);
 		setEditingProjectId(null);
 		setDialogMode("create");
 	}
-
 	function openEditDialog(row: ProjectDisplayRow): void {
 		setForm(buildProjectEditFormState(row.project));
 		setFormError(null);
 		setEditingProjectId(row.project.id);
 		setDialogMode("edit");
 	}
-
 	function closeProjectDialog(): void {
 		setDialogMode(null);
 		setFormError(null);
@@ -228,7 +224,9 @@ export function ProjectsPanel(): ReactElement {
 						gitHubConnectionQuery.isLoading || gitHubConnectionQuery.isFetching
 					}
 					isRepositoryError={repositoriesQuery.isError}
-					isRepositoryLoading={repositoriesQuery.isLoading}
+					isRepositoryLoading={
+						repositoriesQuery.isLoading || repositoriesQuery.isFetching
+					}
 					isSaving={createProject.isPending || updateProject.isPending}
 					mode={dialogMode}
 					repositories={repositories}

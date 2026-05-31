@@ -27,6 +27,8 @@ export const EMPTY_PROJECT_FORM_STATE: ProjectFormState = {
 	repositoryMode: "select",
 	selectedRepository: "",
 	manualRepository: "",
+	originalManualRepository: "",
+	baseBranch: "",
 	lead: "",
 	priority: "",
 };
@@ -40,7 +42,7 @@ export function buildProjectCreateRequest(
 	if (!name) {
 		throw new Error("Project name is required");
 	}
-	const repository = resolveRepository(form, repositories);
+	const repository = resolveRepository(form, repositories, "main");
 	return {
 		boardId: defaults.boardId,
 		ownerId: defaults.ownerId,
@@ -66,7 +68,11 @@ export function buildProjectUpdateRequest(
 	if (!name) {
 		throw new Error("Project name is required");
 	}
-	const repository = resolveRepository(form, repositories);
+	const fallbackBranch =
+		form.manualRepository.trim() === form.originalManualRepository.trim()
+			? (optionalText(form.baseBranch) ?? "main")
+			: "main";
+	const repository = resolveRepository(form, repositories, fallbackBranch);
 	return {
 		name,
 		emoji: optionalText(form.emoji) ?? DEFAULT_PROJECT_EMOJI,
@@ -93,6 +99,8 @@ export function buildProjectEditFormState(
 		description: project.description ?? "",
 		repositoryMode: "manual",
 		manualRepository,
+		originalManualRepository: manualRepository,
+		baseBranch: project.baseBranch ?? "",
 		lead: project.lead ?? "",
 		priority: project.priority === null ? "" : String(project.priority),
 	};
@@ -180,6 +188,7 @@ function optionalPriority(value: string): number | null {
 function resolveRepository(
 	form: ProjectFormState,
 	repositories: GitHubRepositoryRecord[],
+	manualFallbackBranch: string,
 ): { owner: string; name: string; defaultBranch: string } | null {
 	const trimmed = (
 		form.repositoryMode === "manual"
@@ -203,7 +212,11 @@ function resolveRepository(
 	if (!match) {
 		throw new Error("Repository must be owner/repo");
 	}
-	return { owner: match[1], name: match[2], defaultBranch: "main" };
+	return {
+		owner: match[1],
+		name: match[2],
+		defaultBranch: manualFallbackBranch,
+	};
 }
 
 function formatOptionalLabel(
