@@ -18,32 +18,41 @@ import {
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
 import type { GitHubRepositoryRecord } from "@/lib/api";
+import type { GitHubConnectionResponse } from "@/lib/api/types/client.types";
 
 import { Field, RepositoryFields } from "./project-create-dialog-fields";
 import type { ProjectFormState } from "./types/projects-panel.types";
 
 interface ProjectCreateDialogProps {
+	connection: GitHubConnectionResponse | undefined;
 	form: ProjectFormState;
 	formError: string | null;
+	isRepositoryError: boolean;
 	isRepositoryLoading: boolean;
 	isSaving: boolean;
 	mode: "create" | "edit";
 	repositories: GitHubRepositoryRecord[];
 	repositoryUnavailableReason: string | null;
 	onClose: () => void;
+	onConnectGitHub: () => void;
+	onRetryRepositories: () => void;
 	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 	onUpdateField: (field: keyof ProjectFormState, value: string) => void;
 }
 
 export function ProjectCreateDialog({
+	connection,
 	form,
 	formError,
+	isRepositoryError,
 	isRepositoryLoading,
 	isSaving,
 	mode,
 	repositories,
 	repositoryUnavailableReason,
 	onClose,
+	onConnectGitHub,
+	onRetryRepositories,
 	onSubmit,
 	onUpdateField,
 }: ProjectCreateDialogProps): ReactElement {
@@ -162,11 +171,15 @@ export function ProjectCreateDialog({
 							</div>
 						) : null}
 						<RepositoryFields
+							connection={connection}
 							form={form}
 							hasRepositoryOptions={hasRepositoryOptions}
+							isRepositoryError={isRepositoryError}
 							isRepositoryLoading={isRepositoryLoading}
 							repositories={repositories}
 							repositoryUnavailableReason={repositoryUnavailableReason}
+							onConnectGitHub={onConnectGitHub}
+							onRetryRepositories={onRetryRepositories}
 							onUpdateField={onUpdateField}
 						/>
 						{formError ? (

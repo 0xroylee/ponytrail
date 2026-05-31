@@ -45,4 +45,46 @@ describe("GitHub repositories API client", () => {
 			],
 		});
 	});
+
+	it("gets GitHub OAuth connection state from the server API", async () => {
+		const fetchFn = (async (input: URL | RequestInfo, init?: RequestInit) => {
+			expect(String(input)).toBe("/api/github/connection");
+			expect(init?.method).toBe("GET");
+			return okJsonResponse({
+				isConfigured: true,
+				isConnected: true,
+				login: "octo",
+				unavailableReason: null,
+			});
+		}) as typeof fetch;
+		const client = createApiClient({ fetchFn });
+
+		await expect(client.getGitHubConnection()).resolves.toEqual({
+			isConfigured: true,
+			isConnected: true,
+			login: "octo",
+			unavailableReason: null,
+		});
+	});
+
+	it("disconnects GitHub OAuth through the server API", async () => {
+		const fetchFn = (async (input: URL | RequestInfo, init?: RequestInit) => {
+			expect(String(input)).toBe("/api/github/connection");
+			expect(init?.method).toBe("DELETE");
+			return okJsonResponse({
+				isConfigured: true,
+				isConnected: false,
+				login: null,
+				unavailableReason: null,
+			});
+		}) as typeof fetch;
+		const client = createApiClient({ fetchFn });
+
+		await expect(client.disconnectGitHub()).resolves.toEqual({
+			isConfigured: true,
+			isConnected: false,
+			login: null,
+			unavailableReason: null,
+		});
+	});
 });

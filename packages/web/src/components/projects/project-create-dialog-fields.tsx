@@ -1,34 +1,52 @@
 "use client";
 
-import { FolderGit, Keyboard, Search } from "lucide-react";
+import { FolderGit, Keyboard, RefreshCw, Search } from "lucide-react";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
 import type { GitHubRepositoryRecord } from "@/lib/api";
+import type { GitHubConnectionResponse } from "@/lib/api/types/client.types";
 import { cn } from "@/lib/utils";
 
+import { resolveRepositorySelectorState } from "./projects-panel-utils";
 import type {
 	ProjectFormState,
 	ProjectRepositoryMode,
 } from "./types/projects-panel.types";
 
 export function RepositoryFields({
+	connection,
 	form,
 	hasRepositoryOptions,
+	isRepositoryError,
 	isRepositoryLoading,
 	repositories,
 	repositoryUnavailableReason,
+	onConnectGitHub,
+	onRetryRepositories,
 	onUpdateField,
 }: {
+	connection: GitHubConnectionResponse | undefined;
 	form: ProjectFormState;
 	hasRepositoryOptions: boolean;
+	isRepositoryError: boolean;
 	isRepositoryLoading: boolean;
 	repositories: GitHubRepositoryRecord[];
 	repositoryUnavailableReason: string | null;
+	onConnectGitHub: () => void;
+	onRetryRepositories: () => void;
 	onUpdateField: (field: keyof ProjectFormState, value: string) => void;
 }): ReactElement {
+	const selectorState = resolveRepositorySelectorState({
+		connection,
+		hasRepositoryOptions,
+		isRepositoryError,
+		isRepositoryLoading,
+		repositoryUnavailableReason,
+	});
+
 	return (
 		<fieldset className="grid gap-3 border-0 border-t border-border p-0 pt-4">
 			<Typography as="legend" className="mb-1" variant="label">
@@ -55,7 +73,7 @@ export function RepositoryFields({
 					<span className="sr-only">Repository</span>
 					<select
 						className="h-10 rounded-md border border-input bg-surface-input px-3 text-sm text-zinc-100 outline-none transition focus-visible:border-zinc-500 focus-visible:ring-2 focus-visible:ring-ring"
-						disabled={!hasRepositoryOptions}
+						disabled={!selectorState.canSelectRepository}
 						id="project-create-repository"
 						onChange={(event) =>
 							onUpdateField("selectedRepository", event.target.value)
@@ -94,9 +112,30 @@ export function RepositoryFields({
 					</div>
 				</Field>
 			)}
-			{repositoryUnavailableReason ? (
+			{selectorState.shouldShowConnect || selectorState.shouldShowRetry ? (
+				<div className="flex flex-wrap gap-2">
+					{selectorState.shouldShowConnect ? (
+						<Button onClick={onConnectGitHub} size="sm" type="button">
+							<FolderGit size={15} />
+							Connect GitHub
+						</Button>
+					) : null}
+					{selectorState.shouldShowRetry ? (
+						<Button
+							onClick={onRetryRepositories}
+							size="sm"
+							type="button"
+							variant="secondary"
+						>
+							<RefreshCw size={15} />
+							Retry
+						</Button>
+					) : null}
+				</div>
+			) : null}
+			{selectorState.statusMessage ? (
 				<Typography variant="description">
-					{repositoryUnavailableReason}; manual entry is still available.
+					{selectorState.statusMessage}
 				</Typography>
 			) : null}
 		</fieldset>

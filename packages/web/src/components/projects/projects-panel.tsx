@@ -1,8 +1,7 @@
 "use client";
 
 import { Plus, RefreshCw, Search } from "lucide-react";
-import type { FormEvent, ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { type FormEvent, type ReactElement, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,7 @@ import {
 	useUpdateProjectMutation,
 } from "@/lib/api/queries";
 import {
+	useGitHubConnectionQuery,
 	useGitHubRepositoriesQuery,
 	useWorkspaceProjectsQuery,
 } from "@/lib/api/realtime-queries";
@@ -49,8 +49,13 @@ export function ProjectsPanel(): ReactElement {
 	const projectsQuery = useWorkspaceProjectsQuery(workspaceId, {
 		refetchIntervalMs: false,
 	});
-	const repositoriesQuery = useGitHubRepositoriesQuery({
+	const gitHubConnectionQuery = useGitHubConnectionQuery({
 		enabled: Boolean(dialogMode),
+		refetchIntervalMs: false,
+	});
+	const repositoriesQuery = useGitHubRepositoriesQuery({
+		enabled:
+			Boolean(dialogMode) && gitHubConnectionQuery.data?.isConnected === true,
 		refetchIntervalMs: false,
 	});
 	const createProject = useCreateProjectMutation();
@@ -119,10 +124,7 @@ export function ProjectsPanel(): ReactElement {
 				await createProject.mutateAsync(
 					buildProjectCreateRequest(
 						form,
-						{
-							boardId: LOCAL_BOARD_ID,
-							ownerId: workspaceId,
-						},
+						{ boardId: LOCAL_BOARD_ID, ownerId: workspaceId },
 						repositories,
 					),
 				);
@@ -211,8 +213,10 @@ export function ProjectsPanel(): ReactElement {
 			</div>
 			{dialogMode ? (
 				<ProjectCreateDialog
+					connection={gitHubConnectionQuery.data}
 					form={form}
 					formError={formError}
+					isRepositoryError={repositoriesQuery.isError}
 					isRepositoryLoading={repositoriesQuery.isLoading}
 					isSaving={createProject.isPending || updateProject.isPending}
 					mode={dialogMode}
@@ -221,6 +225,10 @@ export function ProjectsPanel(): ReactElement {
 						repositoriesQuery.data?.unavailableReason ?? null
 					}
 					onClose={closeProjectDialog}
+					onConnectGitHub={() =>
+						window.location.assign("/api/github/oauth/start")
+					}
+					onRetryRepositories={() => void repositoriesQuery.refetch()}
 					onSubmit={(event) => void submitProject(event)}
 					onUpdateField={updateField}
 				/>
@@ -229,19 +237,7 @@ export function ProjectsPanel(): ReactElement {
 	);
 }
 
-function ProjectMetric({
-	label,
-	value,
-}: {
-	label: string;
-	value: number;
-}): ReactElement {
-	return (
-		<span className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm text-zinc-400">
-			{label}
-			<Typography as="span" className="text-zinc-100">
-				{value}
-			</Typography>
-		</span>
-	);
+// biome-ignore format: keep this component under the repo 250-line limit.
+function ProjectMetric({ label, value }: { label: string; value: number }): ReactElement {
+	return <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm text-zinc-400">{label}<Typography as="span" className="text-zinc-100">{value}</Typography></span>;
 }

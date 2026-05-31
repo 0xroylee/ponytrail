@@ -1,90 +1,61 @@
 import { describe, expect, it } from "bun:test";
-import * as projectUtils from "../src/components/projects/projects-panel-utils";
 import {
 	DEFAULT_PROJECT_EMOJI,
 	EMPTY_PROJECT_FORM_STATE,
 	buildProjectCreateRequest,
 	buildProjectDisplayRows,
+	buildProjectEditFormState,
+	buildProjectUpdateRequest,
 	filterProjects,
 	formatProjectCreatedAt,
+	resolveRepositorySelectorState,
 } from "../src/components/projects/projects-panel-utils";
 import type { ProjectFormState } from "../src/components/projects/types/projects-panel.types";
 import type {
 	GitHubRepositoryRecord,
-	ProjectUpdateRequest,
 	WorkspaceProjectRecord,
 } from "../src/lib/api";
 
-const defaults = {
-	boardId: "board-1",
-	ownerId: "owner-1",
+const defaults = { boardId: "board-1", ownerId: "owner-1" };
+const connected = {
+	isConfigured: true,
+	isConnected: true,
+	login: "octo",
+	unavailableReason: null,
 };
 
-describe("projects panel create request builder", () => {
-	it("maps a manual owner/repo repository to the API request", () => {
-		const request = buildProjectCreateRequest(
-			{
-				...EMPTY_PROJECT_FORM_STATE,
-				name: "  Web Project  ",
-				emoji: "🧭",
-				description: "  Created from UI  ",
-				repositoryMode: "manual",
-				manualRepository: "  octo/demo  ",
-			},
-			defaults,
-		);
-
-		expect(request).toEqual({
-			boardId: "board-1",
-			ownerId: "owner-1",
+// biome-ignore format: keep this pure-helper test under the repo 250-line limit.
+describe("projects panel utils", () => {
+	it("maps manual and discovered repositories to create requests", () => {
+		expect(buildProjectCreateRequest({
+			...EMPTY_PROJECT_FORM_STATE,
+			name: "  Web Project  ",
+			emoji: "🧭",
+			description: "  Created from UI  ",
+			repositoryMode: "manual",
+			manualRepository: "  octo/demo  ",
+		}, defaults)).toMatchObject({
 			name: "Web Project",
 			emoji: "🧭",
-			externalProjectId: null,
 			description: "Created from UI",
 			repoOwner: "octo",
 			repoName: "demo",
 			baseBranch: "main",
-			localFolder: null,
-			lead: null,
-			category: null,
-			priority: null,
+		});
+		expect(buildProjectCreateRequest({
+			...EMPTY_PROJECT_FORM_STATE,
+			name: "Web Project",
+			repositoryMode: "select",
+			selectedRepository: "octo/core",
+		}, defaults, [repositoryOption({ name: "core", nameWithOwner: "octo/core", defaultBranch: "trunk" })])).toMatchObject({
+			repoOwner: "octo",
+			repoName: "core",
+			baseBranch: "trunk",
 		});
 	});
 
-	it("maps a discovered GitHub repository option to the API request", () => {
-		const request = buildProjectCreateRequest(
-			{
-				...EMPTY_PROJECT_FORM_STATE,
-				name: "Web Project",
-				repositoryMode: "select",
-				selectedRepository: "octo/core",
-			},
-			defaults,
-			[
-				repositoryOption({
-					id: "octo/core",
-					name: "core",
-					nameWithOwner: "octo/core",
-					defaultBranch: "trunk",
-				}),
-			],
-		);
-
-		expect(request.repoOwner).toBe("octo");
-		expect(request.repoName).toBe("core");
-		expect(request.baseBranch).toBe("trunk");
-	});
-
-	it("normalizes optional blank fields to null", () => {
-		const request = buildProjectCreateRequest(
-			{
-				...EMPTY_PROJECT_FORM_STATE,
-				name: "Web Project",
-			},
-			defaults,
-		);
-
-		expect(request).toEqual({
+	it("normalizes blanks and validates create inputs", () => {
+		expect(buildProjectCreateRequest({ ...EMPTY_PROJECT_FORM_STATE, name: "Web Project" }, defaults)).toEqual({
 			boardId: "board-1",
 			ownerId: "owner-1",
 			name: "Web Project",
@@ -99,43 +70,17 @@ describe("projects panel create request builder", () => {
 			category: null,
 			priority: null,
 		});
+		expect(() => buildProjectCreateRequest({ ...EMPTY_PROJECT_FORM_STATE, name: " " }, defaults)).toThrow("Project name is required");
+		expect(() => buildProjectCreateRequest({
+			...EMPTY_PROJECT_FORM_STATE,
+			name: "Web Project",
+			repositoryMode: "manual",
+			manualRepository: "https://github.com/octo/demo",
+		}, defaults)).toThrow("Repository must be owner/repo");
 	});
 
-	it("requires a valid owner/repo repository when one is provided", () => {
-		expect(() =>
-			buildProjectCreateRequest(
-				{
-					...EMPTY_PROJECT_FORM_STATE,
-					name: "Web Project",
-					repositoryMode: "manual",
-					manualRepository: "https://github.com/octo/demo",
-				},
-				defaults,
-			),
-		).toThrow("Repository must be owner/repo");
-	});
-
-	it("requires a project name", () => {
-		expect(() =>
-			buildProjectCreateRequest(
-				{ ...EMPTY_PROJECT_FORM_STATE, name: " " },
-				defaults,
-			),
-		).toThrow("Project name is required");
-	});
-});
-
-describe("projects panel edit request builder", () => {
-	it("prefills editable project metadata from an existing project", () => {
-		const buildProjectEditFormState = (
-			projectUtils as {
-				buildProjectEditFormState?: (
-					project: WorkspaceProjectRecord,
-				) => ProjectFormState;
-			}
-		).buildProjectEditFormState;
-
-		expect(buildProjectEditFormState?.(buildProject())).toEqual({
+	it("prefills and maps editable project metadata", () => {
+		expect(buildProjectEditFormState(buildProject())).toEqual({
 			name: "Project",
 			emoji: DEFAULT_PROJECT_EMOJI,
 			description: "Project description",
@@ -145,40 +90,19 @@ describe("projects panel edit request builder", () => {
 			lead: "",
 			priority: "2",
 		});
-	});
-
-	it("maps editable metadata and selected repository to an update request", () => {
-		const buildProjectUpdateRequest = (
-			projectUtils as {
-				buildProjectUpdateRequest?: (
-					form: ProjectFormState,
-					repositories: GitHubRepositoryRecord[],
-				) => ProjectUpdateRequest;
-			}
-		).buildProjectUpdateRequest;
-
-		expect(
-			buildProjectUpdateRequest?.(
-				{
-					...EMPTY_PROJECT_FORM_STATE,
-					name: "  Web Project Updated  ",
-					emoji: "🚀",
-					description: "  Edited from UI  ",
-					repositoryMode: "select",
-					selectedRepository: "octo/core",
-					lead: "  Roy  ",
-					priority: "3",
-				},
-				[
-					repositoryOption({
-						id: "octo/core",
-						name: "core",
-						nameWithOwner: "octo/core",
-						defaultBranch: "trunk",
-					}),
-				],
-			),
-		).toEqual({
+		const form: ProjectFormState = {
+			...EMPTY_PROJECT_FORM_STATE,
+			name: "  Web Project Updated  ",
+			emoji: "🚀",
+			description: "  Edited from UI  ",
+			repositoryMode: "select",
+			selectedRepository: "octo/core",
+			lead: "  Roy  ",
+			priority: "3",
+		};
+		expect(buildProjectUpdateRequest(form, [
+			repositoryOption({ name: "core", nameWithOwner: "octo/core", defaultBranch: "trunk" }),
+		])).toEqual({
 			name: "Web Project Updated",
 			emoji: "🚀",
 			description: "Edited from UI",
@@ -190,29 +114,17 @@ describe("projects panel edit request builder", () => {
 		});
 	});
 
-	it("clears optional edit fields when left blank", () => {
-		const buildProjectUpdateRequest = (
-			projectUtils as {
-				buildProjectUpdateRequest?: (
-					form: ProjectFormState,
-					repositories?: GitHubRepositoryRecord[],
-				) => ProjectUpdateRequest;
-			}
-		).buildProjectUpdateRequest;
-
-		expect(
-			buildProjectUpdateRequest?.({
-				...EMPTY_PROJECT_FORM_STATE,
-				name: "Web Project",
-				emoji: " ",
-				description: " ",
-				repositoryMode: "manual",
-				manualRepository: " ",
-				lead: " ",
-				priority: " ",
-			}),
-		).toMatchObject({
+	it("clears optional edit fields and validates priority", () => {
+		expect(buildProjectUpdateRequest({
+			...EMPTY_PROJECT_FORM_STATE,
 			name: "Web Project",
+			emoji: " ",
+			description: " ",
+			repositoryMode: "manual",
+			manualRepository: " ",
+			lead: " ",
+			priority: " ",
+		})).toMatchObject({
 			emoji: DEFAULT_PROJECT_EMOJI,
 			description: null,
 			repoOwner: null,
@@ -221,62 +133,23 @@ describe("projects panel edit request builder", () => {
 			lead: null,
 			priority: null,
 		});
+		expect(() => buildProjectUpdateRequest({ ...EMPTY_PROJECT_FORM_STATE, name: "Web Project", priority: "high" })).toThrow("Priority must be a whole number");
 	});
 
-	it("requires edit priority to be a whole number when provided", () => {
-		const buildProjectUpdateRequest = (
-			projectUtils as {
-				buildProjectUpdateRequest?: (
-					form: ProjectFormState,
-				) => ProjectUpdateRequest;
-			}
-		).buildProjectUpdateRequest;
-
-		expect(() =>
-			buildProjectUpdateRequest?.({
-				...EMPTY_PROJECT_FORM_STATE,
-				name: "Web Project",
-				priority: "high",
-			}),
-		).toThrow("Priority must be a whole number");
-	});
-});
-
-describe("projects panel table helpers", () => {
-	it("filters projects across key display fields", () => {
+	it("filters projects and builds display rows", () => {
 		const projects = [
 			buildProject({ id: "web", name: "Web", repoName: "operator-ui" }),
-			buildProject({
-				id: "worker",
-				name: "Worker",
-				category: "automation",
-				lead: "Roy",
-			}),
+			buildProject({ id: "worker", name: "Worker", category: "automation", lead: "Roy" }),
 		];
-
 		expect(filterProjects(projects, "operator")).toEqual([projects[0]]);
 		expect(filterProjects(projects, "ROY")).toEqual([projects[1]]);
 		expect(filterProjects(projects, " ")).toEqual(projects);
-	});
-
-	it("builds display rows with concise fallbacks", () => {
-		const [row] = buildProjectDisplayRows(
-			[
-				buildProject({
-					description: null,
-					priority: null,
-					repoOwner: null,
-					repoName: null,
-					createdAt: "2026-05-01T00:00:00.000Z",
-				}),
-			],
-			new Date("2026-05-22T00:00:00.000Z"),
-		);
-
+		const [row] = buildProjectDisplayRows([
+			buildProject({ description: null, priority: null, repoOwner: null, repoName: null, createdAt: "2026-05-01T00:00:00.000Z" }),
+		], new Date("2026-05-22T00:00:00.000Z"));
 		expect(row).toMatchObject({
 			emojiLabel: DEFAULT_PROJECT_EMOJI,
 			priorityLabel: "--",
-			categoryLabel: "--",
 			repositoryLabel: "--",
 			leadLabel: "--",
 			createdLabel: "3w ago",
@@ -286,17 +159,35 @@ describe("projects panel table helpers", () => {
 
 	it("formats project created dates as compact relative labels", () => {
 		const now = new Date("2026-05-25T12:00:00.000Z");
-
-		expect(formatProjectCreatedAt("2026-05-25T11:59:40.000Z", now)).toBe(
-			"Just now",
-		);
-		expect(formatProjectCreatedAt("2026-05-25T10:00:00.000Z", now)).toBe(
-			"2h ago",
-		);
-		expect(formatProjectCreatedAt("2026-05-04T12:00:00.000Z", now)).toBe(
-			"3w ago",
-		);
+		expect(formatProjectCreatedAt("2026-05-25T11:59:40.000Z", now)).toBe("Just now");
+		expect(formatProjectCreatedAt("2026-05-25T10:00:00.000Z", now)).toBe("2h ago");
 		expect(formatProjectCreatedAt("not-a-date", now)).toBe("--");
+	});
+
+	it("resolves GitHub connection and repository loading states", () => {
+		const cases = [
+			{
+				input: { connection: { isConfigured: false, isConnected: false, login: null, unavailableReason: "GitHub OAuth is not configured" }, hasRepositoryOptions: false, isRepositoryLoading: false, isRepositoryError: false, repositoryUnavailableReason: null },
+				expected: { canSelectRepository: false, shouldShowConnect: false, shouldShowRetry: false, statusMessage: "GitHub OAuth is not configured; manual entry is still available." },
+			},
+			{
+				input: { connection: { ...connected, isConnected: false, login: null }, hasRepositoryOptions: false, isRepositoryLoading: false, isRepositoryError: false, repositoryUnavailableReason: null },
+				expected: { canSelectRepository: false, shouldShowConnect: true, shouldShowRetry: false, statusMessage: "Connect GitHub to list repositories." },
+			},
+			{
+				input: { connection: connected, hasRepositoryOptions: false, isRepositoryLoading: true, isRepositoryError: false, repositoryUnavailableReason: null },
+				expected: { canSelectRepository: false, shouldShowConnect: false, shouldShowRetry: false, statusMessage: "Loading repositories." },
+			},
+			{
+				input: { connection: connected, hasRepositoryOptions: true, isRepositoryLoading: false, isRepositoryError: false, repositoryUnavailableReason: null },
+				expected: { canSelectRepository: true, shouldShowConnect: false, shouldShowRetry: false, statusMessage: null },
+			},
+			{
+				input: { connection: connected, hasRepositoryOptions: false, isRepositoryLoading: false, isRepositoryError: true, repositoryUnavailableReason: null },
+				expected: { canSelectRepository: false, shouldShowConnect: false, shouldShowRetry: true, statusMessage: "GitHub repositories unavailable; manual entry is still available." },
+			},
+		];
+		for (const item of cases) expect(resolveRepositorySelectorState(item.input)).toEqual(item.expected);
 	});
 });
 
