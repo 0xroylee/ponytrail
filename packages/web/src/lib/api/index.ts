@@ -18,6 +18,7 @@ export type {
 	ChatSessionUpdateRequest,
 	CommandHistoryRecord,
 	CurrentWorkspaceRecord,
+	GitHubConnectionResponse,
 	GitHubRepositoriesResponse,
 	GitHubRepositoryRecord,
 	HealthRequestOptions,
