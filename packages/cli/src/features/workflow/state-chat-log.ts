@@ -5,6 +5,7 @@ import type { AgentChatLogEntry } from "../types";
 
 const STATE_ROOT_DIR = path.join(".devos", "projects");
 const CHAT_LOGS_DIR = "chat-logs";
+const MAX_CHAT_LOG_FILE_NAME_LENGTH = 255;
 export const AGENT_CHAT_LOG_RETENTION = 1000;
 
 function sanitizePathToken(value: string): string {
@@ -22,7 +23,11 @@ function skillPathHash(skillPath: string): string {
 
 function agentSkillLogFileName(skillPath: string): string {
 	const normalized = sanitizePathToken(skillPath.replace(/[\\/]+/g, "-"));
-	return `${normalized}-${skillPathHash(skillPath)}.json`;
+	const suffix = `-${skillPathHash(skillPath)}.json`;
+	return `${normalized.slice(
+		0,
+		MAX_CHAT_LOG_FILE_NAME_LENGTH - suffix.length,
+	)}${suffix}`;
 }
 
 export function agentChatLogPath(

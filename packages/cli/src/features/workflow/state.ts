@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { RunState, WorkflowStage } from "../types";
@@ -9,6 +10,7 @@ type MaybeLegacyRunState = Omit<RunState, "stage" | "failedStage"> & {
 
 const LEGACY_STATE_DIR = path.join(".devos", "runs");
 const STATE_ROOT_DIR = path.join(".devos", "projects");
+const MAX_STATE_FILE_NAME_LENGTH = 255;
 
 export function normalizeIssueKey(input: string): string {
 	const trimmed = input.trim();
@@ -33,7 +35,7 @@ export function stateFilePath(
 		STATE_ROOT_DIR,
 		projectId,
 		"runs",
-		`${normalizeIssueKey(issueKey)}.json`,
+		runStateFileName(issueKey),
 	);
 }
 
@@ -208,4 +210,20 @@ function normalizeWorkflowStage(stage: string): WorkflowStage {
 		return stage;
 	}
 	return "failed";
+}
+
+function runStateFileName(issueKey: string): string {
+	const normalized = normalizeIssueKey(issueKey);
+	const suffix = ".json";
+	if (normalized.length + suffix.length <= MAX_STATE_FILE_NAME_LENGTH) {
+		return `${normalized}${suffix}`;
+	}
+	const hashSuffix = `-${createHash("sha1")
+		.update(normalized)
+		.digest("hex")
+		.slice(0, 8)}${suffix}`;
+	return `${normalized.slice(
+		0,
+		MAX_STATE_FILE_NAME_LENGTH - hashSuffix.length,
+	)}${hashSuffix}`;
 }
