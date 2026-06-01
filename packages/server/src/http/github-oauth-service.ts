@@ -1,24 +1,33 @@
 import { loadSqliteEnv, saveSqliteEnv } from "devos/features/config";
+import {
+	LOGIN_KEY,
+	type OAuthConfig,
+	TOKEN_KEY,
+	connectionResponse,
+	githubHeaders,
+	readDeviceConfig,
+	readOAuthConfig,
+	readStoredConnection,
+	value,
+} from "./github-oauth-config";
+import {
+	STATE_COOKIE,
+	createGitHubOAuthRedirectContext,
+	oauthRedirect,
+	readCookie,
+	readStoredGitHubOAuthRedirectContext,
+	redirect,
+	startRedirectCookies,
+} from "./github-oauth-redirects";
 import { badRequest } from "./http-utils";
 import type {
 	GitHubConnectionResponse,
 	GitHubRepositoriesRouteDeps,
 } from "./types/github-repositories-api.types";
 
-const CLIENT_ID_KEY = "GITHUB_OAUTH_CLIENT_ID";
-const CLIENT_SECRET_KEY = "GITHUB_OAUTH_CLIENT_SECRET";
-const TOKEN_KEY = "GITHUB_OAUTH_ACCESS_TOKEN";
-const LOGIN_KEY = "GITHUB_OAUTH_LOGIN";
-const STATE_COOKIE = "devos_github_oauth_state";
-const CALLBACK_PATH = "/api/github/oauth/callback";
-const OAUTH_UNCONFIGURED = "GitHub OAuth is not configured";
-const OAUTH_DISCONNECTED = "Connect GitHub to list repositories";
-
 type RouteDeps = Required<Omit<GitHubRepositoriesRouteDeps, "env">> & {
 	env: Record<string, string | undefined>;
 };
-type OAuthConfig = { clientId: string; clientSecret: string };
-type StoredConnection = { login: string | null; token: string | null };
 
 export async function getGitHubConnection(
 	workspacePath: string,
@@ -27,7 +36,7 @@ export async function getGitHubConnection(
 	const resolved = resolveDeps(deps);
 	const store = await resolved.loadEnv(workspacePath);
 	return connectionResponse(
-		readConfig(resolved.env),
+		readDeviceConfig(resolved.env, store),
 		readStoredConnection(store),
 	);
 }
@@ -37,11 +46,12 @@ export async function disconnectGitHub(
 	deps: GitHubRepositoriesRouteDeps,
 ): Promise<GitHubConnectionResponse> {
 	const resolved = resolveDeps(deps);
+	const store = await resolved.loadEnv(workspacePath);
 	await resolved.saveEnv(workspacePath, {
 		[TOKEN_KEY]: undefined,
 		[LOGIN_KEY]: undefined,
 	});
-	return connectionResponse(readConfig(resolved.env), {
+	return connectionResponse(readDeviceConfig(resolved.env, store), {
 		login: null,
 		token: null,
 	});
@@ -52,7 +62,7 @@ export function startGitHubOAuth(
 	deps: GitHubRepositoriesRouteDeps,
 ): Response {
 	const resolved = resolveDeps(deps);
-	const config = readConfig(resolved.env);
+	const config = readOAuthConfig(resolved.env);
 	if (!config) {
 		return Response.json(
 			connectionResponse(null, { login: null, token: null }),
@@ -60,13 +70,16 @@ export function startGitHubOAuth(
 		);
 	}
 	const state = resolved.randomState();
-	const redirectUri = new URL(CALLBACK_PATH, request.url);
+	const redirectContext = createGitHubOAuthRedirectContext(request);
 	const location = new URL("https://github.com/login/oauth/authorize");
 	location.searchParams.set("client_id", config.clientId);
-	location.searchParams.set("redirect_uri", redirectUri.toString());
+	location.searchParams.set("redirect_uri", redirectContext.callbackUrl);
 	location.searchParams.set("scope", "repo");
 	location.searchParams.set("state", state);
-	return redirect(location.toString(), stateCookie(state, 600));
+	return redirect(
+		location.toString(),
+		startRedirectCookies(state, redirectContext),
+	);
 }
 
 export async function finishGitHubOAuth(
@@ -81,14 +94,15 @@ export async function finishGitHubOAuth(
 		return badRequest("Invalid GitHub OAuth callback");
 	}
 	const resolved = resolveDeps(deps);
-	const config = readConfig(resolved.env);
+	const config = readOAuthConfig(resolved.env);
 	if (!config) return oauthRedirect(request, "error");
 	try {
+		const redirectContext = readStoredGitHubOAuthRedirectContext(request);
 		const token = await exchangeCode(
 			resolved.fetchFn,
 			config,
 			code,
-			request.url,
+			redirectContext.callbackUrl,
 		);
 		const login = await fetchLogin(resolved.fetchFn, token);
 		await resolved.saveEnv(workspacePath, {
@@ -105,7 +119,7 @@ async function exchangeCode(
 	fetchFn: typeof fetch,
 	config: OAuthConfig,
 	code: string,
-	requestUrl: string,
+	redirectUri: string,
 ): Promise<string> {
 	const payload = await fetchJson(
 		fetchFn,
@@ -120,7 +134,7 @@ async function exchangeCode(
 				client_id: config.clientId,
 				client_secret: config.clientSecret,
 				code,
-				redirect_uri: new URL(CALLBACK_PATH, requestUrl).toString(),
+				redirect_uri: redirectUri,
 			}),
 		},
 	);
@@ -151,26 +165,6 @@ async function fetchJson(
 	return response.json();
 }
 
-function connectionResponse(
-	config: OAuthConfig | null,
-	store: StoredConnection,
-): GitHubConnectionResponse {
-	if (!config) return connection(false, false, null, OAUTH_UNCONFIGURED);
-	if (!store.login || !store.token) {
-		return connection(true, false, null, OAUTH_DISCONNECTED);
-	}
-	return connection(true, true, store.login, null);
-}
-
-function connection(
-	isConfigured: boolean,
-	isConnected: boolean,
-	login: string | null,
-	unavailableReason: string | null,
-): GitHubConnectionResponse {
-	return { isConfigured, isConnected, login, unavailableReason };
-}
-
 function resolveDeps(deps: GitHubRepositoriesRouteDeps): RouteDeps {
 	return {
 		env: deps.env ?? process.env,
@@ -179,64 +173,4 @@ function resolveDeps(deps: GitHubRepositoriesRouteDeps): RouteDeps {
 		randomState: deps.randomState ?? crypto.randomUUID,
 		saveEnv: deps.saveEnv ?? saveSqliteEnv,
 	};
-}
-
-function readConfig(
-	env: Record<string, string | undefined>,
-): OAuthConfig | null {
-	const clientId = value(env[CLIENT_ID_KEY]);
-	const clientSecret = value(env[CLIENT_SECRET_KEY]);
-	return clientId && clientSecret ? { clientId, clientSecret } : null;
-}
-
-function readStoredConnection(
-	store: Record<string, string> | undefined,
-): StoredConnection {
-	return { login: value(store?.[LOGIN_KEY]), token: value(store?.[TOKEN_KEY]) };
-}
-
-function githubHeaders(token: string): Record<string, string> {
-	return {
-		accept: "application/vnd.github+json",
-		authorization: `Bearer ${token}`,
-	};
-}
-
-function value(input: unknown): string | null {
-	return typeof input === "string" && input.trim() ? input.trim() : null;
-}
-
-function readCookie(request: Request, name: string): string | null {
-	const encoded = request.headers
-		.get("cookie")
-		?.split(";")
-		.map((cookie) => cookie.trim())
-		.find((cookie) => cookie.startsWith(`${name}=`))
-		?.slice(name.length + 1);
-	return encoded ? decodeURIComponent(encoded) : null;
-}
-
-function stateCookie(state: string, maxAge: number): string {
-	return `${STATE_COOKIE}=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Path=/api/github/oauth; Max-Age=${maxAge}`;
-}
-
-function clearStateCookie(): string {
-	return `${STATE_COOKIE}=; HttpOnly; SameSite=Lax; Path=/api/github/oauth; Max-Age=0`;
-}
-
-function oauthRedirect(
-	request: Request,
-	result: "connected" | "error",
-): Response {
-	return redirect(
-		new URL(`/projects?github=${result}`, request.url).toString(),
-		clearStateCookie(),
-	);
-}
-
-function redirect(location: string, cookie: string): Response {
-	return new Response(null, {
-		status: 302,
-		headers: { location, "set-cookie": cookie },
-	});
 }

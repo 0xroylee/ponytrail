@@ -18,6 +18,7 @@ import {
 } from "@/lib/api/realtime-queries";
 
 import { ProjectCreateDialog } from "./project-create-dialog";
+import { connectGitHubForProjects } from "./project-github-oauth";
 import { ProjectMetric } from "./project-metric";
 import {
 	EMPTY_PROJECT_FORM_STATE,
@@ -234,9 +235,7 @@ export function ProjectsPanel(): ReactElement {
 						repositoriesQuery.data?.unavailableReason ?? null
 					}
 					onClose={closeProjectDialog}
-					onConnectGitHub={() =>
-						window.location.assign("/api/github/oauth/start")
-					}
+					onConnectGitHub={connectGitHubForProjects}
 					onRetryRepositories={retryGitHubData}
 					onSubmit={(event) => void submitProject(event)}
 					onUpdateField={updateField}

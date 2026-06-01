@@ -11,11 +11,7 @@ import type {
 	CliCommandStreamHandler,
 	CliCommandStreamRequest,
 } from "./command-stream-client.types";
-import type {
-	GitHubConnectionResponse,
-	GitHubRepositoriesResponse,
-	GitHubRepositoryRecord,
-} from "./github.types";
+import type { GitHubApiMethods } from "./github.types";
 import type { HealthRequestOptions, HealthResponse } from "./health.types";
 import type { InboxMessageRecord, InboxMessageScope } from "./inbox.types";
 import type { PollingStatusResponse } from "./polling-status.types";
@@ -107,7 +103,12 @@ export type {
 	WorkspaceProjectsResponse,
 } from "./project.types";
 export type {
+	GitHubApiMethods,
 	GitHubConnectionResponse,
+	GitHubDevicePollResponse,
+	GitHubDevicePollStatus,
+	GitHubDeviceStartRequest,
+	GitHubDeviceStartResponse,
 	GitHubRepositoriesResponse,
 	GitHubRepositoryRecord,
 } from "./github.types";
@@ -121,7 +122,9 @@ export interface ApiClientOptions {
 	WebSocketImpl?: typeof WebSocket;
 }
 
-export interface ApiClient extends WorkflowComputerApiMethods {
+export interface ApiClient
+	extends WorkflowComputerApiMethods,
+		GitHubApiMethods {
 	getHealth(options?: HealthRequestOptions): Promise<HealthResponse>;
 	getCurrentWorkspace(
 		options?: HealthRequestOptions,
@@ -208,15 +211,6 @@ export interface ApiClient extends WorkflowComputerApiMethods {
 		projectId: string,
 		options?: HealthRequestOptions,
 	): Promise<ProjectBoardRecord>;
-	listGitHubRepositories(
-		options?: HealthRequestOptions,
-	): Promise<GitHubRepositoriesResponse>;
-	getGitHubConnection(
-		options?: HealthRequestOptions,
-	): Promise<GitHubConnectionResponse>;
-	disconnectGitHub(
-		options?: HealthRequestOptions,
-	): Promise<GitHubConnectionResponse>;
 	listInboxMessages(
 		scope: InboxMessageScope,
 		options?: HealthRequestOptions,

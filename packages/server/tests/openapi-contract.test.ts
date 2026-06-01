@@ -15,6 +15,8 @@ const IMPLEMENTED_ROUTES = [
 	["DELETE", "/api/github/connection"],
 	["GET", "/api/github/oauth/start"],
 	["GET", "/api/github/oauth/callback"],
+	["POST", "/api/github/device/start"],
+	["POST", "/api/github/device/poll"],
 	["GET", "/api/github/repositories"],
 	["GET", "/api/tasks"],
 	["POST", "/api/tasks"],

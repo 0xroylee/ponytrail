@@ -1,14 +1,15 @@
 import { loadSqliteEnv } from "devos/features/config";
+import {
+	githubHeaders,
+	readDeviceConfig,
+	readStoredConnection,
+} from "./github-oauth-config";
 import type {
 	GitHubRepositoriesResponse,
 	GitHubRepositoriesRouteDeps,
 	GitHubRepositoryRecord,
 } from "./types/github-repositories-api.types";
 
-const CLIENT_ID_KEY = "GITHUB_OAUTH_CLIENT_ID";
-const CLIENT_SECRET_KEY = "GITHUB_OAUTH_CLIENT_SECRET";
-const TOKEN_KEY = "GITHUB_OAUTH_ACCESS_TOKEN";
-const LOGIN_KEY = "GITHUB_OAUTH_LOGIN";
 const REPOS_URL =
 	"https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member";
 const REPOS_UNAVAILABLE = "GitHub repositories unavailable";
@@ -22,12 +23,14 @@ export async function listGitHubRepositories(
 	const env = deps.env ?? process.env;
 	const loadEnv = deps.loadEnv ?? loadSqliteEnv;
 	const tokenStore = await loadEnv(workspacePath);
-	const token = value(tokenStore?.[TOKEN_KEY]);
-	const login = value(tokenStore?.[LOGIN_KEY]);
-	if (!value(env[CLIENT_ID_KEY]) || !value(env[CLIENT_SECRET_KEY])) {
-		return unavailable(OAUTH_UNCONFIGURED);
+	const { login, token } = readStoredConnection(tokenStore);
+	if (!token || !login) {
+		return unavailable(
+			readDeviceConfig(env, tokenStore)
+				? OAUTH_DISCONNECTED
+				: OAUTH_UNCONFIGURED,
+		);
 	}
-	if (!token || !login) return unavailable(OAUTH_DISCONNECTED);
 	try {
 		const payload = await fetchRepositories(deps.fetchFn ?? fetch, token);
 		if (!Array.isArray(payload)) return unavailable(REPOS_UNAVAILABLE);
@@ -46,10 +49,7 @@ async function fetchRepositories(
 	token: string,
 ): Promise<unknown> {
 	const response = await fetchFn(REPOS_URL, {
-		headers: {
-			accept: "application/vnd.github+json",
-			authorization: `Bearer ${token}`,
-		},
+		headers: githubHeaders(token),
 	});
 	if (!response.ok) throw new Error("GitHub repositories unavailable");
 	return response.json();
@@ -83,8 +83,4 @@ function parseRepository(value: unknown): GitHubRepositoryRecord[] {
 
 function unavailable(unavailableReason: string): GitHubRepositoriesResponse {
 	return { isAvailable: false, unavailableReason, repositories: [] };
-}
-
-function value(input: unknown): string | null {
-	return typeof input === "string" && input.trim() ? input.trim() : null;
 }

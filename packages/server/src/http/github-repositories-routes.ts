@@ -1,4 +1,8 @@
 import {
+	pollGitHubDeviceFlow,
+	startGitHubDeviceFlow,
+} from "./github-device-flow-service";
+import {
 	disconnectGitHub,
 	finishGitHubOAuth,
 	getGitHubConnection,
@@ -11,11 +15,15 @@ import type { GitHubRepositoriesRouteDeps } from "./types/github-repositories-ap
 const GITHUB_CONNECTION_PATH = "/api/github/connection";
 const GITHUB_OAUTH_START_PATH = "/api/github/oauth/start";
 const GITHUB_OAUTH_CALLBACK_PATH = "/api/github/oauth/callback";
+const GITHUB_DEVICE_START_PATH = "/api/github/device/start";
+const GITHUB_DEVICE_POLL_PATH = "/api/github/device/poll";
 const GITHUB_REPOSITORIES_PATH = "/api/github/repositories";
 const KNOWN_PATHS = new Set([
 	GITHUB_CONNECTION_PATH,
 	GITHUB_OAUTH_START_PATH,
 	GITHUB_OAUTH_CALLBACK_PATH,
+	GITHUB_DEVICE_START_PATH,
+	GITHUB_DEVICE_POLL_PATH,
 	GITHUB_REPOSITORIES_PATH,
 ]);
 
@@ -31,6 +39,12 @@ export async function handleGitHubRepositoriesRoute(
 	}
 	if (pathname === GITHUB_CONNECTION_PATH && request.method === "DELETE") {
 		return Response.json(await disconnectGitHub(workspacePath, deps));
+	}
+	if (pathname === GITHUB_DEVICE_START_PATH && request.method === "POST") {
+		return startGitHubDeviceFlow(request, workspacePath, deps);
+	}
+	if (pathname === GITHUB_DEVICE_POLL_PATH && request.method === "POST") {
+		return pollGitHubDeviceFlow(request, workspacePath, deps);
 	}
 	if (request.method !== "GET") return methodNotAllowed();
 	if (pathname === GITHUB_OAUTH_START_PATH) {

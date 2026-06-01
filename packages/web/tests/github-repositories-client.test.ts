@@ -87,4 +87,61 @@ describe("GitHub repositories API client", () => {
 			unavailableReason: "Connect GitHub to list repositories",
 		});
 	});
+
+	it("starts GitHub device flow through the server API", async () => {
+		const fetchFn = (async (input: URL | RequestInfo, init?: RequestInit) => {
+			expect(String(input)).toBe("/api/github/device/start");
+			expect(init?.method).toBe("POST");
+			expect(JSON.parse(String(init?.body))).toEqual({
+				clientId: "device-client-id",
+			});
+			return okJsonResponse({
+				userCode: "WDJB-MJHT",
+				verificationUri: "https://github.com/login/device",
+				expiresIn: 900,
+				interval: 5,
+			});
+		}) as typeof fetch;
+		const client = createApiClient({ fetchFn });
+
+		await expect(
+			client.startGitHubDeviceFlow({ clientId: "device-client-id" }),
+		).resolves.toEqual({
+			userCode: "WDJB-MJHT",
+			verificationUri: "https://github.com/login/device",
+			expiresIn: 900,
+			interval: 5,
+		});
+	});
+
+	it("polls GitHub device flow through the server API", async () => {
+		const fetchFn = (async (input: URL | RequestInfo, init?: RequestInit) => {
+			expect(String(input)).toBe("/api/github/device/poll");
+			expect(init?.method).toBe("POST");
+			return okJsonResponse({
+				status: "connected",
+				interval: null,
+				connection: {
+					isConfigured: true,
+					isConnected: true,
+					login: "octo",
+					unavailableReason: null,
+				},
+				message: null,
+			});
+		}) as typeof fetch;
+		const client = createApiClient({ fetchFn });
+
+		await expect(client.pollGitHubDeviceFlow()).resolves.toEqual({
+			status: "connected",
+			interval: null,
+			connection: {
+				isConfigured: true,
+				isConnected: true,
+				login: "octo",
+				unavailableReason: null,
+			},
+			message: null,
+		});
+	});
 });

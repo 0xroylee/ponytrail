@@ -44,13 +44,13 @@ skills: {
 ## Manage skills via CLI
 
 Use the CLI to list, add, update, and remove skill folders under the configured
-`skills.root` for the selected project:
+`skills.root`:
 
 ```bash
-devos skills list [--project <PROJECT_ID>]
-devos skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>" [--project <PROJECT_ID>]
-devos skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"] [--project <PROJECT_ID>]
-devos skills remove <NAME> [--project <PROJECT_ID>]
+devos skills list
+devos skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>"
+devos skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"]
+devos skills remove <NAME>
 ```
 
 Generated `SKILL.md` template:

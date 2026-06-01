@@ -12,7 +12,7 @@ import type {
 	OnboardDraft,
 	OnboardDraftPromptDeps,
 } from "./types/onboard.types";
-import { parseRecipients, resolveUserPath } from "./wizard-helpers";
+import { resolveUserPath } from "./wizard-helpers";
 
 const DEFAULT_CODEX_MODELS = {
 	brainstorm: "gpt-5.5",
@@ -32,7 +32,6 @@ export async function collectOnboardDraft(
 		"Workspace name",
 		defaultWorkspaceName(executionPath),
 	);
-	const notifications = await collectNotificationDraft(prompts);
 	const isolatedWorktrees = await prompts.confirm({
 		message: "Use isolated worktrees?",
 		initialValue: true,
@@ -44,7 +43,7 @@ export async function collectOnboardDraft(
 		workspacePath: executionPath,
 		executionPath,
 		instance,
-		notifications,
+		notifications: disabledNotifications(),
 		workflow: {
 			isolatedWorktrees,
 		},
@@ -73,34 +72,8 @@ export async function collectOnboardDraft(
 	};
 }
 
-async function collectNotificationDraft(
-	prompts: PromptAdapter,
-): Promise<OnboardDraft["notifications"]> {
-	const enabled = await prompts.confirm({
-		message: "Enable email notifications?",
-		initialValue: false,
-	});
-	if (!enabled) {
-		return { email: { enabled: false, to: [] } };
-	}
-	return {
-		email: {
-			enabled: true,
-			resendApiKey: await promptSecret(prompts, "Resend API key", ""),
-			from: await promptText(prompts, "Notification from address", ""),
-			to: parseRecipients(
-				await promptText(prompts, "Notification recipients", ""),
-			),
-		},
-	};
-}
-
-async function promptSecret(
-	prompts: PromptAdapter,
-	message: string,
-	fallback: string,
-): Promise<string> {
-	return (await prompts.password({ message })).trim() || fallback;
+function disabledNotifications(): OnboardDraft["notifications"] {
+	return { email: { enabled: false, to: [] } };
 }
 
 function promptText(

@@ -8,6 +8,7 @@ export type SidebarNavKey =
 	| "settings"
 	| "issues"
 	| "projects"
+	| "integrations"
 	| "inbox"
 	| "autopilot"
 	| "squads"

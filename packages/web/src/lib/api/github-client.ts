@@ -2,17 +2,24 @@ import {
 	assertObjectRecord,
 	parseListResponse,
 	readBoolean,
+	readNullableNumber,
 	readNullableString,
+	readNumber,
 	readString,
 } from "./response-utils";
 import type {
+	GitHubApiMethods,
 	GitHubConnectionResponse,
+	GitHubDevicePollResponse,
+	GitHubDeviceStartResponse,
 	GitHubRepositoriesResponse,
 	GitHubRepositoryRecord,
 	HealthRequestOptions,
 } from "./types/client.types";
 
 const GITHUB_CONNECTION_PATH = "/api/github/connection";
+const GITHUB_DEVICE_START_PATH = "/api/github/device/start";
+const GITHUB_DEVICE_POLL_PATH = "/api/github/device/poll";
 const GITHUB_REPOSITORIES_PATH = "/api/github/repositories";
 
 function parseGitHubRepositoryRecord(payload: unknown): GitHubRepositoryRecord {
@@ -57,16 +64,50 @@ export function parseGitHubConnectionResponse(
 	};
 }
 
-export interface GitHubApiMethods {
-	listGitHubRepositories(
-		options?: HealthRequestOptions,
-	): Promise<GitHubRepositoriesResponse>;
-	getGitHubConnection(
-		options?: HealthRequestOptions,
-	): Promise<GitHubConnectionResponse>;
-	disconnectGitHub(
-		options?: HealthRequestOptions,
-	): Promise<GitHubConnectionResponse>;
+export function parseGitHubDeviceStartResponse(
+	payload: unknown,
+): GitHubDeviceStartResponse {
+	const endpoint = GITHUB_DEVICE_START_PATH;
+	const row = assertObjectRecord(payload, endpoint);
+	return {
+		userCode: readString(row, "userCode", endpoint),
+		verificationUri: readString(row, "verificationUri", endpoint),
+		expiresIn: readNumber(row, "expiresIn", endpoint),
+		interval: readNumber(row, "interval", endpoint),
+	};
+}
+
+export function parseGitHubDevicePollResponse(
+	payload: unknown,
+): GitHubDevicePollResponse {
+	const endpoint = GITHUB_DEVICE_POLL_PATH;
+	const row = assertObjectRecord(payload, endpoint);
+	const connection = row.connection;
+	return {
+		status: readGitHubDeviceStatus(row, endpoint),
+		interval: readNullableNumber(row, "interval", endpoint),
+		connection:
+			connection === null ? null : parseGitHubConnectionResponse(connection),
+		message: readNullableString(row, "message", endpoint),
+	};
+}
+
+function readGitHubDeviceStatus(
+	row: Record<string, unknown>,
+	endpoint: string,
+): GitHubDevicePollResponse["status"] {
+	const status = readString(row, "status", endpoint);
+	if (
+		status === "pending" ||
+		status === "slow_down" ||
+		status === "expired" ||
+		status === "denied" ||
+		status === "connected" ||
+		status === "error"
+	) {
+		return status;
+	}
+	throw new Error(`Invalid ${endpoint} response field 'status'`);
 }
 
 export function createGitHubApiMethods(
@@ -101,6 +142,23 @@ export function createGitHubApiMethods(
 				options,
 			);
 			return parseGitHubRepositoriesResponse(payload);
+		},
+		async startGitHubDeviceFlow(request, options) {
+			const payload = await requestWithBase(
+				GITHUB_DEVICE_START_PATH,
+				"POST",
+				options,
+				request,
+			);
+			return parseGitHubDeviceStartResponse(payload);
+		},
+		async pollGitHubDeviceFlow(options) {
+			const payload = await requestWithBase(
+				GITHUB_DEVICE_POLL_PATH,
+				"POST",
+				options,
+			);
+			return parseGitHubDevicePollResponse(payload);
 		},
 	};
 }

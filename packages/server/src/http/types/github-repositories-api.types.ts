@@ -20,6 +20,32 @@ export interface GitHubConnectionResponse {
 	unavailableReason: string | null;
 }
 
+export interface GitHubDeviceStartRequest {
+	clientId?: string | null;
+}
+
+export interface GitHubDeviceStartResponse {
+	userCode: string;
+	verificationUri: string;
+	expiresIn: number;
+	interval: number;
+}
+
+export type GitHubDevicePollStatus =
+	| "pending"
+	| "slow_down"
+	| "expired"
+	| "denied"
+	| "connected"
+	| "error";
+
+export interface GitHubDevicePollResponse {
+	status: GitHubDevicePollStatus;
+	interval: number | null;
+	connection: GitHubConnectionResponse | null;
+	message: string | null;
+}
+
 export interface GitHubRepositoriesRouteDeps {
 	env?: Record<string, string | undefined>;
 	fetchFn?: typeof fetch;

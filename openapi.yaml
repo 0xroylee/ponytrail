@@ -125,6 +125,19 @@ paths:
   /api/github/oauth/start:
     get:
       tags: [GitHub]
+      parameters:
+        - in: query
+          name: returnTo
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - in: query
+          name: origin
+          required: false
+          schema:
+            type: string
+            minLength: 1
       responses:
         '302':
           description: Redirects to GitHub OAuth authorization.
@@ -153,6 +166,36 @@ paths:
       responses:
         '302':
           description: Redirects to Projects after the OAuth callback.
+        '400':
+          $ref: '#/components/responses/TypedError'
+  /api/github/device/start:
+    post:
+      tags: [GitHub]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GitHubDeviceStartRequest'
+      responses:
+        '200':
+          description: GitHub device flow code.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubDeviceStartResponse'
+        '400':
+          $ref: '#/components/responses/TypedError'
+  /api/github/device/poll:
+    post:
+      tags: [GitHub]
+      responses:
+        '200':
+          description: GitHub device authorization status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubDevicePollResponse'
         '400':
           $ref: '#/components/responses/TypedError'
   /api/github/repositories:
@@ -840,6 +883,43 @@ components:
           type: string
           nullable: true
         unavailableReason:
+          type: string
+          nullable: true
+    GitHubDeviceStartRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        clientId:
+          type: string
+          nullable: true
+          minLength: 1
+    GitHubDeviceStartResponse:
+      type: object
+      additionalProperties: false
+      required: [userCode, verificationUri, expiresIn, interval]
+      properties:
+        userCode: { type: string, minLength: 1 }
+        verificationUri: { type: string, minLength: 1 }
+        expiresIn: { type: integer, minimum: 1 }
+        interval: { type: integer, minimum: 1 }
+    GitHubDevicePollResponse:
+      type: object
+      additionalProperties: false
+      required: [status, interval, connection, message]
+      properties:
+        status:
+          type: string
+          enum: [pending, slow_down, expired, denied, connected, error]
+        interval:
+          type: integer
+          nullable: true
+          minimum: 1
+        connection:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/GitHubConnectionResponse'
+        message:
           type: string
           nullable: true
     GitHubRepositoriesResponse:

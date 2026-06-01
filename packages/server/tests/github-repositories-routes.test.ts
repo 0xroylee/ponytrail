@@ -88,6 +88,45 @@ describe("GitHub repositories route", () => {
 		});
 	});
 
+	it("lists repositories after device flow without a client secret", async () => {
+		const { deps, fetchCalls } = createRouteDeps({
+			env: {},
+			initialStore: {
+				...CONNECTED_STORE,
+				GITHUB_OAUTH_CLIENT_ID: "device-client-id",
+			},
+			fetchFn: (async () =>
+				Response.json([
+					{
+						id: 43,
+						name: "device",
+						full_name: "octo/device",
+						default_branch: "main",
+						private: false,
+						owner: { login: "octo" },
+					},
+				])) as unknown as typeof fetch,
+		});
+
+		const response = await route("/api/github/repositories", deps);
+
+		expect(fetchCalls).toHaveLength(1);
+		expect(await response?.json()).toEqual({
+			isAvailable: true,
+			unavailableReason: null,
+			repositories: [
+				{
+					id: "43",
+					owner: "octo",
+					name: "device",
+					nameWithOwner: "octo/device",
+					defaultBranch: "main",
+					isPrivate: false,
+				},
+			],
+		});
+	});
+
 	it("does not call GitHub when a stored login is missing", async () => {
 		const { deps, fetchCalls } = createRouteDeps({
 			initialStore: { GITHUB_OAUTH_ACCESS_TOKEN: "token-123" },
