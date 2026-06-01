@@ -53,6 +53,16 @@ jobs:
             exit 1
           fi
 
+      - name: Configure npm auth for Bun
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          {
+            echo "registry=https://registry.npmjs.org/"
+            echo "always-auth=true"
+            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}"
+          } > "${HOME}/.npmrc"
+
       - name: Run CLI release gate
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
