@@ -6,6 +6,7 @@ import { READ_ONLY_SERVER_PATHS } from "../src/routes";
 const IMPLEMENTED_ROUTES = [
 	["GET", "/health"],
 	["GET", "/api/cli/history"],
+	["GET", "/api/github/repositories/search"],
 	["GET", "/api/projects"],
 	["POST", "/api/projects"],
 	["GET", "/api/projects/{id}"],
@@ -63,6 +64,16 @@ const AGENT_UPDATE_FIELDS = [
 	"recentWork",
 	"activity",
 	"instructions",
+] as const;
+
+const PROJECT_METADATA_FIELDS = [
+	"repoOwner",
+	"repoName",
+	"baseBranch",
+	"localFolder",
+	"lead",
+	"category",
+	"priority",
 ] as const;
 
 function extractOpenApiRoutes(openApiDocument: string): Set<string> {
@@ -182,6 +193,25 @@ describe("openapi contract", () => {
 
 		for (const field of AGENT_UPDATE_FIELDS) {
 			expect(agentPatchFields).toContain(`${field}:`);
+		}
+	});
+
+	it("documents project repository metadata fields", () => {
+		const root = path.resolve(__dirname, "../..", "..");
+		const openApiPath = path.join(root, "openapi.yaml");
+		const openApiText = readFileSync(openApiPath, "utf-8");
+		const projectCreateFields = extractSchemaBlock(
+			openApiText,
+			"ProjectCreateRequest",
+		);
+		const projectPatchFields = extractSchemaBlock(
+			openApiText,
+			"ProjectPatchFields",
+		);
+
+		for (const field of PROJECT_METADATA_FIELDS) {
+			expect(projectCreateFields).toContain(`${field}:`);
+			expect(projectPatchFields).toContain(`${field}:`);
 		}
 	});
 });
