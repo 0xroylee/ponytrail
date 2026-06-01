@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import {
+	access,
 	chmod,
 	mkdir,
 	mkdtemp,
@@ -32,6 +33,12 @@ describe("devos installer route", () => {
 		expect(body).toContain('bun add --global "$TARGET"');
 		expect(body).toContain("curl -fsSL https://bun.sh/install | bash");
 		expect(body).toContain("https://devos.ing/cli/devos-0.0.3.tgz");
+	});
+
+	it("ships the default hosted tarball referenced by the installer", async () => {
+		await access(
+			path.join(process.cwd(), "packages/landing/public/cli/devos-0.0.3.tgz"),
+		);
 	});
 
 	it("installs the hosted devos tarball with Bun by default", async () => {
