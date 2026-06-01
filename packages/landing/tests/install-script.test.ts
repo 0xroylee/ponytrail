@@ -31,7 +31,7 @@ describe("devos installer route", () => {
 		expect(body.startsWith("#!/usr/bin/env sh\n")).toBe(true);
 		expect(body).toContain('bun add --global "$TARGET"');
 		expect(body).toContain("curl -fsSL https://bun.sh/install | bash");
-		expect(body).toContain("https://devos.ing/cli/devos-0.0.2.tgz");
+		expect(body).toContain("https://devos.ing/cli/devos-0.0.3.tgz");
 	});
 
 	it("installs the hosted devos tarball with Bun by default", async () => {
@@ -95,7 +95,7 @@ describe("devos installer route", () => {
 		expect(installResult.code).toBe(0);
 		expect(installResult.stderr).toBe("");
 		expect(await readFile(curlLogPath, "utf8")).toContain(
-			"https://devos.ing/cli/devos-0.0.2.tgz",
+			"https://devos.ing/cli/devos-0.0.3.tgz",
 		);
 		const bunCalls = await readFile(callLogPath, "utf8");
 		expect(bunCalls).toContain("remove --global devos");
