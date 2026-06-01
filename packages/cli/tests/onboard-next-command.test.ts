@@ -1,0 +1,78 @@
+import { afterEach, describe, expect, it } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import path from "node:path";
+import { type OnboardCheck, runOnboardWizard } from "../src/features/onboard";
+import type { PromptAdapter } from "../src/features/prompts";
+import type { CommandResult } from "../src/utils/shell";
+
+let previousHome: string | undefined;
+
+describe("onboard next command", () => {
+	afterEach(async () => {
+		process.env.HOME = previousHome;
+		previousHome = undefined;
+	});
+
+	it("prints devos daemon after successful onboard checks", async () => {
+		const tempDir = await createTempHome();
+		try {
+			const output = await captureStdout(() =>
+				runOnboardWizard(tempDir, {
+					runCommand: async () => okCommand(),
+					prompts: onboardingPromptAdapter(),
+					collectOnboardChecks: async (): Promise<OnboardCheck[]> => [
+						{ name: "Instance config", status: "pass", message: "ok" },
+					],
+					configurePluginCredentials: async () => {},
+				}),
+			);
+
+			const successIndex = output.indexOf("All checks passed!");
+			const daemonIndex = output.indexOf("devos daemon");
+			expect(successIndex).toBeGreaterThan(-1);
+			expect(daemonIndex).toBeGreaterThan(successIndex);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+});
+
+async function createTempHome(): Promise<string> {
+	previousHome = process.env.HOME;
+	const tempDir = await mkdtemp(path.join(process.cwd(), ".tmp-onboard-home-"));
+	process.env.HOME = tempDir;
+	return tempDir;
+}
+
+async function captureStdout(run: () => Promise<void>): Promise<string> {
+	const previousWrite = process.stdout.write;
+	let output = "";
+	process.stdout.write = ((chunk: string | Uint8Array) => {
+		output += String(chunk);
+		return true;
+	}) as typeof process.stdout.write;
+	try {
+		await run();
+		return output;
+	} finally {
+		process.stdout.write = previousWrite;
+	}
+}
+
+function onboardingPromptAdapter(): PromptAdapter {
+	return {
+		text: async ({ defaultValue }) => defaultValue ?? "",
+		password: async () => "",
+		confirm: async ({ initialValue }) => initialValue ?? false,
+		select: async ({ options, initialValue }) =>
+			initialValue ?? options[0]?.value ?? "",
+	};
+}
+
+function okCommand(): CommandResult {
+	return {
+		code: 0,
+		stdout: "ok",
+		stderr: "",
+	};
+}

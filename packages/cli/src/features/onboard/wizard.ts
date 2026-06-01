@@ -48,6 +48,7 @@ export async function runOnboardWizard(
 	if (checks.some((check) => check.status === "fail")) {
 		throw new Error("Onboard check failed");
 	}
+	process.stdout.write(`${renderCliHeading("Next command")}\ndevos daemon\n`);
 }
 
 async function configureInstalledPluginCredentials(
