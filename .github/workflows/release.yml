@@ -47,8 +47,9 @@ jobs:
       - name: Verify npm token
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [[ -z "${NODE_AUTH_TOKEN}" ]]; then
+          if [[ -z "${NPM_CONFIG_TOKEN}" ]]; then
             echo "NPM_TOKEN secret is required for release dry-run authentication."
             exit 1
           fi
@@ -56,16 +57,18 @@ jobs:
       - name: Configure npm auth for Bun
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           {
             echo "registry=https://registry.npmjs.org/"
             echo "always-auth=true"
-            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}"
+            echo "//registry.npmjs.org/:_authToken=${NPM_CONFIG_TOKEN}"
           } > "${HOME}/.npmrc"
 
       - name: Run CLI release gate
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           bun run release:cli
 
