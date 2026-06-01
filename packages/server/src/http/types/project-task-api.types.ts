@@ -2,6 +2,7 @@ export interface CreateProjectPayload {
 	boardId: string;
 	name: string;
 	ownerId: string;
+	emoji?: string | null;
 	externalProjectId?: string | null;
 	description?: string | null;
 	repoOwner?: string | null;
@@ -17,6 +18,7 @@ export interface UpdateProjectPayload {
 	boardId?: string;
 	name?: string;
 	ownerId?: string;
+	emoji?: string | null;
 	externalProjectId?: string | null;
 	description?: string | null;
 	repoOwner?: string | null;

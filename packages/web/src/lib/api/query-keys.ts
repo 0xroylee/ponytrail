@@ -11,6 +11,10 @@ export const serverStateQueryKeys = {
 	commandHistory: ["server-state", "command-history"] as const,
 	workflowComputers: ["server-state", "workflow-computers"] as const,
 	modelSettings: ["server-state", "model-settings"] as const,
+	gitHubConnection: ["server-state", "github-connection"] as const,
+	gitHubRepositories: ["server-state", "github-repositories"] as const,
+	gitHubDevicePoll: (userCode: string) =>
+		["server-state", "github-device-poll", userCode] as const,
 	chatSessions: (workspaceId: string) =>
 		["server-state", "chat-sessions", workspaceId] as const,
 	chatMessages: (sessionId: string) =>

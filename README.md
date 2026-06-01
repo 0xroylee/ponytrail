@@ -2,174 +2,270 @@
 
 Talk is cheap, show me your agent system.
 
-devos.ing is ADHD (Agentic Development Hub & Daemon): an all-in-one workflow for managing agentic development, reducing human involvement while keeping operators in control. It turns Linear issues into an agent-driven engineering workflow: plan -> implement -> review/test. It can run one issue at a time, poll for new work, or run scheduled automation sweeps across projects.
+devos.ing is ADHD: Agentic Development Hub & Daemon. It turns product and
+engineering work into a repeatable agent workflow that can plan, implement,
+review, test, and report progress across one or more projects while keeping a
+human operator in control.
 
-For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_TECHNICAL_GUIDE.md).
+## What We Are Solving
 
-## Quick Start
+Modern coding agents are powerful, but production work still gets stuck in the
+same places: unclear task intake, missing project context, manual handoffs
+between planning and implementation, inconsistent review quality, lost run
+state, and brittle scripts that only work in one repo.
 
-1. Install dependencies.
-2. Build the local CLI package.
-3. Run guided onboarding.
-4. Validate your onboarding.
-5. Start the local server, web UI, and workflow worker.
-6. Run one scoped workflow.
+devos.ing gives teams a local-first control plane for that work:
+
+- Turn issues or chat requests into structured engineering tasks.
+- Route work to the right project, repository, branch, skills, and agent model.
+- Run the default workflow from brainstorm to plan, implement, and testing.
+- Keep run state, logs, PR context, and human review points visible.
+- Operate from the CLI, local web UI, daemon, poller, or scheduled cron jobs.
+- Keep workflow behavior project-agnostic so one platform can coordinate many
+  repos.
+
+For a non-technical operator guide, start with
+[docs/NON_TECHNICAL_GUIDE.md](docs/NON_TECHNICAL_GUIDE.md).
+
+## Install And First Run
+
+Install the published CLI with the hosted bash installer:
 
 ```bash
-bun install
-bun run build
-npx devos help
-npx devos onboard
-npx devos onboard --check
-bun run dev
-npx devos run --project <PROJECT_ID>
+curl -fsSL https://devos.ing/cli | bash
 ```
 
-Use `npx devos projects` to list available project IDs, then pass one of those values as `<PROJECT_ID>`.
+Run guided onboarding. The wizard writes local instance config and stores
+secrets under `~/.devos/config`.
+
+```bash
+npx devos onboard
+npx devos onboard --check
+```
+
+Run one scoped workflow.
+
+```bash
+npx devos run --issue ENG-123
+```
+
+If you want devos.ing to keep polling for eligible work:
+
+```bash
+npx devos run --poll
+npx devos run --poll-forever
+```
+
+## Prerequisites
+
+The installer and onboarding flow handle as much setup as possible, but real
+workflow runs need a few local tools and credentials:
+
+- Bun `>=1.3.0` for this monorepo and package scripts.
+- GitHub CLI authenticated with `gh auth login` when workflows touch GitHub.
+- RTK available for token-optimized agent shell execution.
+- At least one configured coding-agent runtime, such as Codex, Claude Code, or
+  Cursor Agent.
+- Project credentials and routing details for the systems you use, such as
+  Linear, GitHub, and optional Resend notifications.
+
+Run `npx devos onboard --check` after any config change. It validates config,
+tooling, GitHub auth, agent runtime availability, and secret placement.
+
+## Core Concepts
+
+### Project
+
+A project is a configured work lane. It binds workspace paths, repository
+settings, task sources, skills, agent backends, and workflow defaults so devos.ing
+can route work without each command carrying project-specific flags.
+
+### Workflow
+
+The default workflow is the agent pipeline that moves a task forward:
+
+1. `brainstorm`: clarify intent and identify missing requirements.
+2. `plan`: turn task context into a concrete implementation goal.
+3. `implement`: change code and prepare PR context.
+4. `testing`: verify the result and produce structured pass/fail feedback.
+5. `githubComment`: write PR-facing review or status comments when needed.
+
+Failed review can loop back into implementation with bug feedback. Blocked work
+pauses for human review instead of silently continuing.
+
+### Agent Runtime
+
+Agent runtimes execute workflow stages. devos.ing keeps the orchestration logic
+separate from runtime adapters so a project can use Codex, Claude Code, Cursor
+Agent, or another supported backend without rewriting workflow code.
+
+### Worker And Daemon
+
+The web UI and server dispatch commands through a workflow websocket. A worker
+must be connected for browser-driven commands and chat workflows. `devos daemon`
+runs the production-style server, web UI, workflow worker, and poller together
+after build artifacts exist.
+
+### State And Secrets
+
+Onboarding stores:
+
+- Secrets in `~/.devos/config/env.sqlite`.
+- Local trusted instance config in `~/.devos/config/instance.config.json`.
+- Per-project run state under `.devos/projects/<project-id>/`.
+
+Run state includes leases, current phase, agent sessions, chat logs, errors, and
+workflow progress.
 
 ## Common Commands
 
+### Operator Commands
+
 ```bash
-# install dependencies
-bun install
-
-# build and test the local CLI bin with npx
-bun run build
-npx devos help
-
-# onboarding and validation
+# guided setup and validation
 npx devos onboard
 npx devos onboard --check
 
-# recommended local web UI stack: API 3001, web 3000, workflow worker
-bun run dev
+# run one issue or the configured queue
+npx devos run --issue ENG-123
+npx devos run
 
-# if the web UI reports "No CLI worker connected to /api/workflow";
-# this starts both the command worker and continuous polling
-bun run dev:worker
+# poll continuously for work
+npx devos run --poll
+npx devos run --poll-forever
 
-# standalone command worker only, without polling
-npx devos worker
+# inspect run state
+npx devos status --issue ENG-123
 
-# production/local package daemon after build artifacts exist
-devos daemon
-
-# local workspace single-service startup/build shortcuts
-bun run dev:server
-bun run dev:web
-bun run build:server
-bun run build:web
-bun run build
-
-# inspect configured projects
-npx devos projects
-
-# run one issue
-npx devos run --project <PROJECT_ID> --issue ENG-123
-
-# local polling mode
-npx devos run --project <PROJECT_ID> --poll
-
-# daemon-owned continuous workflow polling
-npx devos run --all-projects --poll-forever
-
-# unattended scheduled mode (server-owned cron runner)
-bun run --filter devos-server cron
-
-# run the first enabled automation job once now
-bun run cron:once
-
-# run the hourly PR review job
-bun run review:hourly
-
-# run the hourly PR review job once now
-bun run review:hourly:once
-
-# create a release changeset
-bun run changeset
-
-# apply version updates, run quality gates, and publish
-bun run publish:version
-
-# push version commit and tags after publish
-git push --follow-tags
-
-# inspect run state for one issue
-npx devos status --project <PROJECT_ID> --issue ENG-123
-
-# skills management
-npx devos skills list [--project <PROJECT_ID>]
-npx devos skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>" [--project <PROJECT_ID>]
-npx devos skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"] [--project <PROJECT_ID>]
-npx devos skills remove <NAME> [--project <PROJECT_ID>]
+# create a task through the configured intake flow
+npx devos task create --request "Add retry handling for API timeouts"
 ```
 
-After `bun install` and `bun run build`, use `npx devos ...` from the repo root to test the local workspace CLI package.
+### Local App Commands
 
-## Local Server/Web Notes
+```bash
+# start API server, web UI, and workflow worker together
+bun run dev
 
-Use `bun run dev` from the repository root to start the local API server, web UI,
-and workflow worker together. The combined entrypoint runs `dev:server`,
-`dev:web` with `PORT=3000`, and `dev:worker` connected to `/api/workflow`.
+# start only one side of the local stack
+bun run dev:server
+bun run dev:web
+bun run dev:worker
 
-Use `bun run dev:server`, `bun run dev:web`, or `bun run dev:worker` when you
-only need one side of the local stack. `bun run dev:worker` starts both the
-outbound command worker for `/api/workflow` and continuous workflow polling with
-`run --poll-forever`. Chat task creation and browser command streams need the
-worker connected; if the web UI returns
-`No CLI worker connected to /api/workflow`, keep the server running and start
-the dev worker with:
+# production-style local daemon after build artifacts exist
+devos daemon
+
+# server-owned scheduled automation runner
+bun run --filter devos-server cron
+bun run cron:once
+```
+
+### Skill Commands
+
+```bash
+npx devos skills list
+npx devos skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>"
+npx devos skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"]
+npx devos skills remove <NAME>
+```
+
+## Local Contributor Setup
+
+Clone the repo, install dependencies with Bun, build the local CLI package, and
+validate onboarding.
+
+```bash
+bun install
+bun run build
+npx devos help
+npx devos onboard
+npx devos onboard --check
+```
+
+Start the local development stack:
+
+```bash
+bun run dev
+```
+
+That command starts:
+
+- API server on `http://localhost:3001`.
+- Web UI on `http://localhost:3000`.
+- Workflow worker connected to `/api/workflow`.
+
+If the web UI reports `No CLI worker connected to /api/workflow`, keep the
+server running and start the worker:
 
 ```bash
 bun run dev:worker
 ```
 
 The worker connects to `ws://127.0.0.1:3001/api/workflow` by default. Override
-that target when needed with:
+the local targets when needed:
 
 ```bash
 DEVOS_SERVER_BASE_URL=http://127.0.0.1:3001
 DEVOS_WORKFLOW_WS_URL=ws://127.0.0.1:3001/api/workflow
 ```
 
-After `bun run build`, use `devos worker` or `npx devos worker` from the
-repository root only when you want the standalone command worker without
-polling. The older `workflow-worker` command remains available as a compatibility
-alias.
-
-Use `devos daemon` to run the production API server, web UI, outbound CLI workflow worker, and workflow poller together in the foreground after production artifacts already exist. The command starts the server on `PIV_SERVER_PORT=3001`, the web UI on `PORT=3000`, and a supervised `run --all-projects --poll-forever` worker by default, with command and database websocket traffic sharing `DEVOS_WORKFLOW_WS_URL` at `/api/workflow`. Override those environment variables before starting when needed.
-
-Server cron remains a separate scheduled automation runner. Start it with `bun run --filter devos-server cron` when you want server-owned cron jobs, or use `bun run cron:once` to run the first enabled automation job once now.
-
-To run the full local development stack in Docker, use:
+To run the full local development stack in Docker:
 
 ```bash
 docker compose up
 ```
 
-The Compose stack starts the web UI at `http://localhost:3000`, the API server
+The Compose stack exposes the web UI at `http://localhost:3000`, the API server
 health endpoint at `http://localhost:3001/health`, the workflow worker connected
 to `ws://server:3001/api/workflow`, and the landing site at
-`http://localhost:3002`. Stop it with:
+`http://localhost:3002`.
+
+Stop it with:
 
 ```bash
 docker compose down
 ```
 
-## Configuration Notes
+## Repository Map
 
-- Guided onboarding stores local secrets in `~/.devos/config/env.sqlite` (and writes `.env` for compatibility).
-- Guided onboarding writes the local instance config to `~/.devos/config/instance.config.json`.
-- Local instance data lives under `~/.devos/instances/default`.
-- Docker-isolated Codex execution status and caveats (ROY-95): [docs/RELIABILITY.md#docker-isolated-codex-execution](docs/RELIABILITY.md#docker-isolated-codex-execution)
+- `packages/cli/`: CLI parsing, onboarding, config resolution, workflow
+  orchestration, daemon helpers, task intake, skills, and integrations.
+- `packages/server/`: HTTP API, realtime/websocket behavior, cron runtime,
+  workflow-data boundaries, repositories, and server tests.
+- `packages/web/`: Next.js operator UI, client data access, realtime state,
+  providers, components, and frontend tests.
+- `packages/db/`: Shared database schema, migrations, helpers, and DB scripts.
+- `packages/landing/`: Public landing site and hosted CLI installer route.
+- `packages/agent-adapters/`: Runtime adapters for Codex, Claude Code, Cursor
+  Agent, and normalized agent output contracts.
+- `packages/agents/`: Shared agent/session/guardrail primitives.
+- `packages/create-devos-plugin/`: Plugin scaffolding package.
+- `packages/workflow/`: Workflow scaffolding/runtime package.
 
-For runtime config resolution, polling, env vars, and routing behavior, use:
+## Architecture At A Glance
 
-- [ARCHITECTURE.md](ARCHITECTURE.md)
-- [docs/workspace-cli-commands.md](docs/workspace-cli-commands.md)
-- [docs/PLANS.md](docs/PLANS.md)
-- [docs/RELIABILITY.md](docs/RELIABILITY.md)
-- [docs/SECURITY.md](docs/SECURITY.md)
+```mermaid
+flowchart TD
+    trigger["Operator, chat, poller, cron, or API"] --> config["Config resolver"]
+    config --> orchestrator["Workflow orchestrator"]
+    orchestrator <--> state["Run state and leases"]
+    orchestrator <--> taskSource["Task source"]
+    orchestrator --> brainstorm["Brainstorm"]
+    brainstorm --> plan["Plan"]
+    plan --> implement["Implement"]
+    implement --> review["Testing and review"]
+    review --> decision{"Pass?"}
+    decision -->|yes| done["Done or PR ready"]
+    decision -->|retryable bugs| implement
+    decision -->|blocked| human["Human review"]
+    orchestrator --> adapter["Agent adapter"]
+    adapter --> runtime["Codex, Claude Code, Cursor Agent"]
+    orchestrator --> github["GitHub"]
+    orchestrator --> linear["Linear or task board"]
+    orchestrator --> notify["Notifications"]
+```
+
+For the deeper design, read [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Quality Checks
 
@@ -180,6 +276,28 @@ bun run check
 bun run typecheck
 bun test
 ```
+
+Useful focused checks:
+
+```bash
+bun run --filter devos typecheck
+bun run --filter devos-server check
+bun run --filter devos-server typecheck
+bun run --filter devos-server test
+bun test packages/cli/tests/smoke-flow.test.ts
+```
+
+## More Documentation
+
+- [docs/workspace-cli-commands.md](docs/workspace-cli-commands.md): full CLI
+  command reference.
+- [docs/product-specs/new-user-onboarding.md](docs/product-specs/new-user-onboarding.md):
+  expected new-user onboarding flow.
+- [ARCHITECTURE.md](ARCHITECTURE.md): system boundaries and workflow model.
+- [docs/RELIABILITY.md](docs/RELIABILITY.md): reliability and run behavior.
+- [docs/SECURITY.md](docs/SECURITY.md): secrets and security expectations.
+- [docs/PLANS.md](docs/PLANS.md): active operating plans.
+- [docs/QUALITY_SCORE.md](docs/QUALITY_SCORE.md): quality posture.
 
 ## Star History
 

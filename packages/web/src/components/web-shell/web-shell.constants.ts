@@ -8,9 +8,10 @@ export const navItems: SidebarNavItem[] = [
 	// { key: "chat", label: "Chat", href: "/chat" },
 	// { key: "inbox", label: "Inbox", href: "/inbox" },
 	// { key: "issues", label: "Issues", href: "/issues" },
-	// { key: "projects", label: "Projects", href: "/projects" },
 	// { key: "autopilot", label: "Autopilot", href: "/autopilot" },
 	{ key: "agents", label: "Agents", href: "/agents" },
+	{ key: "projects", label: "Projects", href: "/projects" },
+	{ key: "integrations", label: "Integrations", href: "/integrations" },
 	// { key: "squads", label: "Squads", href: "/squads" },
 	{ key: "usage", label: "Usage", href: "/usage" },
 	{ key: "runtimes", label: "Runtimes", href: "/runtimes" },
@@ -45,6 +46,10 @@ export const sectionContentByKey: Record<
 	projects: {
 		heading: "Projects Job Board",
 		description: "Coordinate project-level work streams and status.",
+	},
+	integrations: {
+		heading: "Integrations",
+		description: "Connect external services for this workspace.",
 	},
 	inbox: {
 		heading: "Inbox Job Board",

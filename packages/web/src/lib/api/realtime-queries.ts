@@ -3,6 +3,10 @@
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { serverStateQueryKeys } from "./query-keys";
 import type {
+	GitHubConnectionResponse,
+	GitHubDevicePollResponse,
+	GitHubDeviceStartResponse,
+	GitHubRepositoriesResponse,
 	InboxMessageRecord,
 	InboxMessageScope,
 	ProjectBoardRecord,
@@ -37,6 +41,48 @@ export function useProjectBoardQuery(
 		enabled:
 			Boolean(workspaceId) && Boolean(projectId) && options?.enabled !== false,
 		refetchInterval: resolveRefetchInterval(options),
+	});
+}
+
+export function useGitHubConnectionQuery(
+	options?: ServerStateQueryOptions,
+): UseQueryResult<GitHubConnectionResponse, Error> {
+	return useQuery({
+		queryKey: serverStateQueryKeys.gitHubConnection,
+		queryFn: () => apiClient.getGitHubConnection(),
+		enabled: options?.enabled !== false,
+		refetchInterval: resolveRefetchInterval(options),
+	});
+}
+
+export function useGitHubRepositoriesQuery(
+	options?: ServerStateQueryOptions,
+): UseQueryResult<GitHubRepositoriesResponse, Error> {
+	return useQuery({
+		queryKey: serverStateQueryKeys.gitHubRepositories,
+		queryFn: () => apiClient.listGitHubRepositories(),
+		enabled: options?.enabled !== false,
+		refetchInterval: resolveRefetchInterval(options),
+	});
+}
+
+export function useGitHubDevicePollQuery(
+	deviceFlow: GitHubDeviceStartResponse | null,
+	enabled: boolean,
+): UseQueryResult<GitHubDevicePollResponse, Error> {
+	return useQuery({
+		queryKey: serverStateQueryKeys.gitHubDevicePoll(
+			deviceFlow?.userCode ?? "idle",
+		),
+		queryFn: () => apiClient.pollGitHubDeviceFlow(),
+		enabled: Boolean(deviceFlow) && enabled,
+		refetchInterval: (query) => {
+			const status = query.state.data?.status;
+			if (status && status !== "pending" && status !== "slow_down") {
+				return false;
+			}
+			return (query.state.data?.interval ?? deviceFlow?.interval ?? 5) * 1000;
+		},
 	});
 }
 

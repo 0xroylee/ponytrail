@@ -17,10 +17,8 @@ For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_T
 bun install
 devos onboard
 devos onboard --check
-devos run --project <PROJECT_ID>
+devos run --issue ENG-123
 ```
-
-Use `devos projects` to list available project IDs, then pass one of those values as `<PROJECT_ID>`.
 
 ## Command Reference
 
@@ -70,40 +68,18 @@ Usage notes:
 - Default onboarding enables per-issue isolated git worktrees for local runs.
 - `onboard --check` performs validation only.
 
-### projects
-
-Purpose: list configured projects from runtime config.
-
-Syntax:
-
-```bash
-devos projects
-```
-
-Output shape:
-
-- One tab-separated line per project:
-  `<id>\t<name>\texec=<executionPath>\tstate=<workspacePath>`
-
-Usage notes:
-
-- Useful for discovering valid values for `--project`.
-
 ### run
 
-Purpose: run workflow orchestration for one issue or project scope.
+Purpose: run workflow orchestration for one issue or the configured queue.
 
 Syntax:
 
 ```bash
-devos run [--project <PROJECT_ID>] [--issue <LINEAR_KEY_OR_URL>] [--poll|--poll-forever] [--no-exit-when-idle] [--concurrency <N>] [--poll-interval-ms <MS>] [--max-poll-cycles <N>] [--isolated-worktrees]
-devos run --all-projects [--issue <LINEAR_KEY_OR_URL>] [--poll|--poll-forever] [--no-exit-when-idle] [--concurrency <N>] [--poll-interval-ms <MS>] [--max-poll-cycles <N>] [--isolated-worktrees]
+devos run [--issue <LINEAR_KEY_OR_URL>] [--poll|--poll-forever] [--no-exit-when-idle] [--concurrency <N>] [--poll-interval-ms <MS>] [--max-poll-cycles <N>] [--isolated-worktrees]
 ```
 
 Options:
 
-- `--project <PROJECT_ID>`: select one configured project.
-- `--all-projects`: run across all configured projects.
 - `--issue <LINEAR_KEY_OR_URL>`: scope run to a specific Linear issue.
 - `--poll`: continue polling for new work.
 - `--poll-forever`: daemon-friendly polling mode; implies `--poll`, ignores configured max cycles, disables idle exit, and cannot be combined with `--max-poll-cycles`.
@@ -119,33 +95,31 @@ Output shape:
 
 Usage notes:
 
-- `--project` and `--all-projects` cannot be combined.
 - Numeric options must be positive integers.
 
 ### status
 
-Purpose: inspect persisted run state for one project/issue pair.
+Purpose: inspect persisted run state for one issue.
 
 Syntax:
 
 ```bash
-devos status --project <PROJECT_ID> --issue <LINEAR_KEY>
+devos status --issue <LINEAR_KEY>
 ```
 
 Options:
 
-- `--project <PROJECT_ID>`: required project identifier.
 - `--issue <LINEAR_KEY>`: required issue key.
 
 Output shape:
 
 - If state exists: pretty-printed JSON object including persisted run fields plus
   `stageDisplay`.
-- If state does not exist: `No run state found for <ISSUE_KEY> in project <PROJECT_ID>`.
+- If state does not exist: `No run state found for <ISSUE_KEY>`.
 
 Usage notes:
 
-- Both `--project` and `--issue` are required.
+- `--issue` is required.
 
 ### task create
 
@@ -154,14 +128,13 @@ Purpose: generate a Linear backlog issue from a loose request through task intak
 Syntax:
 
 ```bash
-devos task create [<REQUEST>] [--request <TEXT|->] [--project <PROJECT_ID>] [--non-interactive] [--max-clarification-rounds <N>] [--clarifications-json <JSON>]
+devos task create [<REQUEST>] [--request <TEXT|->] [--non-interactive] [--max-clarification-rounds <N>] [--clarifications-json <JSON>]
 ```
 
 Parameters and options:
 
 - `<REQUEST>`: optional positional request text.
 - `--request <TEXT|->`: request text; use `-` to read from stdin.
-- `--project <PROJECT_ID>`: optional project override (defaults to first configured project).
 - `--non-interactive`: disable interactive clarifying questions.
 - `--max-clarification-rounds <N>`: optional positive integer cap.
 - `--clarifications-json <JSON>`: optional JSON array of `{ "question": "...", "answer": "..." }`.
@@ -180,12 +153,12 @@ Usage notes:
 
 ### skills list
 
-Purpose: list skills for the selected project's skills root.
+Purpose: list skills for the configured skills root.
 
 Syntax:
 
 ```bash
-devos skills list [--project <PROJECT_ID>]
+devos skills list
 ```
 
 Output shape:
@@ -194,18 +167,14 @@ Output shape:
   `<name>\t<title>\t<description|->`
 - If none exist: `No skills found in <skillsRootPath>`.
 
-Usage notes:
-
-- `--project` is optional; defaults to first configured project.
-
 ### skills add
 
-Purpose: create a new skill document in the selected project.
+Purpose: create a new skill document in the configured skills root.
 
 Syntax:
 
 ```bash
-devos skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>" [--project <PROJECT_ID>]
+devos skills add --title "<TITLE>" --description "<DESCRIPTION>" --content "<CONTENT>"
 ```
 
 Options:
@@ -213,7 +182,6 @@ Options:
 - `--title <TITLE>`: required skill title.
 - `--description <DESCRIPTION>`: required skill description.
 - `--content <CONTENT>`: required skill body content.
-- `--project <PROJECT_ID>`: optional project override.
 
 Output shape:
 
@@ -226,7 +194,7 @@ Purpose: update skill metadata/content by skill name.
 Syntax:
 
 ```bash
-devos skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"] [--project <PROJECT_ID>]
+devos skills update <NAME> [--title "<TITLE>"] [--description "<DESCRIPTION>"] [--content "<CONTENT>"]
 ```
 
 Parameters and options:
@@ -235,7 +203,6 @@ Parameters and options:
 - `--title <TITLE>`: optional new title.
 - `--description <DESCRIPTION>`: optional new description.
 - `--content <CONTENT>`: optional new content.
-- `--project <PROJECT_ID>`: optional project override.
 
 Output shape:
 
@@ -247,18 +214,17 @@ Usage notes:
 
 ### skills remove
 
-Purpose: remove a skill by name from the selected project.
+Purpose: remove a skill by name from the configured skills root.
 
 Syntax:
 
 ```bash
-devos skills remove <NAME> [--project <PROJECT_ID>]
+devos skills remove <NAME>
 ```
 
 Parameters and options:
 
 - `<NAME>`: required skill name.
-- `--project <PROJECT_ID>`: optional project override.
 
 Output shape:
 

@@ -1,76 +1,108 @@
-import type { ProjectCreateRequest, WorkspaceProjectRecord } from "@/lib/api";
+import type {
+	GitHubRepositoryRecord,
+	ProjectCreateRequest,
+	ProjectUpdateRequest,
+	WorkspaceProjectRecord,
+} from "@/lib/api";
 import type {
 	ProjectCreateDefaults,
 	ProjectDisplayRow,
-	ProjectFieldGroup,
 	ProjectFormState,
 } from "./types/projects-panel.types";
 
 const EMPTY_LABEL = "--";
+const RELATIVE_TIME_UNITS = [
+	{ divisor: 60, limit: 60, suffix: "m" },
+	{ divisor: 60 * 60, limit: 24, suffix: "h" },
+	{ divisor: 60 * 60 * 24, limit: 7, suffix: "d" },
+	{ divisor: 60 * 60 * 24 * 7, limit: 5, suffix: "w" },
+	{ divisor: 60 * 60 * 24 * 30, limit: 12, suffix: "mo" },
+] as const;
+export const DEFAULT_PROJECT_EMOJI = "📁";
 
 export const EMPTY_PROJECT_FORM_STATE: ProjectFormState = {
 	name: "",
-	externalProjectId: "",
+	emoji: DEFAULT_PROJECT_EMOJI,
 	description: "",
-	repositoryUrl: "",
-	localFolder: "",
+	repositoryMode: "select",
+	selectedRepository: "",
+	manualRepository: "",
+	originalManualRepository: "",
+	baseBranch: "",
 	lead: "",
-	category: "",
 	priority: "",
 };
-
-export const PROJECT_FORM_FIELD_GROUPS: ProjectFieldGroup[] = [
-	{
-		title: "Identity",
-		fields: [
-			{ name: "name", label: "Project name" },
-			{ name: "externalProjectId", label: "External project ID" },
-			{ name: "description", label: "Description" },
-		],
-	},
-	{
-		title: "Repository",
-		fields: [
-			{
-				name: "repositoryUrl",
-				label: "Repository URL",
-				placeholder: "https://github.com/org/repo",
-			},
-			{ name: "localFolder", label: "Local folder" },
-		],
-	},
-	{
-		title: "Ownership",
-		fields: [
-			{ name: "lead", label: "Lead" },
-			{ name: "category", label: "Category" },
-			{ name: "priority", label: "Priority", type: "number" },
-		],
-	},
-];
 
 export function buildProjectCreateRequest(
 	form: ProjectFormState,
 	defaults: ProjectCreateDefaults,
+	repositories: GitHubRepositoryRecord[] = [],
 ): ProjectCreateRequest {
 	const name = form.name.trim();
 	if (!name) {
 		throw new Error("Project name is required");
 	}
-	const repository = parseGitHubRepositoryUrl(form.repositoryUrl);
+	const repository = resolveRepository(form, repositories, "main");
 	return {
 		boardId: defaults.boardId,
 		ownerId: defaults.ownerId,
 		name,
-		externalProjectId: optionalText(form.externalProjectId),
+		emoji: optionalText(form.emoji) ?? DEFAULT_PROJECT_EMOJI,
+		externalProjectId: null,
 		description: optionalText(form.description),
 		repoOwner: repository?.owner ?? null,
 		repoName: repository?.name ?? null,
-		baseBranch: repository ? "main" : null,
-		localFolder: optionalText(form.localFolder),
+		baseBranch: repository?.defaultBranch ?? null,
+		localFolder: null,
 		lead: optionalText(form.lead),
-		category: optionalText(form.category),
+		category: null,
 		priority: optionalPriority(form.priority),
+	};
+}
+
+export function buildProjectUpdateRequest(
+	form: ProjectFormState,
+	repositories: GitHubRepositoryRecord[] = [],
+): ProjectUpdateRequest {
+	const name = form.name.trim();
+	if (!name) {
+		throw new Error("Project name is required");
+	}
+	const fallbackBranch =
+		form.manualRepository.trim() === form.originalManualRepository.trim()
+			? (optionalText(form.baseBranch) ?? "main")
+			: "main";
+	const repository = resolveRepository(form, repositories, fallbackBranch);
+	return {
+		name,
+		emoji: optionalText(form.emoji) ?? DEFAULT_PROJECT_EMOJI,
+		description: optionalText(form.description),
+		repoOwner: repository?.owner ?? null,
+		repoName: repository?.name ?? null,
+		baseBranch: repository?.defaultBranch ?? null,
+		lead: optionalText(form.lead),
+		priority: optionalPriority(form.priority),
+	};
+}
+
+export function buildProjectEditFormState(
+	project: WorkspaceProjectRecord,
+): ProjectFormState {
+	const manualRepository =
+		project.repoOwner && project.repoName
+			? `${project.repoOwner}/${project.repoName}`
+			: "";
+	return {
+		...EMPTY_PROJECT_FORM_STATE,
+		name: project.name,
+		emoji: project.emoji ?? DEFAULT_PROJECT_EMOJI,
+		description: project.description ?? "",
+		repositoryMode: "manual",
+		manualRepository,
+		originalManualRepository: manualRepository,
+		baseBranch: project.baseBranch ?? "",
+		lead: project.lead ?? "",
+		priority: project.priority === null ? "" : String(project.priority),
 	};
 }
 
@@ -93,15 +125,13 @@ export function buildProjectDisplayRows(
 ): ProjectDisplayRow[] {
 	return projects.map((project) => ({
 		project,
+		emojiLabel: formatOptionalLabel(project.emoji, DEFAULT_PROJECT_EMOJI),
 		priorityLabel: formatProjectPriority(project.priority),
 		categoryLabel: formatOptionalLabel(project.category),
 		repositoryLabel: formatProjectRepository(project),
 		leadLabel: formatOptionalLabel(project.lead),
 		createdLabel: formatProjectCreatedAt(project.createdAt, now),
-		summaryLabel:
-			formatOptionalLabel(project.description) === EMPTY_LABEL
-				? project.id
-				: formatOptionalLabel(project.description),
+		summaryLabel: formatOptionalLabel(project.description, project.id),
 	}));
 }
 
@@ -114,10 +144,7 @@ export function formatProjectRepository(
 ): string {
 	const owner = project.repoOwner?.trim();
 	const repo = project.repoName?.trim();
-	if (owner && repo) {
-		return `${owner}/${repo}`;
-	}
-	return owner || repo || EMPTY_LABEL;
+	return owner && repo ? `${owner}/${repo}` : owner || repo || EMPTY_LABEL;
 }
 
 export function formatProjectCreatedAt(
@@ -133,32 +160,17 @@ export function formatProjectCreatedAt(
 	if (elapsedSeconds < 60) {
 		return "Just now";
 	}
-	const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-	if (elapsedMinutes < 60) {
-		return `${elapsedMinutes}m ago`;
+	for (const unit of RELATIVE_TIME_UNITS) {
+		const value = Math.floor(elapsedSeconds / unit.divisor);
+		if (value < unit.limit) {
+			return `${value}${unit.suffix} ago`;
+		}
 	}
-	const elapsedHours = Math.floor(elapsedMinutes / 60);
-	if (elapsedHours < 24) {
-		return `${elapsedHours}h ago`;
-	}
-	const elapsedDays = Math.floor(elapsedHours / 24);
-	if (elapsedDays < 7) {
-		return `${elapsedDays}d ago`;
-	}
-	const elapsedWeeks = Math.floor(elapsedDays / 7);
-	if (elapsedWeeks < 5) {
-		return `${elapsedWeeks}w ago`;
-	}
-	const elapsedMonths = Math.floor(elapsedDays / 30);
-	if (elapsedMonths < 12) {
-		return `${elapsedMonths}mo ago`;
-	}
-	return `${Math.floor(elapsedDays / 365)}y ago`;
+	return `${Math.floor(elapsedSeconds / (60 * 60 * 24 * 365))}y ago`;
 }
 
 function optionalText(value: string): string | null {
-	const trimmed = value.trim();
-	return trimmed || null;
+	return value.trim() || null;
 }
 
 function optionalPriority(value: string): number | null {
@@ -166,47 +178,54 @@ function optionalPriority(value: string): number | null {
 	if (!trimmed) {
 		return null;
 	}
-	const parsed = Number(trimmed);
-	if (!Number.isInteger(parsed)) {
-		throw new Error("Priority must be an integer");
+	const priority = Number(trimmed);
+	if (!Number.isInteger(priority)) {
+		throw new Error("Priority must be a whole number");
 	}
-	return parsed;
+	return priority;
 }
 
-function parseGitHubRepositoryUrl(
-	value: string,
-): { owner: string; name: string } | null {
-	const trimmed = value.trim();
+function resolveRepository(
+	form: ProjectFormState,
+	repositories: GitHubRepositoryRecord[],
+	manualFallbackBranch: string,
+): { owner: string; name: string; defaultBranch: string } | null {
+	const trimmed = (
+		form.repositoryMode === "manual"
+			? form.manualRepository
+			: form.selectedRepository
+	).trim();
 	if (!trimmed) {
 		return null;
 	}
-	const match =
-		/^https:\/\/github\.com\/([^/\s]+)\/([^/\s]+?)(?:\.git)?$/.exec(trimmed) ??
-		/^git@github\.com:([^/\s]+)\/([^/\s]+?)(?:\.git)?$/.exec(trimmed) ??
-		/^ssh:\/\/git@github\.com\/([^/\s]+)\/([^/\s]+?)(?:\.git)?$/.exec(trimmed);
-	if (!match) {
-		throw new Error("Repository URL must be a GitHub HTTPS or SSH clone URL");
+	const repository = repositories.find(
+		(option) => option.nameWithOwner === trimmed,
+	);
+	if (repository) {
+		return {
+			owner: repository.owner,
+			name: repository.name,
+			defaultBranch: repository.defaultBranch ?? "main",
+		};
 	}
-	return { owner: match[1], name: match[2] };
+	const match = /^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/.exec(trimmed);
+	if (!match) {
+		throw new Error("Repository must be owner/repo");
+	}
+	return {
+		owner: match[1],
+		name: match[2],
+		defaultBranch: manualFallbackBranch,
+	};
 }
 
-function formatOptionalLabel(value: string | null): string {
-	return value?.trim() || EMPTY_LABEL;
+function formatOptionalLabel(
+	value: string | null,
+	fallback = EMPTY_LABEL,
+): string {
+	return value?.trim() || fallback;
 }
 
 function projectSearchText(project: WorkspaceProjectRecord): string {
-	return [
-		project.name,
-		project.description,
-		project.externalProjectId,
-		project.repoOwner,
-		project.repoName,
-		project.baseBranch,
-		project.localFolder,
-		project.lead,
-		project.category,
-		project.priority === null ? null : String(project.priority),
-	]
-		.filter(Boolean)
-		.join(" ");
+	return `${project.name} ${project.emoji ?? ""} ${project.description ?? ""} ${project.externalProjectId ?? ""} ${project.repoOwner ?? ""} ${project.repoName ?? ""} ${project.baseBranch ?? ""} ${project.localFolder ?? ""} ${project.lead ?? ""} ${project.category ?? ""} ${project.priority ?? ""}`;
 }
