@@ -1,8 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 import type { WorkspaceProjectRecord } from "../src/lib/api";
-import * as projectMutations from "../src/lib/api/project-mutations";
-import { refreshCreatedProjectCache } from "../src/lib/api/project-mutations";
+import {
+	refreshCreatedProjectCache,
+	refreshUpdatedProjectCache,
+} from "../src/lib/api/project-mutations";
 import { serverStateQueryKeys } from "../src/lib/api/query-keys";
 
 describe("project create mutation cache refresh", () => {
@@ -22,35 +24,26 @@ describe("project create mutation cache refresh", () => {
 		queryClient.clear();
 	});
 
-	it("replaces an updated project and invalidates the workspace project list", async () => {
-		const refreshUpdatedProjectCache = (
-			projectMutations as {
-				refreshUpdatedProjectCache?: (
-					queryClient: QueryClient,
-					project: WorkspaceProjectRecord,
-				) => Promise<void>;
-			}
-		).refreshUpdatedProjectCache;
+	it("replaces an updated project and invalidates affected project caches", async () => {
 		const queryClient = new QueryClient();
 		const existing = projectRecord("project-existing", "Existing");
-		const updated = {
-			...projectRecord("project-created", "Created"),
-			name: "Created updated",
-			lead: "Roy",
-			priority: 3,
-		};
-		const queryKey = serverStateQueryKeys.workspaceProjects(
+		const updated = projectRecord("project-existing", "Updated");
+		const listKey = serverStateQueryKeys.workspaceProjects(updated.workspaceId);
+		const boardKey = serverStateQueryKeys.projectBoard(
 			updated.workspaceId,
+			updated.id,
 		);
-		queryClient.setQueryData(queryKey, [
-			existing,
-			projectRecord("project-created", "Created"),
-		]);
+		queryClient.setQueryData(listKey, [existing]);
+		queryClient.setQueryData(boardKey, {
+			project: existing,
+			statusColumns: [],
+		});
 
-		await refreshUpdatedProjectCache?.(queryClient, updated);
+		await refreshUpdatedProjectCache(queryClient, updated);
 
-		expect(queryClient.getQueryData(queryKey)).toEqual([existing, updated]);
-		expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryData(listKey)).toEqual([updated]);
+		expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryState(boardKey)?.isInvalidated).toBe(true);
 		queryClient.clear();
 	});
 });

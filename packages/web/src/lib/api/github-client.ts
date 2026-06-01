@@ -14,6 +14,8 @@ import type {
 	GitHubDeviceStartResponse,
 	GitHubRepositoriesResponse,
 	GitHubRepositoryRecord,
+	GitHubRepositorySearchResponse,
+	GitHubRepositorySearchResult,
 	HealthRequestOptions,
 } from "./types/client.types";
 
@@ -21,6 +23,7 @@ const GITHUB_CONNECTION_PATH = "/api/github/connection";
 const GITHUB_DEVICE_START_PATH = "/api/github/device/start";
 const GITHUB_DEVICE_POLL_PATH = "/api/github/device/poll";
 const GITHUB_REPOSITORIES_PATH = "/api/github/repositories";
+const GITHUB_REPOSITORY_SEARCH_PATH = "/api/github/repositories/search";
 
 function parseGitHubRepositoryRecord(payload: unknown): GitHubRepositoryRecord {
 	const endpoint = GITHUB_REPOSITORIES_PATH;
@@ -32,6 +35,31 @@ function parseGitHubRepositoryRecord(payload: unknown): GitHubRepositoryRecord {
 		nameWithOwner: readString(row, "nameWithOwner", endpoint),
 		defaultBranch: readNullableString(row, "defaultBranch", endpoint),
 		isPrivate: readBoolean(row, "isPrivate", endpoint),
+	};
+}
+
+function parseGitHubRepositorySearchResult(
+	payload: unknown,
+): GitHubRepositorySearchResult {
+	const row = assertObjectRecord(payload, GITHUB_REPOSITORY_SEARCH_PATH);
+	return {
+		id: readString(row, "id", GITHUB_REPOSITORY_SEARCH_PATH),
+		owner: readString(row, "owner", GITHUB_REPOSITORY_SEARCH_PATH),
+		name: readString(row, "name", GITHUB_REPOSITORY_SEARCH_PATH),
+		fullName: readString(row, "fullName", GITHUB_REPOSITORY_SEARCH_PATH),
+		htmlUrl: readString(row, "htmlUrl", GITHUB_REPOSITORY_SEARCH_PATH),
+		cloneUrl: readString(row, "cloneUrl", GITHUB_REPOSITORY_SEARCH_PATH),
+		defaultBranch: readString(
+			row,
+			"defaultBranch",
+			GITHUB_REPOSITORY_SEARCH_PATH,
+		),
+		description: readNullableString(
+			row,
+			"description",
+			GITHUB_REPOSITORY_SEARCH_PATH,
+		),
+		isPrivate: readBoolean(row, "isPrivate", GITHUB_REPOSITORY_SEARCH_PATH),
 	};
 }
 
@@ -47,6 +75,19 @@ export function parseGitHubRepositoriesResponse(
 			row.repositories,
 			`${endpoint}:repositories`,
 			parseGitHubRepositoryRecord,
+		),
+	};
+}
+
+function parseGitHubRepositorySearchResponse(
+	payload: unknown,
+): GitHubRepositorySearchResponse {
+	const row = assertObjectRecord(payload, GITHUB_REPOSITORY_SEARCH_PATH);
+	return {
+		repositories: parseListResponse(
+			row.repositories,
+			`${GITHUB_REPOSITORY_SEARCH_PATH}:repositories`,
+			parseGitHubRepositorySearchResult,
 		),
 	};
 }
@@ -142,6 +183,15 @@ export function createGitHubApiMethods(
 				options,
 			);
 			return parseGitHubRepositoriesResponse(payload);
+		},
+		async searchGitHubRepositories(query, options) {
+			const trimmed = query.trim();
+			const payload = await requestWithBase(
+				`${GITHUB_REPOSITORY_SEARCH_PATH}?q=${encodeURIComponent(trimmed)}`,
+				"GET",
+				options,
+			);
+			return parseGitHubRepositorySearchResponse(payload).repositories;
 		},
 		async startGitHubDeviceFlow(request, options) {
 			const payload = await requestWithBase(

@@ -1,14 +1,13 @@
-import type {
-	GitHubRepositoryRecord,
-	ProjectCreateRequest,
-	ProjectUpdateRequest,
-	WorkspaceProjectRecord,
-} from "@/lib/api";
-import type {
-	ProjectCreateDefaults,
-	ProjectDisplayRow,
-	ProjectFormState,
-} from "./types/projects-panel.types";
+import type { WorkspaceProjectRecord } from "@/lib/api";
+import type { ProjectDisplayRow } from "./types/projects-panel.types";
+
+export {
+	DEFAULT_PROJECT_EMOJI,
+	EMPTY_PROJECT_FORM_STATE,
+	buildProjectCreateRequest,
+	buildProjectEditFormState,
+	buildProjectUpdateRequest,
+} from "./project-form-utils";
 
 const EMPTY_LABEL = "--";
 const RELATIVE_TIME_UNITS = [
@@ -18,102 +17,13 @@ const RELATIVE_TIME_UNITS = [
 	{ divisor: 60 * 60 * 24 * 7, limit: 5, suffix: "w" },
 	{ divisor: 60 * 60 * 24 * 30, limit: 12, suffix: "mo" },
 ] as const;
-export const DEFAULT_PROJECT_EMOJI = "📁";
-
-export const EMPTY_PROJECT_FORM_STATE: ProjectFormState = {
-	name: "",
-	emoji: DEFAULT_PROJECT_EMOJI,
-	description: "",
-	repositoryMode: "select",
-	selectedRepository: "",
-	manualRepository: "",
-	originalManualRepository: "",
-	baseBranch: "",
-	lead: "",
-	priority: "",
-};
-
-export function buildProjectCreateRequest(
-	form: ProjectFormState,
-	defaults: ProjectCreateDefaults,
-	repositories: GitHubRepositoryRecord[] = [],
-): ProjectCreateRequest {
-	const name = form.name.trim();
-	if (!name) {
-		throw new Error("Project name is required");
-	}
-	const repository = resolveRepository(form, repositories, "main");
-	return {
-		boardId: defaults.boardId,
-		ownerId: defaults.ownerId,
-		name,
-		emoji: optionalText(form.emoji) ?? DEFAULT_PROJECT_EMOJI,
-		externalProjectId: null,
-		description: optionalText(form.description),
-		repoOwner: repository?.owner ?? null,
-		repoName: repository?.name ?? null,
-		baseBranch: repository?.defaultBranch ?? null,
-		localFolder: null,
-		lead: optionalText(form.lead),
-		category: null,
-		priority: optionalPriority(form.priority),
-	};
-}
-
-export function buildProjectUpdateRequest(
-	form: ProjectFormState,
-	repositories: GitHubRepositoryRecord[] = [],
-): ProjectUpdateRequest {
-	const name = form.name.trim();
-	if (!name) {
-		throw new Error("Project name is required");
-	}
-	const fallbackBranch =
-		form.manualRepository.trim() === form.originalManualRepository.trim()
-			? (optionalText(form.baseBranch) ?? "main")
-			: "main";
-	const repository = resolveRepository(form, repositories, fallbackBranch);
-	return {
-		name,
-		emoji: optionalText(form.emoji) ?? DEFAULT_PROJECT_EMOJI,
-		description: optionalText(form.description),
-		repoOwner: repository?.owner ?? null,
-		repoName: repository?.name ?? null,
-		baseBranch: repository?.defaultBranch ?? null,
-		lead: optionalText(form.lead),
-		priority: optionalPriority(form.priority),
-	};
-}
-
-export function buildProjectEditFormState(
-	project: WorkspaceProjectRecord,
-): ProjectFormState {
-	const manualRepository =
-		project.repoOwner && project.repoName
-			? `${project.repoOwner}/${project.repoName}`
-			: "";
-	return {
-		...EMPTY_PROJECT_FORM_STATE,
-		name: project.name,
-		emoji: project.emoji ?? DEFAULT_PROJECT_EMOJI,
-		description: project.description ?? "",
-		repositoryMode: "manual",
-		manualRepository,
-		originalManualRepository: manualRepository,
-		baseBranch: project.baseBranch ?? "",
-		lead: project.lead ?? "",
-		priority: project.priority === null ? "" : String(project.priority),
-	};
-}
 
 export function filterProjects(
 	projects: WorkspaceProjectRecord[],
 	searchQuery: string,
 ): WorkspaceProjectRecord[] {
 	const query = searchQuery.trim().toLowerCase();
-	if (!query) {
-		return projects;
-	}
+	if (!query) return projects;
 	return projects.filter((project) =>
 		projectSearchText(project).toLowerCase().includes(query),
 	);
@@ -125,7 +35,7 @@ export function buildProjectDisplayRows(
 ): ProjectDisplayRow[] {
 	return projects.map((project) => ({
 		project,
-		emojiLabel: formatOptionalLabel(project.emoji, DEFAULT_PROJECT_EMOJI),
+		emojiLabel: formatOptionalLabel(project.emoji, "📁"),
 		priorityLabel: formatProjectPriority(project.priority),
 		categoryLabel: formatOptionalLabel(project.category),
 		repositoryLabel: formatProjectRepository(project),
@@ -152,71 +62,15 @@ export function formatProjectCreatedAt(
 	now = new Date(),
 ): string {
 	const createdDate = new Date(createdAt);
-	if (Number.isNaN(createdDate.getTime())) {
-		return EMPTY_LABEL;
-	}
+	if (Number.isNaN(createdDate.getTime())) return EMPTY_LABEL;
 	const elapsedMs = Math.max(0, now.getTime() - createdDate.getTime());
 	const elapsedSeconds = Math.floor(elapsedMs / 1000);
-	if (elapsedSeconds < 60) {
-		return "Just now";
-	}
+	if (elapsedSeconds < 60) return "Just now";
 	for (const unit of RELATIVE_TIME_UNITS) {
 		const value = Math.floor(elapsedSeconds / unit.divisor);
-		if (value < unit.limit) {
-			return `${value}${unit.suffix} ago`;
-		}
+		if (value < unit.limit) return `${value}${unit.suffix} ago`;
 	}
 	return `${Math.floor(elapsedSeconds / (60 * 60 * 24 * 365))}y ago`;
-}
-
-function optionalText(value: string): string | null {
-	return value.trim() || null;
-}
-
-function optionalPriority(value: string): number | null {
-	const trimmed = value.trim();
-	if (!trimmed) {
-		return null;
-	}
-	const priority = Number(trimmed);
-	if (!Number.isInteger(priority)) {
-		throw new Error("Priority must be a whole number");
-	}
-	return priority;
-}
-
-function resolveRepository(
-	form: ProjectFormState,
-	repositories: GitHubRepositoryRecord[],
-	manualFallbackBranch: string,
-): { owner: string; name: string; defaultBranch: string } | null {
-	const trimmed = (
-		form.repositoryMode === "manual"
-			? form.manualRepository
-			: form.selectedRepository
-	).trim();
-	if (!trimmed) {
-		return null;
-	}
-	const repository = repositories.find(
-		(option) => option.nameWithOwner === trimmed,
-	);
-	if (repository) {
-		return {
-			owner: repository.owner,
-			name: repository.name,
-			defaultBranch: repository.defaultBranch ?? "main",
-		};
-	}
-	const match = /^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/.exec(trimmed);
-	if (!match) {
-		throw new Error("Repository must be owner/repo");
-	}
-	return {
-		owner: match[1],
-		name: match[2],
-		defaultBranch: manualFallbackBranch,
-	};
 }
 
 function formatOptionalLabel(

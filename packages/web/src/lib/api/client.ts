@@ -4,8 +4,7 @@ import { createCommandStreamApiMethods } from "./command-stream-client";
 import { createGitHubApiMethods } from "./github-client";
 import { createInboxApiMethods } from "./inbox-client";
 import { parsePollingStatusResponse } from "./polling-status-client";
-import { encodePathSegment } from "./response-utils";
-import { requestJson } from "./response-utils";
+import { encodePathSegment, requestJson } from "./response-utils";
 import {
 	parseAgentRecord,
 	parseHealthResponse,
@@ -121,7 +120,7 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
 		listBoardTasks: taskApiMethods.listBoardTasks,
 		getBoardTask: taskApiMethods.getBoardTask,
 		createProject: boardApiMethods.createProject,
-		listGitHubRepositories: githubApiMethods.listGitHubRepositories,
+		updateProject: boardApiMethods.updateProject,
 		listTaskActivity: taskApiMethods.listTaskActivity,
 		listInboxMessages: inboxApiMethods.listInboxMessages,
 		createTask: taskApiMethods.createTaskFromChat,

@@ -63,11 +63,17 @@ export async function refreshUpdatedProjectCache(
 	queryClient.setQueryData<WorkspaceProjectRecord[] | undefined>(
 		serverStateQueryKeys.workspaceProjects(project.workspaceId),
 		(current) =>
-			current?.map((existing) =>
-				existing.id === project.id ? project : existing,
-			) ?? [project],
+			current?.map((entry) => (entry.id === project.id ? project : entry)) ?? [
+				project,
+			],
 	);
 	await queryClient.invalidateQueries({
 		queryKey: serverStateQueryKeys.workspaceProjects(project.workspaceId),
+	});
+	await queryClient.invalidateQueries({
+		queryKey: serverStateQueryKeys.projectBoard(
+			project.workspaceId,
+			project.id,
+		),
 	});
 }

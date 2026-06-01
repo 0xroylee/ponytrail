@@ -198,17 +198,10 @@ function resolveProjectTableState({
 	searchQuery: string;
 	totalCount: number;
 }): string | null {
-	if (isLoading) {
-		return "Loading projects";
-	}
-	if (error) {
-		return error.message;
-	}
-	if (totalCount === 0) {
-		return "No projects yet";
-	}
-	if (rowCount === 0 && searchQuery.trim()) {
+	if (isLoading) return "Loading projects";
+	if (error) return error.message;
+	if (totalCount === 0) return "No projects yet";
+	if (rowCount === 0 && searchQuery.trim())
 		return "No projects match this search";
-	}
 	return null;
 }

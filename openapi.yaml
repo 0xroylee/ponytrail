@@ -8,13 +8,13 @@ servers:
 tags:
   - name: Health
   - name: CLI
+  - name: GitHub
   - name: Read Models
   - name: Board
   - name: Chat
   - name: Notifications
   - name: Polling
   - name: Workspace
-  - name: GitHub
 paths:
   /health:
     get:
@@ -28,6 +28,31 @@ paths:
       responses:
         '200':
           description: In-memory CLI execution history.
+  /api/github/repositories/search:
+    get:
+      tags: [GitHub]
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: GitHub repository search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitHubRepositorySearchResponse'
+        '400':
+          $ref: '#/components/responses/TypedError'
+        '429':
+          $ref: '#/components/responses/TypedError'
+        '502':
+          $ref: '#/components/responses/TypedError'
+        '503':
+          $ref: '#/components/responses/TypedError'
   /api/computers:
     get:
       tags: [CLI]
@@ -1027,6 +1052,40 @@ components:
         priority:
           type: integer
           nullable: true
+    GitHubRepositorySearchResponse:
+      type: object
+      additionalProperties: false
+      required: [repositories]
+      properties:
+        repositories:
+          type: array
+          items:
+            $ref: '#/components/schemas/GitHubRepositorySearchResult'
+    GitHubRepositorySearchResult:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - owner
+        - name
+        - fullName
+        - htmlUrl
+        - cloneUrl
+        - defaultBranch
+        - description
+        - isPrivate
+      properties:
+        id: { type: string, minLength: 1 }
+        owner: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1 }
+        fullName: { type: string, minLength: 1 }
+        htmlUrl: { type: string, minLength: 1 }
+        cloneUrl: { type: string, minLength: 1 }
+        defaultBranch: { type: string, minLength: 1 }
+        description:
+          type: string
+          nullable: true
+        isPrivate: { type: boolean }
     TaskCreateRequest:
       type: object
       additionalProperties: false

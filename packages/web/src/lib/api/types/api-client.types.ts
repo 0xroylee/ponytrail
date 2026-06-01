@@ -11,19 +11,15 @@ import type {
 	CliCommandStreamHandler,
 	CliCommandStreamRequest,
 } from "./command-stream-client.types";
-import type { GitHubApiMethods } from "./github.types";
-import type { HealthRequestOptions, HealthResponse } from "./health.types";
-import type { InboxMessageRecord, InboxMessageScope } from "./inbox.types";
+import type { GitHubRepositorySearchResult } from "./github.types";
 import type { PollingStatusResponse } from "./polling-status.types";
 import type {
 	ProjectCreateRequest,
 	ProjectUpdateRequest,
 	WorkspaceProjectRecord,
-	WorkspaceProjectsResponse,
 } from "./project.types";
 import type {
 	AgentRecord,
-	AgentStatus,
 	AgentUpdateRequest,
 	CommandHistoryRecord,
 	JobRecord,
@@ -38,83 +34,40 @@ import type { TaskActivityResponse } from "./task-activity.types";
 import type {
 	ProjectBoardRecord,
 	ProjectBoardTaskRecord,
-	TaskClarificationOption,
-	TaskClarificationQuestion,
 	TaskCreateRequest,
 	TaskCreateResponse,
 	TaskMutationRequest,
 } from "./task.types";
 import type { WorkflowComputerApiMethods } from "./workflow-computer.types";
 import type { WorkspaceEnvironmentResponse } from "./workspace-environment.types";
-import type { CurrentWorkspaceRecord } from "./workspace.types";
 
-export type {
-	ProjectBoardRecord,
-	ProjectBoardStatusColumn,
-	ProjectBoardTaskRecord,
-	TaskClarificationOption,
-	TaskClarificationQuestion,
-	TaskCreateAnswer,
-	TaskCreateRequest,
-	TaskCreateResponse,
-	TaskMutationRequest,
-} from "./task.types";
-export type { PollingStatusResponse } from "./polling-status.types";
-export type {
-	SettingsModelOption,
-	SettingsModelStage,
-	SettingsModelStageId,
-	SettingsModelStageUpdate,
-	SettingsModelsResponse,
-	SettingsModelsUpdateRequest,
-	SettingsReasoningEffort,
-} from "./settings.types";
-export type {
-	AgentRecord,
-	AgentStatus,
-	AgentUpdateRequest,
-	CommandHistoryRecord,
-	JobRecord,
-	SkillRecord,
-	TokenUsageRecord,
-} from "./server-state.types";
-export type {
-	WorkspaceEnvironmentGitStatus,
-	WorkspaceEnvironmentMcpSource,
-	WorkspaceEnvironmentResponse,
-} from "./workspace-environment.types";
-export type {
-	ChatMessageCreateRequest,
-	ChatMessageKind,
-	ChatMessageRecord,
-	ChatMessageRole,
-	ChatSendRequest,
-	ChatSendResponse,
-	ChatSessionCreateRequest,
-	ChatSessionRecord,
-	ChatSessionUpdateRequest,
-} from "./chat.types";
-export type { HealthRequestOptions, HealthResponse } from "./health.types";
-export type { CurrentWorkspaceRecord } from "./workspace.types";
-export type {
-	ProjectCreateRequest,
-	ProjectUpdateRequest,
-	WorkspaceProjectRecord,
-	WorkspaceProjectsResponse,
-} from "./project.types";
-export type {
-	GitHubApiMethods,
-	GitHubConnectionResponse,
-	GitHubDevicePollResponse,
-	GitHubDevicePollStatus,
-	GitHubDeviceStartRequest,
-	GitHubDeviceStartResponse,
-	GitHubRepositoriesResponse,
-	GitHubRepositoryRecord,
-	GitHubRepositorySearchResponse,
-	GitHubRepositorySearchResult,
-} from "./github.types";
-export type { InboxMessageRecord, InboxMessageScope } from "./inbox.types";
+export type HealthResponse = { status: "ok" };
+
+export interface HealthRequestOptions {
+	signal?: AbortSignal;
+}
+
+export interface CurrentWorkspaceRecord {
+	workspaceId: string;
+	name: string;
+}
+
+export interface InboxMessageScope {
+	workspaceId: string;
+	userId: string;
+	runId: string;
+}
+
+export interface InboxMessageRecord extends InboxMessageScope {
+	id: string;
+	source: string;
+	kind: string;
+	body: string;
+	taskId: string | null;
+	agentId: string | null;
+	metadata: Record<string, unknown> | null;
+	createdAt: string;
+}
 
 export interface ApiClientOptions {
 	baseUrl?: string;
@@ -124,9 +77,7 @@ export interface ApiClientOptions {
 	WebSocketImpl?: typeof WebSocket;
 }
 
-export interface ApiClient
-	extends WorkflowComputerApiMethods,
-		GitHubApiMethods {
+export interface ApiClient extends WorkflowComputerApiMethods {
 	getHealth(options?: HealthRequestOptions): Promise<HealthResponse>;
 	getCurrentWorkspace(
 		options?: HealthRequestOptions,
@@ -208,6 +159,10 @@ export interface ApiClient
 		request: ProjectUpdateRequest,
 		options?: HealthRequestOptions,
 	): Promise<WorkspaceProjectRecord>;
+	searchGitHubRepositories(
+		query: string,
+		options?: HealthRequestOptions,
+	): Promise<GitHubRepositorySearchResult[]>;
 	getProjectBoard(
 		workspaceId: string,
 		projectId: string,

@@ -48,10 +48,30 @@ export interface GitHubRepositoriesResponse {
 	repositories: GitHubRepositoryRecord[];
 }
 
+export interface GitHubRepositorySearchResult {
+	id: string;
+	owner: string;
+	name: string;
+	fullName: string;
+	htmlUrl: string;
+	cloneUrl: string;
+	defaultBranch: string;
+	description: string | null;
+	isPrivate: boolean;
+}
+
+export interface GitHubRepositorySearchResponse {
+	repositories: GitHubRepositorySearchResult[];
+}
+
 export interface GitHubApiMethods {
 	listGitHubRepositories(
 		options?: HealthRequestOptions,
 	): Promise<GitHubRepositoriesResponse>;
+	searchGitHubRepositories(
+		query: string,
+		options?: HealthRequestOptions,
+	): Promise<GitHubRepositorySearchResult[]>;
 	getGitHubConnection(
 		options?: HealthRequestOptions,
 	): Promise<GitHubConnectionResponse>;

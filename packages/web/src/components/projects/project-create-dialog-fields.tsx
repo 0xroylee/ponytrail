@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Typography } from "@/components/ui/typography";
 import type { GitHubRepositoryRecord } from "@/lib/api";
 import type { GitHubConnectionResponse } from "@/lib/api/types/client.types";
-import { cn } from "@/lib/utils";
 
 import { Field } from "./project-form-field";
+import { ProjectRepositoryModeButton } from "./project-repository-mode-button";
+import { ProjectRepositoryPicker } from "./project-repository-picker";
 import type {
+	ProjectFormFieldName,
 	ProjectFormState,
-	ProjectRepositoryMode,
+	ProjectRepositorySelection,
 	RepositorySelectorState,
 	RepositorySelectorStateInput,
 } from "./types/projects-panel.types";
@@ -64,6 +66,8 @@ export function RepositoryFields({
 	repositories,
 	repositoryUnavailableReason,
 	onConnectGitHub,
+	onRepositoryQueryChange,
+	onRepositorySelectionChange,
 	onRetryRepositories,
 	onUpdateField,
 }: {
@@ -77,8 +81,12 @@ export function RepositoryFields({
 	repositories: GitHubRepositoryRecord[];
 	repositoryUnavailableReason: string | null;
 	onConnectGitHub: () => void;
+	onRepositoryQueryChange: (value: string) => void;
+	onRepositorySelectionChange: (
+		selection: ProjectRepositorySelection | null,
+	) => void;
 	onRetryRepositories: () => void;
-	onUpdateField: (field: keyof ProjectFormState, value: string) => void;
+	onUpdateField: (field: ProjectFormFieldName, value: string) => void;
 }): ReactElement {
 	const selectorState = resolveRepositorySelectorState({
 		connection,
@@ -96,14 +104,21 @@ export function RepositoryFields({
 				GitHub repository
 			</Typography>
 			<div className="flex flex-wrap gap-2">
-				<RepositoryModeButton
+				<ProjectRepositoryModeButton
 					icon={<FolderGit size={15} />}
 					isActive={form.repositoryMode === "select"}
 					label="Select"
 					mode="select"
 					onSelect={(mode) => onUpdateField("repositoryMode", mode)}
 				/>
-				<RepositoryModeButton
+				<ProjectRepositoryModeButton
+					icon={<Search size={15} />}
+					isActive={form.repositoryMode === "search"}
+					label="Search"
+					mode="search"
+					onSelect={(mode) => onUpdateField("repositoryMode", mode)}
+				/>
+				<ProjectRepositoryModeButton
 					icon={<Keyboard size={15} />}
 					isActive={form.repositoryMode === "manual"}
 					label="Manual"
@@ -133,6 +148,13 @@ export function RepositoryFields({
 						))}
 					</select>
 				</label>
+			) : form.repositoryMode === "search" ? (
+				<ProjectRepositoryPicker
+					query={form.repositoryQuery}
+					selection={form.repositorySelection}
+					onQueryChange={onRepositoryQueryChange}
+					onSelectionChange={onRepositorySelectionChange}
+				/>
 			) : (
 				<Field
 					htmlFor="project-create-manual-repository"
@@ -155,7 +177,8 @@ export function RepositoryFields({
 					</div>
 				</Field>
 			)}
-			{selectorState.shouldShowConnect || selectorState.shouldShowRetry ? (
+			{form.repositoryMode === "select" &&
+			(selectorState.shouldShowConnect || selectorState.shouldShowRetry) ? (
 				<div className="flex flex-wrap gap-2">
 					{selectorState.shouldShowConnect ? (
 						<Button onClick={onConnectGitHub} size="sm" type="button">
@@ -176,7 +199,7 @@ export function RepositoryFields({
 					) : null}
 				</div>
 			) : null}
-			{selectorState.statusMessage ? (
+			{form.repositoryMode === "select" && selectorState.statusMessage ? (
 				<Typography variant="description">
 					{selectorState.statusMessage}
 				</Typography>
@@ -203,32 +226,4 @@ function repositoryStatusState(statusMessage: string): RepositorySelectorState {
 
 function repositoryRetryState(statusMessage: string): RepositorySelectorState {
 	return repositorySelectorState({ shouldShowRetry: true, statusMessage });
-}
-
-function RepositoryModeButton({
-	icon,
-	isActive,
-	label,
-	mode,
-	onSelect,
-}: {
-	icon: ReactElement;
-	isActive: boolean;
-	label: string;
-	mode: ProjectRepositoryMode;
-	onSelect: (mode: ProjectRepositoryMode) => void;
-}): ReactElement {
-	return (
-		<Button
-			aria-pressed={isActive}
-			className={cn(isActive ? "border-zinc-500 bg-surface-active" : "")}
-			onClick={() => onSelect(mode)}
-			size="sm"
-			type="button"
-			variant="outline"
-		>
-			{icon}
-			{label}
-		</Button>
-	);
 }

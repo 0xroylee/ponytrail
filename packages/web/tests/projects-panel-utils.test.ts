@@ -1,200 +1,90 @@
 import { describe, expect, it } from "bun:test";
 import {
 	DEFAULT_PROJECT_EMOJI,
-	EMPTY_PROJECT_FORM_STATE,
-	buildProjectCreateRequest,
-	buildProjectEditFormState,
-	buildProjectUpdateRequest,
+	buildProjectDisplayRows,
+	filterProjects,
+	formatProjectCreatedAt,
 } from "../src/components/projects/projects-panel-utils";
-import type { ProjectFormState } from "../src/components/projects/types/projects-panel.types";
-import type {
-	GitHubRepositoryRecord,
-	WorkspaceProjectRecord,
-} from "../src/lib/api";
+import type { WorkspaceProjectRecord } from "../src/lib/api";
 
-const defaults = { boardId: "board-1", ownerId: "owner-1" };
+describe("projects panel table helpers", () => {
+	it("filters projects across key display fields", () => {
+		const projects = [
+			buildProject({ id: "web", name: "Web", repoName: "operator-ui" }),
+			buildProject({
+				id: "worker",
+				name: "Worker",
+				lead: "Roy",
+			}),
+		];
 
-describe("projects panel utils", () => {
-	it("builds project requests from manual and selected repositories", () => {
-		const manual = buildProjectCreateRequest(
-			projectForm({
-				name: "  Web Project  ",
-				emoji: "🧭",
-				description: "  Created from UI  ",
-				repositoryMode: "manual",
-				manualRepository: "  octo/demo  ",
-			}),
-			defaults,
-		);
-		const selected = buildProjectCreateRequest(
-			projectForm({
-				name: "Web Project",
-				repositoryMode: "select",
-				selectedRepository: "octo/core",
-			}),
-			defaults,
+		expect(filterProjects(projects, "operator")).toEqual([projects[0]]);
+		expect(filterProjects(projects, "ROY")).toEqual([projects[1]]);
+		expect(filterProjects(projects, " ")).toEqual(projects);
+	});
+
+	it("builds display rows with concise fallbacks", () => {
+		const [row] = buildProjectDisplayRows(
 			[
-				repositoryOption({
-					name: "core",
-					nameWithOwner: "octo/core",
-					defaultBranch: "trunk",
+				buildProject({
+					description: null,
+					emoji: null,
+					priority: null,
+					repoOwner: null,
+					repoName: null,
+					createdAt: "2026-05-01T00:00:00.000Z",
 				}),
 			],
+			new Date("2026-05-22T00:00:00.000Z"),
 		);
 
-		expect(manual).toMatchObject({
-			name: "Web Project",
-			emoji: "🧭",
-			description: "Created from UI",
-			repoOwner: "octo",
-			repoName: "demo",
-			baseBranch: "main",
+		expect(row).toMatchObject({
+			emojiLabel: DEFAULT_PROJECT_EMOJI,
+			priorityLabel: "--",
+			categoryLabel: "--",
+			repositoryLabel: "--",
+			leadLabel: "--",
+			createdLabel: "3w ago",
+			summaryLabel: "project-1",
 		});
-		expect(selected).toMatchObject({
-			repoOwner: "octo",
-			repoName: "core",
-			baseBranch: "trunk",
-		});
-		expect(() =>
-			buildProjectCreateRequest(projectForm({ name: " " }), defaults),
-		).toThrow("Project name is required");
-		expect(() =>
-			buildProjectCreateRequest(
-				projectForm({
-					name: "Web Project",
-					repositoryMode: "manual",
-					manualRepository: "https://github.com/octo/demo",
-				}),
-				defaults,
-			),
-		).toThrow("Repository must be owner/repo");
 	});
 
-	it("normalizes update fields and validates priority", () => {
-		const updated = buildProjectUpdateRequest(
-			projectForm({
-				name: "  Web Project Updated  ",
-				emoji: "🚀",
-				description: "  Edited from UI  ",
-				repositoryMode: "select",
-				selectedRepository: "octo/core",
-				lead: "  Roy  ",
-				priority: "3",
-			}),
-			[repositoryOption({ name: "core", nameWithOwner: "octo/core" })],
-		);
-		const cleared = buildProjectUpdateRequest(
-			projectForm({
-				name: "Web Project",
-				emoji: " ",
-				description: " ",
-				repositoryMode: "manual",
-				manualRepository: " ",
-				lead: " ",
-				priority: " ",
-			}),
-		);
-		const preservedBranch = buildProjectUpdateRequest(
-			projectForm({
-				name: "Web Project",
-				repositoryMode: "manual",
-				manualRepository: "octo/demo",
-				originalManualRepository: "octo/demo",
-				baseBranch: "develop",
-			}),
-		);
-		const changedRepository = buildProjectUpdateRequest(
-			projectForm({
-				name: "Web Project",
-				repositoryMode: "manual",
-				manualRepository: "octo/new",
-				originalManualRepository: "octo/demo",
-				baseBranch: "develop",
-			}),
-		);
+	it("formats project created dates as compact relative labels", () => {
+		const now = new Date("2026-05-25T12:00:00.000Z");
 
-		expect(updated).toMatchObject({
-			name: "Web Project Updated",
-			emoji: "🚀",
-			description: "Edited from UI",
-			repoOwner: "octo",
-			repoName: "core",
-			lead: "Roy",
-			priority: 3,
-		});
-		expect(cleared).toMatchObject({
-			emoji: DEFAULT_PROJECT_EMOJI,
-			description: null,
-			repoOwner: null,
-			repoName: null,
-			priority: null,
-		});
-		expect(preservedBranch.baseBranch).toBe("develop");
-		expect(changedRepository.baseBranch).toBe("main");
-		expect(() =>
-			buildProjectUpdateRequest(
-				projectForm({ name: "Web Project", priority: "high" }),
-			),
-		).toThrow("Priority must be a whole number");
-	});
-
-	it("preserves the existing branch when saving an edited manual repository", () => {
-		const hydratedForm = buildProjectEditFormState(
-			projectRecord({
-				repoOwner: "octo",
-				repoName: "demo",
-				baseBranch: "develop",
-			}),
+		expect(formatProjectCreatedAt("2026-05-25T11:59:40.000Z", now)).toBe(
+			"Just now",
 		);
-
-		expect(buildProjectUpdateRequest(hydratedForm).baseBranch).toBe("develop");
-		expect(
-			buildProjectUpdateRequest({
-				...hydratedForm,
-				manualRepository: "octo/new",
-			}).baseBranch,
-		).toBe("main");
+		expect(formatProjectCreatedAt("2026-05-25T10:00:00.000Z", now)).toBe(
+			"2h ago",
+		);
+		expect(formatProjectCreatedAt("2026-05-04T12:00:00.000Z", now)).toBe(
+			"3w ago",
+		);
+		expect(formatProjectCreatedAt("not-a-date", now)).toBe("--");
 	});
 });
 
-function projectForm(overrides: Partial<ProjectFormState>): ProjectFormState {
-	return { ...EMPTY_PROJECT_FORM_STATE, ...overrides };
-}
-
-function repositoryOption(
-	overrides: Partial<GitHubRepositoryRecord> = {},
-): GitHubRepositoryRecord {
-	return {
-		id: "octo/demo",
-		owner: "octo",
-		name: "demo",
-		nameWithOwner: "octo/demo",
-		defaultBranch: "main",
-		isPrivate: false,
-		...overrides,
-	};
-}
-
-function projectRecord(
+function buildProject(
 	overrides: Partial<WorkspaceProjectRecord> = {},
 ): WorkspaceProjectRecord {
 	return {
 		id: "project-1",
 		boardId: "board-1",
-		workspaceId: "workspace-1",
+		workspaceId: "owner-1",
 		externalProjectId: null,
 		name: "Project",
 		emoji: null,
-		description: null,
-		repoOwner: null,
-		repoName: null,
-		baseBranch: null,
+		description: "Project description",
+		repoOwner: "devos",
+		repoName: "show-me-ur-agents",
+		baseBranch: "main",
 		localFolder: null,
 		lead: null,
 		category: null,
-		priority: null,
-		createdAt: "2026-05-31T00:00:00.000Z",
-		updatedAt: "2026-05-31T00:00:00.000Z",
+		priority: 2,
+		createdAt: "2026-05-25T00:00:00.000Z",
+		updatedAt: "2026-05-25T00:00:00.000Z",
 		...overrides,
 	};
 }

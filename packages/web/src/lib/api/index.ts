@@ -1,4 +1,5 @@
 export { createApiClient } from "./client";
+export { useGitHubRepositorySearchQuery } from "./github-queries";
 export { ApiRequestError, isApiRequestError } from "./response-utils";
 export { createWebApiClient } from "./web-client";
 export type {
@@ -21,6 +22,7 @@ export type {
 	GitHubConnectionResponse,
 	GitHubRepositoriesResponse,
 	GitHubRepositoryRecord,
+	GitHubRepositorySearchResult,
 	HealthRequestOptions,
 	HealthResponse,
 	InboxMessageRecord,
@@ -70,10 +72,11 @@ export type {
 export { buildIssueRunCommand } from "./workflow-run-command";
 export type { IssueRunCommandInput } from "./workflow-run-command";
 export type {
+	AgentUpdateMutationInput,
 	BoardTaskMutationInput,
 	BoardTaskUpdateMutationInput,
-	AgentUpdateMutationInput,
 	ProjectCreateMutationInput,
+	ProjectUpdateMutationInput,
 	ServerStateQueryOptions,
 	TaskCreateMutationInput,
 } from "./types/queries.types";

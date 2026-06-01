@@ -22,9 +22,14 @@ import type { GitHubConnectionResponse } from "@/lib/api/types/client.types";
 
 import { RepositoryFields } from "./project-create-dialog-fields";
 import { Field } from "./project-form-field";
-import type { ProjectFormState } from "./types/projects-panel.types";
+import type {
+	ProjectDialogMode,
+	ProjectFormFieldName,
+	ProjectFormState,
+	ProjectRepositorySelection,
+} from "./types/projects-panel.types";
 
-interface ProjectCreateDialogProps {
+interface ProjectFormDialogProps {
 	connection: GitHubConnectionResponse | undefined;
 	form: ProjectFormState;
 	formError: string | null;
@@ -33,17 +38,21 @@ interface ProjectCreateDialogProps {
 	isRepositoryError: boolean;
 	isRepositoryLoading: boolean;
 	isSaving: boolean;
-	mode: "create" | "edit";
+	mode: ProjectDialogMode;
 	repositories: GitHubRepositoryRecord[];
 	repositoryUnavailableReason: string | null;
 	onClose: () => void;
 	onConnectGitHub: () => void;
+	onRepositoryQueryChange: (value: string) => void;
+	onRepositorySelectionChange: (
+		selection: ProjectRepositorySelection | null,
+	) => void;
 	onRetryRepositories: () => void;
 	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-	onUpdateField: (field: keyof ProjectFormState, value: string) => void;
+	onUpdateField: (field: ProjectFormFieldName, value: string) => void;
 }
 
-export function ProjectCreateDialog({
+export function ProjectFormDialog({
 	connection,
 	form,
 	formError,
@@ -57,10 +66,12 @@ export function ProjectCreateDialog({
 	repositoryUnavailableReason,
 	onClose,
 	onConnectGitHub,
+	onRepositoryQueryChange,
+	onRepositorySelectionChange,
 	onRetryRepositories,
 	onSubmit,
 	onUpdateField,
-}: ProjectCreateDialogProps): ReactElement {
+}: ProjectFormDialogProps): ReactElement {
 	const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 	const hasRepositoryOptions = repositories.length > 0;
 	const isEditMode = mode === "edit";
@@ -186,6 +197,8 @@ export function ProjectCreateDialog({
 							repositories={repositories}
 							repositoryUnavailableReason={repositoryUnavailableReason}
 							onConnectGitHub={onConnectGitHub}
+							onRepositoryQueryChange={onRepositoryQueryChange}
+							onRepositorySelectionChange={onRepositorySelectionChange}
 							onRetryRepositories={onRetryRepositories}
 							onUpdateField={onUpdateField}
 						/>

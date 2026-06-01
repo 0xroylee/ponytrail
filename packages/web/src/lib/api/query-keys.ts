@@ -30,6 +30,8 @@ export const serverStateQueryKeys = {
 	projectBoards: ["server-state", "project-board"] as const,
 	projectBoard: (workspaceId: string, projectId: string) =>
 		["server-state", "project-board", workspaceId, projectId] as const,
+	githubRepositorySearch: (query: string) =>
+		["server-state", "github-repository-search", query.trim()] as const,
 	inboxMessages: (scope: InboxMessageScope) =>
 		[
 			"server-state",

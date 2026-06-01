@@ -16,7 +16,6 @@ import type {
 	ProjectBoardTaskRecord,
 	SettingsModelsResponse,
 	SkillRecord,
-	TaskCreateResponse,
 	TokenUsageRecord,
 	WorkspaceEnvironmentResponse,
 } from "./types/client.types";
@@ -24,7 +23,6 @@ import type { PollingStatusResponse } from "./types/polling-status.types";
 import type {
 	AgentUpdateMutationInput,
 	ServerStateQueryOptions,
-	TaskCreateMutationInput,
 } from "./types/queries.types";
 import type { WorkflowComputerRecord } from "./types/workflow-computer.types";
 import { createWebApiClient } from "./web-client";
@@ -38,18 +36,19 @@ export {
 	useCreateProjectMutation,
 	useUpdateProjectMutation,
 } from "./project-mutations";
+export { useGitHubRepositorySearchQuery } from "./github-queries";
 export { serverStateQueryKeys } from "./query-keys";
 export {
 	settingsMutationKeys,
 	useUpdateModelSettingsMutation,
 } from "./settings-mutations";
+export {
+	taskCreationMutationKeys,
+	useCreateTaskMutation,
+} from "./task-creation-mutations";
 
 const apiClient = createWebApiClient();
 const DEFAULT_POLL_INTERVAL_MS = 5000;
-
-export const taskCreationMutationKeys = {
-	createTask: ["task-creation", "create-task"] as const,
-};
 
 export const agentMutationKeys = {
 	updateAgent: ["agents", "update-agent"] as const,
@@ -210,22 +209,6 @@ export function useBoardTaskQuery(
 		queryFn: () => apiClient.getBoardTask(taskId),
 		enabled: Boolean(taskId) && options?.enabled !== false,
 		refetchInterval: resolveRefetchInterval(options),
-	});
-}
-
-export function useCreateTaskMutation(): UseMutationResult<
-	TaskCreateResponse,
-	Error,
-	TaskCreateMutationInput
-> {
-	return useMutation({
-		mutationKey: taskCreationMutationKeys.createTask,
-		mutationFn: (input) =>
-			apiClient.createTask({
-				request: input.request,
-				projectId: input.projectId || undefined,
-				answers: input.answers,
-			}),
 	});
 }
 

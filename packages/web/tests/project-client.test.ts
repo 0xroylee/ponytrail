@@ -65,6 +65,47 @@ describe("project API client", () => {
 		});
 	});
 
+	it("searches GitHub repositories through the server API", async () => {
+		const fetchFn = (async (input: URL | RequestInfo, init?: RequestInit) => {
+			expect(String(input)).toBe(
+				"/api/github/repositories/search?q=show-me-ur-agents",
+			);
+			expect(init?.method).toBe("GET");
+			return okJsonResponse({
+				repositories: [
+					{
+						id: "7",
+						owner: "devos",
+						name: "show-me-ur-agents",
+						fullName: "devos/show-me-ur-agents",
+						htmlUrl: "https://github.com/devos/show-me-ur-agents",
+						cloneUrl: "https://github.com/devos/show-me-ur-agents.git",
+						defaultBranch: "main",
+						description: "Agent workflow UI",
+						isPrivate: false,
+					},
+				],
+			});
+		}) as typeof fetch;
+		const client = createApiClient({ fetchFn });
+
+		await expect(
+			client.searchGitHubRepositories(" show-me-ur-agents "),
+		).resolves.toEqual([
+			{
+				id: "7",
+				owner: "devos",
+				name: "show-me-ur-agents",
+				fullName: "devos/show-me-ur-agents",
+				htmlUrl: "https://github.com/devos/show-me-ur-agents",
+				cloneUrl: "https://github.com/devos/show-me-ur-agents.git",
+				defaultBranch: "main",
+				description: "Agent workflow UI",
+				isPrivate: false,
+			},
+		]);
+	});
+
 	it("updates projects through the server API", async () => {
 		const request = {
 			name: "Web Project Updated",
