@@ -9,6 +9,8 @@ export const LOCAL_WORKSPACE_ID = "owner-1";
 export const LOCAL_BOARD_ID = "board-1";
 export const DEFAULT_BASE_BRANCH = "main";
 export const RTK_INSTALL_URL = "https://github.com/rtk-ai/rtk";
+export const RTK_INSTALLER_URL =
+	"https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh";
 export const GITHUB_CLI_INSTALL_URL =
 	"https://cli.github.com/manual/installation";
 

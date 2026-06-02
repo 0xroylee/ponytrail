@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { runCommand } from "../../utils/shell";
 import {
 	renderCliHeading,
@@ -14,8 +17,8 @@ import {
 	renderOnboardGitHubInstallPrompt,
 	renderOnboardRtkInstallPrompt,
 } from "./checks";
-import { safeRun } from "./checks-helpers";
-import { ENV_FILE } from "./constants";
+import { commandFailureMessage, safeRun } from "./checks-helpers";
+import { ENV_FILE, RTK_INSTALLER_URL } from "./constants";
 import { loadInstanceConfig, saveInstanceConfig } from "./instance-config";
 import { collectOnboardDraft } from "./onboard-draft";
 import { writeOnboardFiles } from "./onboard-files";
@@ -33,7 +36,7 @@ export async function runOnboardWizard(
 		deps.configurePluginCredentials ?? configureInstalledPluginCredentials;
 	process.stdout.write(renderOnboardCustomizationIntro());
 	const rtk = await safeRun(commandRunner, "rtk", ["--version"], cwd);
-	if (rtk.code !== 0) process.stdout.write(renderOnboardRtkInstallPrompt());
+	if (rtk.code !== 0) await promptForRtkInstall(cwd, commandRunner, prompts);
 	const gh = await safeRun(commandRunner, "gh", ["auth", "status"], cwd);
 	if (gh.code !== 0) process.stdout.write(renderOnboardGitHubInstallPrompt());
 
@@ -57,6 +60,53 @@ export async function runOnboardWizard(
 	process.stdout.write(
 		`${renderCliOutlineBox("Next command", "devos daemon")}\n`,
 	);
+}
+
+async function promptForRtkInstall(
+	cwd: string,
+	commandRunner: NonNullable<OnboardWizardDeps["runCommand"]>,
+	prompts: typeof clackPromptAdapter,
+): Promise<void> {
+	process.stdout.write(renderOnboardRtkInstallPrompt());
+	const install = await prompts.confirm({
+		message: "Install RTK now?",
+		description:
+			"Optional but recommended. RTK shortens noisy command output for coding agents; onboarding will continue if you skip it.",
+		initialValue: true,
+	});
+	if (!install) return;
+	await installRtk(cwd, commandRunner);
+}
+
+async function installRtk(
+	cwd: string,
+	commandRunner: NonNullable<OnboardWizardDeps["runCommand"]>,
+): Promise<void> {
+	const tempDir = await mkdtemp(path.join(tmpdir(), "devos-rtk-install-"));
+	const scriptPath = path.join(tempDir, "install.sh");
+	try {
+		await runChecked(
+			commandRunner,
+			"curl",
+			["-fsSL", RTK_INSTALLER_URL, "-o", scriptPath],
+			cwd,
+		);
+		await runChecked(commandRunner, "sh", [scriptPath], cwd);
+	} finally {
+		await rm(tempDir, { recursive: true, force: true });
+	}
+}
+
+async function runChecked(
+	commandRunner: NonNullable<OnboardWizardDeps["runCommand"]>,
+	command: string,
+	args: string[],
+	cwd: string,
+): Promise<void> {
+	const result = await commandRunner(command, args, { cwd });
+	if (result.code !== 0) {
+		throw new Error(`${command} failed: ${commandFailureMessage(result)}`);
+	}
 }
 
 function renderOnboardCustomizationIntro(): string {

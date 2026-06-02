@@ -1,5 +1,6 @@
 export interface TextPromptOptions {
 	message: string;
+	description?: string;
 	defaultValue?: string;
 	initialValue?: string;
 	placeholder?: string;
@@ -8,11 +9,13 @@ export interface TextPromptOptions {
 
 export interface PasswordPromptOptions {
 	message: string;
+	description?: string;
 	validate?: (value: string | undefined) => string | Error | undefined;
 }
 
 export interface ConfirmPromptOptions {
 	message: string;
+	description?: string;
 	initialValue?: boolean;
 }
 
@@ -25,6 +28,7 @@ export interface SelectPromptOption<Value extends string> {
 
 export interface SelectPromptOptions<Value extends string> {
 	message: string;
+	description?: string;
 	options: Array<SelectPromptOption<Value>>;
 	initialValue?: Value;
 }

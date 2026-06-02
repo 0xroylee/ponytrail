@@ -21,6 +21,9 @@ const DEFAULT_CODEX_MODELS = {
 	reviewTest: "gpt-5.3-codex",
 } as const;
 
+const ISOLATED_WORKTREES_DESCRIPTION =
+	"Keeps each workflow task in its own git worktree so agent changes do not collide with your main checkout or other running tasks.";
+
 export async function collectOnboardDraft(
 	cwd: string,
 	deps: Partial<OnboardDraftPromptDeps> = {},
@@ -34,6 +37,7 @@ export async function collectOnboardDraft(
 	);
 	const isolatedWorktrees = await prompts.confirm({
 		message: "Use isolated worktrees?",
+		description: ISOLATED_WORKTREES_DESCRIPTION,
 		initialValue: true,
 	});
 	const instance = await collectInstanceDraft(prompts);

@@ -9,6 +9,36 @@ import type {
 } from "../src/features/prompts";
 
 describe("prompt adapter", () => {
+	it("renders prompt descriptions after the question", async () => {
+		const messages: string[] = [];
+		const adapter = createPromptAdapter(
+			backend({
+				text: async (options) => {
+					messages.push(options.message);
+					return "answered";
+				},
+				confirm: async (options) => {
+					messages.push(options.message);
+					return true;
+				},
+			}),
+		);
+
+		await adapter.text({
+			message: "Workspace name",
+			description: "Names this local devos workspace.",
+		});
+		await adapter.confirm({
+			message: "Use isolated worktrees?",
+			description: "Keeps agent changes out of the main checkout.",
+		});
+
+		expect(messages).toEqual([
+			"Workspace name\nNames this local devos workspace.",
+			"Use isolated worktrees?\nKeeps agent changes out of the main checkout.",
+		]);
+	});
+
 	it("trims text values and falls back to defaults for blank input", async () => {
 		const adapter = createPromptAdapter(
 			backend({

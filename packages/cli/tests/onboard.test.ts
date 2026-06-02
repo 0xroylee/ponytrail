@@ -220,6 +220,10 @@ describe("onboard helpers", () => {
 
 	it("maps typed onboarding prompts into the onboard draft", async () => {
 		const textPrompts: string[] = [];
+		const confirmPrompts: Array<{
+			message: string;
+			description: string | undefined;
+		}> = [];
 		const prompts = promptAdapter({
 			text: {
 				"Workspace name": "Demo Workspace",
@@ -236,6 +240,13 @@ describe("onboard helpers", () => {
 				text: async (options) => {
 					textPrompts.push(options.message);
 					return prompts.text(options);
+				},
+				confirm: async (options) => {
+					confirmPrompts.push({
+						message: options.message,
+						description: options.description,
+					});
+					return prompts.confirm(options);
 				},
 			},
 			inferGitHubDefaults,
@@ -260,6 +271,18 @@ describe("onboard helpers", () => {
 		});
 		expect(draft.codex.plugins).toEqual(["github@openai-curated"]);
 		expect(textPrompts).toEqual(["Workspace name"]);
+		expect(confirmPrompts).toEqual([
+			{
+				message: "Use isolated worktrees?",
+				description:
+					"Keeps each workflow task in its own git worktree so agent changes do not collide with your main checkout or other running tasks.",
+			},
+			{
+				message: "Customize advanced instance fields?",
+				description:
+					"Changes the local server, database, logs, storage, secrets, and telemetry paths. Most users can keep the defaults.",
+			},
+		]);
 	});
 
 	it("does not write onboard files when onboarding prompts are cancelled", async () => {
@@ -882,6 +905,57 @@ describe("onboard helpers", () => {
 		expect(renderOnboardRtkInstallPrompt()).toContain(
 			"Install RTK before running workflows: https://github.com/rtk-ai/rtk",
 		);
+	});
+
+	it("asks to install rtk when missing and runs installer when accepted", async () => {
+		const calls: Array<{ command: string; args: string[]; cwd: string }> = [];
+		const output = await captureStdout(() =>
+			runOnboardWizard("/tmp/demo", {
+				runCommand: async (command, args, options) => {
+					calls.push({ command, args, cwd: options.cwd });
+					if (command === "rtk") {
+						return {
+							code: 1,
+							stdout: "",
+							stderr: "command not found: rtk",
+						};
+					}
+					return okCommand();
+				},
+				prompts: promptAdapter({
+					text: {
+						"Workspace name": "Demo Workspace",
+					},
+					confirm: {
+						"Install RTK now?": true,
+					},
+				}),
+				writeOnboardFiles: async () => {},
+				configurePluginCredentials: async () => {},
+				collectOnboardChecks: async () => [],
+			}),
+		);
+
+		const scriptPath = calls[1]?.args[3] ?? "";
+		expect(output).toContain(
+			"RTK is required for devos.ing agent workflow commands.",
+		);
+		expect(scriptPath).toContain("devos-rtk-install-");
+		expect(calls.slice(0, 4)).toEqual([
+			{ command: "rtk", args: ["--version"], cwd: "/tmp/demo" },
+			{
+				command: "curl",
+				args: [
+					"-fsSL",
+					"https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh",
+					"-o",
+					scriptPath,
+				],
+				cwd: "/tmp/demo",
+			},
+			{ command: "sh", args: [scriptPath], cwd: "/tmp/demo" },
+			{ command: "gh", args: ["auth", "status"], cwd: "/tmp/demo" },
+		]);
 	});
 
 	it("renders onboard github install prompt", () => {

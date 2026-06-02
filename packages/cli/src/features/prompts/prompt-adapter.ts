@@ -25,19 +25,19 @@ export class PromptCancelledError extends Error {
 export function createPromptAdapter(backend: PromptBackend): PromptAdapter {
 	return {
 		async text(options) {
-			const value = await backend.text(options);
+			const value = await backend.text(withPromptDescription(options));
 			return resolveTextValue(backend, value, options.defaultValue);
 		},
 		async password(options) {
-			const value = await backend.password(options);
+			const value = await backend.password(withPromptDescription(options));
 			return resolveTextValue(backend, value);
 		},
 		async confirm(options) {
-			const value = await backend.confirm(options);
+			const value = await backend.confirm(withPromptDescription(options));
 			return resolvePromptValue(backend, value);
 		},
 		async select(options) {
-			const value = await backend.select(options);
+			const value = await backend.select(withPromptDescription(options));
 			return resolvePromptValue(backend, value);
 		},
 	};
@@ -58,6 +58,18 @@ function resolveTextValue(
 	defaultValue = "",
 ): string {
 	return resolvePromptValue(backend, value).trim() || defaultValue;
+}
+
+function withPromptDescription<
+	Options extends { message: string; description?: string },
+>(options: Options): Options {
+	const description = options.description?.trim();
+	if (!description) return options;
+	return {
+		...options,
+		message: `${options.message}\n${description}`,
+		description: undefined,
+	};
 }
 
 function resolvePromptValue<Value>(

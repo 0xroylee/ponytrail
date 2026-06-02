@@ -9,6 +9,8 @@ export async function collectInstanceDraft(
 	const defaults = createDefaultOnboardInstanceDraft();
 	const customize = await prompts.confirm({
 		message: "Customize advanced instance fields?",
+		description:
+			"Changes the local server, database, logs, storage, secrets, and telemetry paths. Most users can keep the defaults.",
 		initialValue: false,
 	});
 	return customize ? promptInstanceDraft(prompts, defaults) : defaults;
