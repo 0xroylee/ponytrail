@@ -105,6 +105,16 @@ export interface ProjectRuntimeConfig {
 		attach?: string;
 		dangerouslySkipPermissions?: boolean;
 	};
+	githubCopilot?: {
+		binary: string;
+		streamLogs: boolean;
+		model?: string;
+		copilotHome?: string;
+		githubToken?: string;
+		allowAllTools?: boolean;
+		allowTools?: string[];
+		denyTools?: string[];
+	};
 	claude?: {
 		model?: string;
 		maxTurns?: number;
@@ -117,7 +127,12 @@ export interface ProjectRuntimeConfig {
 			| "plan";
 	};
 	agent?: {
-		backend?: "codex" | "claude-code" | "cursor-agent" | "opencode";
+		backend?:
+			| "codex"
+			| "claude-code"
+			| "github-copilot"
+			| "cursor-agent"
+			| "opencode";
 		model?: string;
 		maxTurns?: number;
 		allowedTools?: string[];
