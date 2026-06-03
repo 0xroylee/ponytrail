@@ -1,21 +1,35 @@
-# devos.ing
+# devos CLI
 
 Talk is cheap, show me your agent system.
 
-devos.ing is ADHD (Agentic Development Hub & Daemon): an all-in-one workflow for managing agentic development, reducing human involvement while keeping operators in control. It turns Linear issues into an agent-driven engineering workflow: plan -> implement -> review/test. It can run one issue at a time or poll for new work across projects.
+[Product README](../../README.md) | [Operator Guide](../../docs/NON_TECHNICAL_GUIDE.md) | [Architecture](../../ARCHITECTURE.md) | [Security](../../docs/SECURITY.md)
 
-For non-technical operators, start with [docs/NON_TECHNICAL_GUIDE.md](docs/NON_TECHNICAL_GUIDE.md).
+# The devos CLI runs agentic development workflows from your terminal.
+
+`devos` is the command surface for onboarding, daemon startup, workflow runs,
+task intake, status inspection, skills, plugins, and release helpers. It is the
+local entrypoint for the same project-aware orchestration described in the root
+README: brainstorm, plan, implement, test, review, and report progress while
+keeping the operator in control.
+
+Use this README as the command reference. For the product story, features,
+architecture overview, and problems solved, start with
+[../../README.md](../../README.md).
 
 ## Quick Start
 
-1. Install dependencies.
-2. Run guided onboarding.
-3. Validate your onboarding.
-4. Run one scoped workflow.
+Install the published CLI:
 
 ```bash
-bun install
+curl -fsSL https://devos.ing/cli | bash
+```
+
+Run guided onboarding, start the local daemon, validate setup, then run one
+scoped workflow:
+
+```bash
 devos onboard
+devos daemon
 devos onboard --check
 devos run --issue ENG-123
 ```
@@ -370,14 +384,15 @@ over shell strings so future workflow code can execute them without parsing.
 
 - Guided onboarding stores local secrets in `~/.devos/config/env.sqlite` (and writes `.env` for compatibility) and writes `~/.devos/config/instance.config.json` for the local trusted instance.
 - Local instance data lives under `~/.devos/instances/default`.
-- Docker-isolated Codex execution status and caveats (ROY-95): [docs/RELIABILITY.md#docker-isolated-codex-execution](docs/RELIABILITY.md#docker-isolated-codex-execution)
+- Docker-isolated Codex execution status and caveats (ROY-95):
+  [../../docs/RELIABILITY.md#docker-isolated-codex-execution](../../docs/RELIABILITY.md#docker-isolated-codex-execution)
 
 For runtime config resolution, polling, env vars, and routing behavior, use:
 
-- [ARCHITECTURE.md](ARCHITECTURE.md)
-- [docs/PLANS.md](docs/PLANS.md)
-- [docs/RELIABILITY.md](docs/RELIABILITY.md)
-- [docs/SECURITY.md](docs/SECURITY.md)
+- [../../ARCHITECTURE.md](../../ARCHITECTURE.md)
+- [../../docs/PLANS.md](../../docs/PLANS.md)
+- [../../docs/RELIABILITY.md](../../docs/RELIABILITY.md)
+- [../../docs/SECURITY.md](../../docs/SECURITY.md)
 
 ## Quality Checks
 
