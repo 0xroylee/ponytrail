@@ -52,14 +52,16 @@ describe("chat room stream utilities", () => {
 		expect([...sessionIds]).toEqual(["6591ae97-34a8-44d8-a2fc-17ef5afe9da0"]);
 	});
 
-	it("includes sessions with active workflow states", () => {
+	it("drives persisted loading sessions from task status instead of workflow state", () => {
 		const sessionIds = activeChatStreamSessionIds(
 			{},
 			[
-				chatSessionWithWorkflowState("session-brainstorm", "brainstorm"),
-				chatSessionWithWorkflowState("session-plan", "plan"),
-				chatSessionWithWorkflowState("session-implement", "implement"),
-				chatSessionWithWorkflowState("session-testing", "testing"),
+				chatSessionWithWorkflowState("session-plan", "plan", {
+					taskId: "task-plan",
+				}),
+				chatSessionWithWorkflowState("session-testing", "testing", {
+					taskId: "task-in-review",
+				}),
 				chatSessionWithWorkflowState("session-done", "done"),
 				chatSessionWithWorkflowState("session-done-planning", "done", {
 					taskId: "task-planning",
@@ -67,15 +69,35 @@ describe("chat room stream utilities", () => {
 				chatSessionWithWorkflowState("session-failed", "failed"),
 				chatSessionWithWorkflowState("session-canceled", "canceled"),
 			],
-			[boardTask({ id: "task-planning", status: "planning" })],
+			[
+				boardTask({ id: "task-plan", status: "plan" }),
+				boardTask({ id: "task-in-review", status: "in_review" }),
+				boardTask({ id: "task-planning", status: "planning" }),
+			],
 		);
 
-		expect([...sessionIds]).toEqual([
-			"session-brainstorm",
-			"session-plan",
-			"session-implement",
-			"session-testing",
-		]);
+		expect([...sessionIds]).toEqual(["session-plan", "session-done-planning"]);
+	});
+
+	it("does not mark backlog-derived brainstorm sessions as running", () => {
+		const sessionIds = activeChatStreamSessionIds(
+			{},
+			[
+				chatSessionWithWorkflowState(
+					"49c9c388-aea7-435a-9a40-c01c38fe6e62",
+					"brainstorm",
+					{ taskId: "518d6732-720b-4ece-8d58-45c86b03f403" },
+				),
+			],
+			[
+				boardTask({
+					id: "518d6732-720b-4ece-8d58-45c86b03f403",
+					status: "backlog",
+				}),
+			],
+		);
+
+		expect([...sessionIds]).toEqual([]);
 	});
 });
 
