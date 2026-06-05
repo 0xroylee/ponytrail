@@ -6,5 +6,6 @@ export {
 	CODEX_DEFAULT_STAGE_MODELS,
 	CODEX_DESCRIPTION,
 	CODEX_LABEL,
+	normalizeCodexModel,
 } from "./constants";
 export { codexConfigurationDoc } from "./web/configuration-doc";

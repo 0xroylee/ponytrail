@@ -20,6 +20,7 @@ export function buildCodexExecArgs(input: CodexArgsInput): string[] {
 		"exec",
 		"--json",
 		"--skip-git-repo-check",
+		"--ignore-user-config",
 		"--cd",
 		input.config.executionPath,
 		"--output-last-message",
@@ -36,6 +37,7 @@ export function buildCodexResumeArgs(input: CodexArgsInput): string[] {
 		"resume",
 		"--json",
 		"--skip-git-repo-check",
+		"--ignore-user-config",
 		"--output-last-message",
 		input.outputFile,
 	];

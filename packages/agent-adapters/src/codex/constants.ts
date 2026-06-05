@@ -10,36 +10,52 @@ export const CODEX_DESCRIPTION =
 	"OpenAI Codex runtime for planning, implementation, review, and GitHub comment stages.";
 
 export const CODEX_DEFAULT_MODEL = "gpt-5.5";
+export const CODEX_DEPRECATED_CHATGPT_MODELS = [
+	"gpt-5.2",
+	"gpt-5.3-codex",
+] as const;
 
 export const CODEX_DEFAULT_STAGE_MODELS = {
 	brainstorm: "gpt-5.5",
 	plan: "gpt-5.5",
-	implement: "gpt-5.3-codex",
-	reviewTest: "gpt-5.3-codex",
+	implement: "gpt-5.5",
+	reviewTest: "gpt-5.5",
 	githubComment: "gpt-5.4-mini",
 } satisfies Partial<Record<AgentStage, string>>;
 
 export const CODEX_AVAILABLE_MODELS = [
-	model("gpt-5", "GPT-5", "General OpenAI coding model."),
-	model("gpt-5.1", "GPT-5.1", "Newer general OpenAI coding model."),
-	model(
-		"gpt-5.3-codex",
-		"GPT-5.3 Codex",
-		"Codex-optimized implementation and review model.",
-		["implement", "reviewTest"],
-	),
+	model("gpt-5.5", "GPT-5.5", "Frontier OpenAI coding model.", [
+		"brainstorm",
+		"plan",
+		"implement",
+		"reviewTest",
+	]),
 	model("gpt-5.4", "GPT-5.4", "Balanced OpenAI coding model."),
 	model(
 		"gpt-5.4-mini",
-		"GPT-5.4 Mini",
+		"GPT-5.4-Mini",
 		"Lower-latency OpenAI model for lightweight agent tasks.",
 		["githubComment"],
 	),
-	model("gpt-5.5", "GPT-5.5", "Frontier OpenAI planning model.", [
-		"brainstorm",
-		"plan",
-	]),
+	model(
+		"gpt-5.3-codex-spark",
+		"GPT-5.3-Codex-Spark",
+		"Research-preview Codex model for near-instant coding iteration.",
+	),
 ] as const satisfies readonly AgentModelDefinition[];
+
+export function normalizeCodexModel(
+	modelId: string | undefined,
+): string | undefined {
+	if (!modelId) return modelId;
+	return isDeprecatedChatGptModel(modelId) ? CODEX_DEFAULT_MODEL : modelId;
+}
+
+function isDeprecatedChatGptModel(modelId: string): boolean {
+	return CODEX_DEPRECATED_CHATGPT_MODELS.includes(
+		modelId as (typeof CODEX_DEPRECATED_CHATGPT_MODELS)[number],
+	);
+}
 
 function model(
 	id: string,

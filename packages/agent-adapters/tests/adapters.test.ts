@@ -69,9 +69,12 @@ describe("agent adapter factory", () => {
 	});
 
 	it("publishes model constants and configuration docs", () => {
-		expect(availableAgentModels.codex.map((model) => model.id)).toContain(
-			"gpt-5.3-codex",
-		);
+		expect(availableAgentModels.codex.map((model) => model.id)).toEqual([
+			"gpt-5.5",
+			"gpt-5.4",
+			"gpt-5.4-mini",
+			"gpt-5.3-codex-spark",
+		]);
 		expect(
 			availableAgentModels["claude-code"].map((model) => model.id),
 		).toEqual(["claude-sonnet-4-20250514", "claude-opus-4-20250514"]);
@@ -173,13 +176,13 @@ describe("codex adapter", () => {
 		expect(calls[1]).toContain("gpt-5.5");
 		expect(calls[1]).toContain('model_reasoning_effort="high"');
 		expect(calls[1]).toContain('service_tier="fast"');
-		expect(calls[2]).toContain("gpt-5.3-codex");
+		expect(calls[2]).toContain("gpt-5.5");
 		expect(calls[2]).toContain('model_reasoning_effort="low"');
 		expect(calls[3]).toContain("gpt-5.4-mini");
 		expect(calls[3]).not.toContain('service_tier="fast"');
 	});
 
-	it("uses flex service tier for task-intake runs without fast mode", async () => {
+	it("isolates task-intake runs from user config without forcing flex", async () => {
 		const adapter = new CodexAdapter({
 			...config,
 			codex: {
@@ -203,7 +206,8 @@ describe("codex adapter", () => {
 		await adapter.runTaskIntake("task intake prompt");
 
 		expect(calls).toHaveLength(1);
-		expect(calls[0]).toContain('service_tier="flex"');
+		expect(calls[0]).toContain("--ignore-user-config");
+		expect(calls[0]).not.toContain('service_tier="flex"');
 		expect(calls[0]).not.toContain('service_tier="fast"');
 		expect(calls[0]).not.toContain("features.fast_mode=true");
 	});

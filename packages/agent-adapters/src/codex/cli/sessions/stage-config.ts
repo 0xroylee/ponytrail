@@ -3,6 +3,7 @@ import type {
 	AgentAdapterRuntimeConfig,
 	CodexReasoningEffort,
 } from "../../../types/agent-adapter.types";
+import { normalizeCodexModel } from "../../constants";
 
 export interface CodexStageConfig {
 	model?: string;
@@ -16,10 +17,11 @@ export function resolveCodexStageConfig(
 ): CodexStageConfig {
 	if (role === "brainstorm") {
 		return {
-			model:
+			model: normalizeCodexModel(
 				config.codex.models?.brainstorm ??
-				config.codex.models?.plan ??
-				config.codex.model,
+					config.codex.models?.plan ??
+					config.codex.model,
+			),
 			reasoningEffort:
 				config.codex.reasoningEfforts?.brainstorm ??
 				config.codex.reasoningEfforts?.plan ??
@@ -30,7 +32,9 @@ export function resolveCodexStageConfig(
 	}
 	if (role === "planning" || role === "task-intake") {
 		return {
-			model: config.codex.models?.plan ?? config.codex.model,
+			model: normalizeCodexModel(
+				config.codex.models?.plan ?? config.codex.model,
+			),
 			reasoningEffort:
 				config.codex.reasoningEfforts?.plan ?? config.codex.reasoningEffort,
 			fastModeEnabled: config.codex.fastModes?.plan,
@@ -38,7 +42,9 @@ export function resolveCodexStageConfig(
 	}
 	if (role === "implementing") {
 		return {
-			model: config.codex.models?.implement ?? config.codex.model,
+			model: normalizeCodexModel(
+				config.codex.models?.implement ?? config.codex.model,
+			),
 			reasoningEffort:
 				config.codex.reasoningEfforts?.implement ??
 				config.codex.reasoningEffort,
@@ -47,10 +53,11 @@ export function resolveCodexStageConfig(
 	}
 	if (role === "review-testing") {
 		return {
-			model:
+			model: normalizeCodexModel(
 				config.codex.models?.reviewTest ??
-				config.codex.models?.implement ??
-				config.codex.model,
+					config.codex.models?.implement ??
+					config.codex.model,
+			),
 			reasoningEffort:
 				config.codex.reasoningEfforts?.reviewTest ??
 				config.codex.reasoningEfforts?.implement ??
@@ -60,11 +67,12 @@ export function resolveCodexStageConfig(
 		};
 	}
 	return {
-		model:
+		model: normalizeCodexModel(
 			config.codex.models?.githubComment ??
-			config.codex.models?.reviewTest ??
-			config.codex.models?.implement ??
-			config.codex.model,
+				config.codex.models?.reviewTest ??
+				config.codex.models?.implement ??
+				config.codex.model,
+		),
 		reasoningEffort:
 			config.codex.reasoningEfforts?.githubComment ??
 			config.codex.reasoningEfforts?.reviewTest ??
