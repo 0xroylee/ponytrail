@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { type ReactElement, useState } from "react";
 import { toast } from "sonner";
 
+import { createWebApiClient } from "@/lib/api";
 import {
 	useAppendChatMessageMutation,
 	useChatMessagesQuery,
@@ -17,6 +18,10 @@ import { useRealtimeStore } from "@/lib/realtime";
 
 import { useChatClarificationState } from "./chat-clarification-state";
 import { createChatClarificationSubmitters } from "./chat-clarification-submitters";
+import {
+	createStreamLine,
+	streamLineFromCommandEvent,
+} from "./chat-command-stream-lines";
 import { parseChatCommand } from "./chat-command-utils";
 import { executeChatRoomInput } from "./chat-room-execute-input";
 import { useChatRoomMission } from "./chat-room-mission";
@@ -24,11 +29,13 @@ import { useChatRoomDraftState } from "./chat-room-panel-draft-state";
 import { ChatRoomPanelView } from "./chat-room-panel-view";
 import { selectChatSession } from "./chat-room-selection";
 import { resolveChatRoomStreamState } from "./chat-room-stream-state";
+import { resolveChatSessionRerunState } from "./chat-session-rerun-state";
 import { useWorkingSectionState } from "./chat-working-section-state";
 import type * as CRT from "./types/chat-room.types";
 import { useChatTaskDetailPanelState } from "./use-chat-task-detail-panel-state";
 
 const NO_REFETCH = { refetchIntervalMs: false } as const;
+const apiClient = createWebApiClient();
 
 export function ChatRoomPanel({
 	commandDraftRequest,
@@ -38,6 +45,8 @@ export function ChatRoomPanel({
 	const [activeSessionId, setActiveSessionId] = useState(initialSessionId);
 	const [draft, setDraft] = useState("");
 	const [commandLines, setCommandLines] = useState<CRT.ChatStreamLine[]>([]);
+	const [isRerunning, setIsRerunning] = useState(false);
+	const [submittedRerunKey, setSubmittedRerunKey] = useState("");
 	const clarificationState = useChatClarificationState();
 	const router = useRouter();
 	const { runWithWorkingLabel, workingStartedAt } = useWorkingSectionState();
@@ -62,10 +71,13 @@ export function ChatRoomPanel({
 		refetchIntervalMs: false,
 	});
 	const messages = messagesQuery.data ?? [];
-	const { activeTaskId, isPlanning, missionProgress } = useChatRoomMission(
-		selectedSession,
-		messages,
-	);
+	const {
+		activeTask,
+		activeTaskId,
+		isPlanning,
+		missionProgress,
+		refetchActiveTask,
+	} = useChatRoomMission(selectedSession, messages);
 	const taskDetails = useChatTaskDetailPanelState({
 		activeTaskId,
 		selectedSessionId,
@@ -89,6 +101,13 @@ export function ChatRoomPanel({
 		appendMessage.isPending ||
 		sendMessage.isPending;
 	const isBusy = currentWorkspaceQuery.isLoading || mutationBusy;
+	const rerunSubmissionKey = `${selectedSession?.id}:${selectedSession?.updatedAt}`;
+	const rerunState = resolveChatSessionRerunState({
+		hasSubmittedRerun: submittedRerunKey === rerunSubmissionKey,
+		isBusy: isBusy || isRerunning,
+		session: selectedSession,
+		task: activeTask,
+	});
 	const clarificationSubmitters = createChatClarificationSubmitters({
 		clarificationState,
 		pendingAnswers,
@@ -150,6 +169,45 @@ export function ChatRoomPanel({
 			toast.error(error instanceof Error ? error.message : "Send failed");
 		}
 	}
+	async function handleRerunWorkflow(): Promise<void> {
+		if (!rerunState.command) {
+			toast.error("Workflow cannot be rerun yet.");
+			return;
+		}
+		let finalStatus: "succeeded" | "failed" | "rejected" | null = null;
+		let finalError: string | undefined;
+		setIsRerunning(true);
+		setSubmittedRerunKey(rerunSubmissionKey);
+		setCommandLines([createStreamLine("system", "Queued workflow rerun.")]);
+		try {
+			await apiClient.streamCliCommand(rerunState.command, (event) => {
+				if (event.type === "complete") {
+					finalStatus = event.result.status;
+					finalError = event.result.error;
+				}
+				const line = streamLineFromCommandEvent(event);
+				if (line) setCommandLines((current) => [...current, line]);
+			});
+			await Promise.allSettled([
+				sessionsQuery.refetch(),
+				messagesQuery.refetch(),
+				refetchActiveTask(),
+			]);
+			if (finalStatus && finalStatus !== "succeeded") {
+				toast.error(finalError ?? "Workflow rerun failed.");
+			}
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : "Workflow rerun failed.";
+			setCommandLines((current) => [
+				...current,
+				createStreamLine("stderr", message),
+			]);
+			toast.error(message);
+		} finally {
+			setIsRerunning(false);
+		}
+	}
 
 	return (
 		<ChatRoomPanelView
@@ -157,6 +215,9 @@ export function ChatRoomPanel({
 			draft={draft}
 			isBusy={isBusy}
 			isMessagesLoading={messagesQuery.isLoading}
+			isRerunDisabled={rerunState.isDisabled}
+			isRerunning={isRerunning}
+			isRerunVisible={rerunState.isVisible}
 			isSending={sendMessage.isPending}
 			isPlanning={isPlanning}
 			isTaskDetailPanelOpen={taskDetails.isOpen}
@@ -175,6 +236,7 @@ export function ChatRoomPanel({
 			onCloseTaskDetails={taskDetails.close}
 			onDraftChange={handleDraftChange}
 			onOpenSidebar={onOpenSidebar}
+			onRerunWorkflow={() => void handleRerunWorkflow()}
 			onToggleTaskDetails={taskDetails.toggle}
 			onSelectCommand={setDraft}
 			onSelectOption={(index, value) =>

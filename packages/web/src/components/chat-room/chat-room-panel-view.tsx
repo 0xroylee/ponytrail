@@ -20,6 +20,9 @@ export function ChatRoomPanelView({
 	draft,
 	isBusy,
 	isMessagesLoading,
+	isRerunDisabled,
+	isRerunning,
+	isRerunVisible,
 	isSending,
 	isPlanning,
 	isTaskDetailPanelOpen,
@@ -36,6 +39,7 @@ export function ChatRoomPanelView({
 	onCloseTaskDetails,
 	onDraftChange,
 	onOpenSidebar,
+	onRerunWorkflow,
 	onToggleTaskDetails,
 	onSelectCommand,
 	onSelectOption,
@@ -66,10 +70,14 @@ export function ChatRoomPanelView({
 				<div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto]">
 					<ChatRoomHeader
 						activeTaskId={activeTaskId}
+						isRerunDisabled={isRerunDisabled}
+						isRerunning={isRerunning}
+						isRerunVisible={isRerunVisible}
 						isTaskDetailPanelOpen={hasOpenTaskDetails}
 						projectId={selectedSession.projectId ?? "default"}
 						title={selectedSession.title}
 						onOpenSidebar={onOpenSidebar}
+						onRerunWorkflow={onRerunWorkflow}
 						onToggleTaskDetails={onToggleTaskDetails}
 					/>
 					<ChatTranscript

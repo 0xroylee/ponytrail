@@ -1,3 +1,4 @@
+import { normalizeCodexModel } from "adapters/codex";
 import { instanceConfigPath } from "../config";
 import { loadInstanceConfig, saveInstanceConfig } from "../onboard";
 import type {
@@ -35,6 +36,7 @@ export async function handleModelsCommand(
 	}
 
 	resetModelSettings(config, command.stage);
+	normalizeExistingModels(config);
 	await (deps.saveInstanceConfig ?? saveInstanceConfig)(config);
 	write(`Reset ${stageLabel(command.stage)} model settings.\n`);
 }
@@ -57,7 +59,7 @@ function applyModelSettings(
 	if (command.model !== undefined) {
 		config.codex.models = {
 			...(config.codex.models ?? {}),
-			[command.stage]: command.model,
+			[command.stage]: normalizeCodexModel(command.model),
 		};
 	}
 	if (command.reasoningEffort !== undefined) {
@@ -65,6 +67,17 @@ function applyModelSettings(
 			...(config.codex.reasoningEfforts ?? {}),
 			[command.stage]: command.reasoningEffort,
 		};
+	}
+}
+
+function normalizeExistingModels(
+	config: Awaited<ReturnType<typeof readInstanceConfig>>,
+): void {
+	if (!config.codex?.models) return;
+	for (const stage of STAGES) {
+		config.codex.models[stage] = normalizeCodexModel(
+			config.codex.models[stage],
+		);
 	}
 }
 
@@ -98,7 +111,7 @@ function renderModelsList(
 		lines.push(
 			[
 				stageLabel(stage),
-				config.codex?.models?.[stage] ?? "-",
+				normalizeCodexModel(config.codex?.models?.[stage]) ?? "-",
 				config.codex?.reasoningEfforts?.[stage] ?? "-",
 			].join("\t"),
 		);

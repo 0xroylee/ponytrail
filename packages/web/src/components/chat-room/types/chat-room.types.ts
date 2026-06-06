@@ -17,10 +17,14 @@ export interface ChatRoomPanelProps {
 
 export interface ChatRoomHeaderProps {
 	activeTaskId: string | null;
+	isRerunDisabled: boolean;
+	isRerunning: boolean;
+	isRerunVisible: boolean;
 	isTaskDetailPanelOpen: boolean;
 	projectId: string;
 	title: string;
 	onOpenSidebar: () => void;
+	onRerunWorkflow: () => void;
 	onToggleTaskDetails: () => void;
 }
 
@@ -71,6 +75,9 @@ export interface ChatRoomPanelViewProps {
 	draft: string;
 	isBusy: boolean;
 	isMessagesLoading: boolean;
+	isRerunDisabled: boolean;
+	isRerunning: boolean;
+	isRerunVisible: boolean;
 	isSending: boolean;
 	isPlanning: boolean;
 	isTaskDetailPanelOpen: boolean;
@@ -87,6 +94,7 @@ export interface ChatRoomPanelViewProps {
 	onCloseTaskDetails: () => void;
 	onDraftChange: (value: string) => void;
 	onOpenSidebar: () => void;
+	onRerunWorkflow: () => void;
 	onToggleTaskDetails: () => void;
 	onSelectCommand: (value: string) => void;
 	onSelectOption: (index: number, value: string) => Promise<void> | void;

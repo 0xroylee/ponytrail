@@ -86,7 +86,7 @@ describe("models command", () => {
 		expect(loaded.ok).toBe(true);
 		if (!loaded.ok) return;
 		expect(loaded.config.codex?.models?.plan).toBeUndefined();
-		expect(loaded.config.codex?.models?.implement).toBe("gpt-5.3-codex");
+		expect(loaded.config.codex?.models?.implement).toBe("gpt-5.5");
 		expect(loaded.config.codex?.reasoningEfforts?.plan).toBeUndefined();
 		expect(loaded.config.codex?.reasoningEfforts?.implement).toBe("medium");
 	});

@@ -18,6 +18,9 @@ import type {
 } from "../types/workflow.types";
 import { appendCodexUsage } from "../usage/usage-state";
 
+const NO_STAGED_CHANGES_ERROR =
+	"No staged changes found after implement step; cannot create PR";
+
 export function fixedBugsForImplementationComment(
 	hasExistingPr: boolean,
 	bugs: RunState["bugs"],
@@ -100,12 +103,22 @@ export async function handleImplementingStage(
 				url: "https://example.invalid/dry-run",
 			};
 		} else {
-			state.pullRequest = await runtime.createDraftPrFromWorktree(
-				config,
-				state.issue.key,
-				state.issue.title,
-				state.issue.branchName,
-			);
+			state.pullRequest = await runtime
+				.createDraftPrFromWorktree(
+					config,
+					state.issue.key,
+					state.issue.title,
+					state.issue.branchName,
+				)
+				.catch((error) => {
+					if (!isNoStagedChangesError(error)) {
+						throw error;
+					}
+					throw noImplementationChangesError(
+						state.implementationSummary,
+						error,
+					);
+				});
 		}
 	} else if (!config.dryRun) {
 		if (!state.pullRequest?.branch) {
@@ -146,6 +159,27 @@ export async function handleImplementingStage(
 			? "Implementation feedback pass completed"
 			: "Implementation completed",
 	);
+}
+
+function isNoStagedChangesError(error: unknown): boolean {
+	return (
+		error instanceof Error && error.message.includes(NO_STAGED_CHANGES_ERROR)
+	);
+}
+
+function noImplementationChangesError(
+	implementationSummary: string | undefined,
+	cause: unknown,
+): Error {
+	const summary = implementationSummary?.trim() || "No agent output recorded.";
+	const error = new Error(
+		[
+			"Implementation completed without file changes; no draft PR was created.",
+			`Agent output: ${summary}`,
+		].join("\n\n"),
+	);
+	Object.assign(error, { cause });
+	return error;
 }
 
 export async function prepareImplementationBranchForStage(

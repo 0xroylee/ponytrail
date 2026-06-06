@@ -1,3 +1,4 @@
+import { normalizeCodexModel } from "adapters/codex";
 import type {
 	DeepPartial,
 	DevosRootConfig,
@@ -119,6 +120,9 @@ function mergeRuntime(
 			...base.codex,
 			...(rootDefaults.codex ?? {}),
 			...(project.codex ?? {}),
+			model: normalizeCodexModel(
+				project.codex?.model ?? rootDefaults.codex?.model ?? base.codex.model,
+			),
 			docker: {
 				...(base.codex.docker ?? {}),
 				...(rootDefaults.codex?.docker ?? {}),
@@ -130,9 +134,9 @@ function mergeRuntime(
 				...(project.codex?.reasoningEfforts ?? {}),
 			},
 			models: {
-				...(base.codex.models ?? {}),
-				...(rootDefaults.codex?.models ?? {}),
-				...(project.codex?.models ?? {}),
+				...normalizeCodexModels(base.codex.models),
+				...normalizeCodexModels(rootDefaults.codex?.models),
+				...normalizeCodexModels(project.codex?.models),
 			},
 			fastModes: {
 				...(base.codex.fastModes ?? {}),
@@ -170,4 +174,16 @@ function mergeRuntime(
 		},
 		dryRun: project.dryRun ?? rootDefaults.dryRun ?? base.dryRun,
 	};
+}
+
+function normalizeCodexModels(
+	models: ProjectRuntimeConfig["codex"]["models"] | undefined,
+): ProjectRuntimeConfig["codex"]["models"] {
+	if (!models) return {};
+	return Object.fromEntries(
+		Object.entries(models).map(([key, value]) => [
+			key,
+			normalizeCodexModel(value),
+		]),
+	) as ProjectRuntimeConfig["codex"]["models"];
 }

@@ -93,7 +93,7 @@ describe("settings model routes", () => {
 		expect(loaded.ok).toBe(true);
 		if (!loaded.ok) return;
 		expect(loaded.config.codex?.models?.brainstorm).toBe("gpt-5.4-mini");
-		expect(loaded.config.codex?.models?.reviewTest).toBe("gpt-5.3-codex");
+		expect(loaded.config.codex?.models?.reviewTest).toBe("gpt-5.5");
 		expect(loaded.config.codex?.reasoningEfforts?.brainstorm).toBe("xhigh");
 		expect(loaded.config.codex?.reasoningEfforts?.reviewTest).toBe("medium");
 	});

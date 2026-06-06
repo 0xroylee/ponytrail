@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, PanelLeft } from "lucide-react";
+import { FileText, Loader2, PanelLeft, RotateCcw } from "lucide-react";
 import type { ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,14 @@ import type { ChatRoomHeaderProps } from "./types/chat-room.types";
 
 export function ChatRoomHeader({
 	activeTaskId,
+	isRerunDisabled,
+	isRerunning,
+	isRerunVisible,
 	isTaskDetailPanelOpen,
 	projectId,
 	title,
 	onOpenSidebar,
+	onRerunWorkflow,
 	onToggleTaskDetails,
 }: ChatRoomHeaderProps): ReactElement {
 	return (
@@ -35,19 +39,38 @@ export function ChatRoomHeader({
 					</Typography> */}
 				</div>
 			</div>
-			{activeTaskId ? (
-				<Button
-					aria-pressed={isTaskDetailPanelOpen}
-					className="shrink-0"
-					onClick={onToggleTaskDetails}
-					type="button"
-					variant="outline"
-					size="sm"
-				>
-					<FileText size={16} />
-					Details
-				</Button>
-			) : null}
+			<div className="flex shrink-0 items-center gap-2">
+				{isRerunVisible ? (
+					<Button
+						aria-label="Rerun failed workflow"
+						disabled={isRerunDisabled}
+						onClick={onRerunWorkflow}
+						size="icon"
+						title="Rerun workflow"
+						type="button"
+						variant="outline"
+					>
+						{isRerunning ? (
+							<Loader2 aria-hidden="true" className="animate-spin" size={16} />
+						) : (
+							<RotateCcw aria-hidden="true" size={16} />
+						)}
+					</Button>
+				) : null}
+				{activeTaskId ? (
+					<Button
+						aria-pressed={isTaskDetailPanelOpen}
+						className="shrink-0"
+						onClick={onToggleTaskDetails}
+						type="button"
+						variant="outline"
+						size="sm"
+					>
+						<FileText size={16} />
+						Details
+					</Button>
+				) : null}
+			</div>
 		</header>
 	);
 }

@@ -429,8 +429,8 @@ describe("loadConfig", () => {
 			expect(config.projects[0]?.codex.models).toMatchObject({
 				brainstorm: "gpt-5.4-mini",
 				plan: "gpt-5.5",
-				implement: "gpt-5.3-codex",
-				reviewTest: "gpt-5.3-codex",
+				implement: "gpt-5.5",
+				reviewTest: "gpt-5.5",
 			});
 			expect(config.projects[0]?.codex.reasoningEfforts).toMatchObject({
 				brainstorm: "xhigh",

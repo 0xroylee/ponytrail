@@ -27,6 +27,33 @@ describe("server logger", () => {
 		});
 	});
 
+	it("preserves adapter error details in normalized logs", () => {
+		const error = Object.assign(new Error("codex failed with exit code 1"), {
+			name: "AgentAdapterError",
+			backend: "codex",
+			command: "codex",
+			args: ["exec", "--json", "full prompt should not be logged"],
+			cwd: "/tmp/work",
+			code: 1,
+			stderr: "real codex stderr",
+			stdout: "json event output",
+			traceId: "trace-1",
+		});
+
+		expect(normalizeError(error)).toMatchObject({
+			name: "AgentAdapterError",
+			message: "codex failed with exit code 1",
+			backend: "codex",
+			command: "codex",
+			cwd: "/tmp/work",
+			code: 1,
+			stderr: "real codex stderr",
+			stdout: "json event output",
+			traceId: "trace-1",
+		});
+		expect(normalizeError(error)).not.toHaveProperty("args");
+	});
+
 	it("supports warning logs with human context fields", () => {
 		const { logger, output } = createCapturedLogger();
 

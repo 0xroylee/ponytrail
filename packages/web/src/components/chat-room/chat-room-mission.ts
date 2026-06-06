@@ -1,6 +1,10 @@
 "use client";
 
-import type { ChatMessageRecord, ChatSessionRecord } from "@/lib/api";
+import type {
+	ChatMessageRecord,
+	ChatSessionRecord,
+	ProjectBoardTaskRecord,
+} from "@/lib/api";
 import { useBoardTaskQuery } from "@/lib/api/queries";
 
 import { useChatMissionProgress } from "./chat-mission-progress-state";
@@ -13,8 +17,10 @@ export function useChatRoomMission(
 	messages: ChatMessageRecord[],
 ): {
 	activeTaskId: string | null;
+	activeTask: ProjectBoardTaskRecord | null;
 	isPlanning: boolean;
 	missionProgress: ChatMissionProgressViewModel | null;
+	refetchActiveTask: () => Promise<unknown>;
 } {
 	const activeTaskId = findActiveTaskId(session, messages);
 	const taskQuery = useBoardTaskQuery(activeTaskId ?? "", {
@@ -23,10 +29,12 @@ export function useChatRoomMission(
 	const missionProgress = useChatMissionProgress(activeTaskId);
 	return {
 		activeTaskId,
+		activeTask: taskQuery.data ?? null,
 		isPlanning: shouldShowChatPlanningIndicator({
 			hasMissionProgress: Boolean(missionProgress),
 			taskStatus: taskQuery.data?.status ?? null,
 		}),
 		missionProgress,
+		refetchActiveTask: taskQuery.refetch,
 	};
 }

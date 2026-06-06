@@ -61,6 +61,39 @@ describe("CLI logger", () => {
 		expect(text).toContain("  error name=Error message=Boom\n");
 		expect(text).toContain("Error: Boom");
 	});
+
+	it("preserves adapter error details in normalized logs", () => {
+		const error = Object.assign(new Error("codex failed with exit code 1"), {
+			name: "AgentAdapterError",
+			backend: "codex",
+			command: "codex",
+			args: ["exec", "--json", "full prompt should not be logged"],
+			cwd: "/tmp/work",
+			code: 1,
+			stderr: "real codex stderr",
+			stdout: "json event output",
+			traceId: "trace-1",
+		});
+
+		const normalized = normalizeError(error);
+
+		expect(normalized).toMatchObject({
+			name: "AgentAdapterError",
+			message: "codex failed with exit code 1",
+			backend: "codex",
+			command: "codex",
+			cwd: "/tmp/work",
+			code: 1,
+			stderr: "real codex stderr",
+			stdout: "json event output",
+			traceId: "trace-1",
+		});
+
+		const { logger, output } = createCapturedLogger();
+		logger.error({ err: normalized }, normalized.message as string);
+		expect(output()).toContain('stderr="real codex stderr"');
+		expect(output()).not.toContain("full prompt should not be logged");
+	});
 });
 
 function createCapturedLogger(

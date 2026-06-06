@@ -15,19 +15,15 @@ export const STATUS_ORDER = [
 	"canceled",
 ] as const;
 
+const NEUTRAL_STATUS_TONE = "border-slate-700/70 bg-surface-panel";
+
 export const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
-	backlog: { label: "Backlog", tone: "border-slate-700/70 bg-surface-panel" },
-	todo: { label: "To Do", tone: "border-slate-700/70 bg-surface-panel" },
-	running: {
-		label: "Running",
-		tone: "border-yellow-900/50 bg-yellow-950/35",
-	},
-	in_review: {
-		label: "In Review",
-		tone: "border-emerald-900/50 bg-emerald-950/35",
-	},
-	done: { label: "Done", tone: "border-indigo-900/50 bg-indigo-950/35" },
-	canceled: { label: "Canceled", tone: "border-zinc-700/70 bg-zinc-950/35" },
+	backlog: { label: "Backlog", tone: NEUTRAL_STATUS_TONE },
+	todo: { label: "To Do", tone: NEUTRAL_STATUS_TONE },
+	running: { label: "Running", tone: NEUTRAL_STATUS_TONE },
+	in_review: { label: "In Review", tone: NEUTRAL_STATUS_TONE },
+	done: { label: "Done", tone: NEUTRAL_STATUS_TONE },
+	canceled: { label: "Canceled", tone: NEUTRAL_STATUS_TONE },
 };
 
 export const PRIORITY_OPTIONS: readonly PriorityOption[] = [

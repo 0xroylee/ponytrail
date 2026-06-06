@@ -1,4 +1,5 @@
 import type { CodexReasoningEffort } from "adapters";
+import { normalizeCodexModel } from "adapters/codex";
 import type { OnboardInstanceConfig } from "devos/features/onboard/types/instance-config.types";
 import type {
 	SettingsModelConfigKey,
@@ -55,7 +56,9 @@ export function applySettingsModelStageUpdate(
 export function normalizeSettingsModel(
 	value: string | null | undefined,
 ): string | undefined {
-	return typeof value === "string" && value.trim() ? value.trim() : undefined;
+	return typeof value === "string" && value.trim()
+		? normalizeCodexModel(value.trim())
+		: undefined;
 }
 
 export function isSettingsReasoningEffort(

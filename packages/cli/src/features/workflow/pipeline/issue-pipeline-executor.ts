@@ -6,10 +6,12 @@ import type {
 } from "../../types";
 import { ReviewMergeDecisionManager } from "../review/review-orchestrator";
 import { saveRunState, transitionStage } from "../state";
+import type { PipelineRunResult } from "../types/workflow-metadata.types";
 import type {
 	WorkflowRuntime,
 	WorkflowTaskClient,
 } from "../types/workflow.types";
+import { formatWorkflowError } from "../utils/error-format";
 import { heartbeatRunLease } from "../workflow-lease";
 import { isReviewOnlyExecutableStage } from "../workflow-queue";
 import { createBuiltInWorkflowMetadata } from "./built-in-workflow-metadata";
@@ -83,14 +85,7 @@ export class IssuePipelineExecutor {
 			},
 		});
 		if (!pipelineResult.ok) {
-			const failed = pipelineResult.phaseResults.find(
-				(result) => result.status === "rejected",
-			);
-			throw new Error(
-				failed?.status === "rejected"
-					? failed.error
-					: "Workflow pipeline failed",
-			);
+			throw resolvePipelineFailureError(pipelineResult);
 		}
 	}
 
@@ -126,4 +121,21 @@ export class IssuePipelineExecutor {
 		Object.assign(state, transitionStage(state, "plan"));
 		await saveRunState(this.config.workspacePath, state);
 	}
+}
+
+export function resolvePipelineFailureError(result: PipelineRunResult): Error {
+	const failed = result.phaseResults.find(
+		(phaseResult) => phaseResult.status === "rejected",
+	);
+	if (failed?.status !== "rejected") {
+		return new Error("Workflow pipeline failed");
+	}
+	return normalizePipelineError(failed.error);
+}
+
+function normalizePipelineError(error: unknown): Error {
+	if (error instanceof Error) {
+		return error;
+	}
+	return new Error(formatWorkflowError(error));
 }

@@ -155,10 +155,14 @@ describe("codex adapter", () => {
 		expect(calls).toHaveLength(3);
 		expect(calls[0]).toContain('service_tier="fast"');
 		expect(calls[0]).toContain("features.fast_mode=true");
+		expect(calls[0]).toContain("--ignore-user-config");
 		expect(calls[1]).not.toContain('service_tier="fast"');
+		expect(calls[1]).not.toContain('service_tier="flex"');
 		expect(calls[1]).not.toContain("features.fast_mode=true");
+		expect(calls[1]).toContain("--ignore-user-config");
 		expect(calls[2]).toContain('service_tier="fast"');
 		expect(calls[2]).toContain("features.fast_mode=true");
+		expect(calls[2]).toContain("--ignore-user-config");
 	});
 
 	it("uses github-comment model override when present", async () => {

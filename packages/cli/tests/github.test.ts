@@ -147,6 +147,34 @@ describe("ensureBaseBranchFresh", () => {
 			["update-ref", "refs/heads/main", "origin/main"],
 		]);
 	});
+
+	it("does not fail issue worktrees when local base has unpublished commits", async () => {
+		const calls: string[][] = [];
+		const runCommand = mock(
+			async (_command: string, args: string[]): Promise<CommandResult> => {
+				calls.push(args);
+				if (args[0] === "branch") {
+					return { code: 0, stdout: "codex/eng-42\n", stderr: "" };
+				}
+				if (args[0] === "merge-base") {
+					return { code: 1, stdout: "", stderr: "" };
+				}
+				return { code: 0, stdout: "", stderr: "" };
+			},
+		);
+
+		await ensureBaseBranchFresh(createProjectConfig(), {
+			runCommand,
+			assertCommandOk: assertOk,
+		});
+
+		expect(calls).toEqual([
+			["fetch", "--no-write-fetch-head", "origin", "main"],
+			["branch", "--show-current"],
+			["show-ref", "--verify", "--quiet", "refs/heads/main"],
+			["merge-base", "--is-ancestor", "main", "origin/main"],
+		]);
+	});
 });
 
 describe("commentOnPr", () => {

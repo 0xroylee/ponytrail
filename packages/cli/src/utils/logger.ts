@@ -85,6 +85,7 @@ export function normalizeError(input: unknown): Record<string, unknown> {
 			name: input.name,
 			message: input.message,
 			stack: input.stack,
+			...normalizeDiagnosticErrorFields(input),
 		};
 	}
 	return { message: String(input) };
@@ -186,4 +187,25 @@ function indentBlock(value: string): string {
 
 function isLogContext(value: unknown): value is CliLogContext {
 	return typeof value === "object" && value !== null;
+}
+
+function normalizeDiagnosticErrorFields(error: Error): Record<string, unknown> {
+	const diagnostic = error as Error & Record<string, unknown>;
+	return pickDefined({
+		backend: diagnostic.backend,
+		command: diagnostic.command,
+		cwd: diagnostic.cwd,
+		code: diagnostic.code,
+		stdout: diagnostic.stdout,
+		stderr: diagnostic.stderr,
+		traceId: diagnostic.traceId,
+	});
+}
+
+function pickDefined(
+	input: Record<string, unknown | undefined>,
+): Record<string, unknown> {
+	return Object.fromEntries(
+		Object.entries(input).filter(([, value]) => value !== undefined),
+	);
 }

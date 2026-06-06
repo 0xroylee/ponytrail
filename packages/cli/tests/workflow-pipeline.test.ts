@@ -7,6 +7,7 @@ import type {
 import type { ResolvedProjectConfig, RunState } from "../src/features/types";
 import { createBuiltInWorkflowMetadata } from "../src/features/workflow/pipeline/built-in-workflow-metadata";
 import { BuiltInWorkflowPhaseRunner } from "../src/features/workflow/pipeline/built-in-workflow-phase-runner";
+import { resolvePipelineFailureError } from "../src/features/workflow/pipeline/issue-pipeline-executor";
 import { PhaseRunner } from "../src/features/workflow/pipeline/phase-runner";
 import { PipelineManager } from "../src/features/workflow/pipeline/pipeline-manager";
 
@@ -80,6 +81,46 @@ describe("workflow pipeline", () => {
 		});
 
 		expect(events).toEqual(["plan", "implement", "testing"]);
+	});
+
+	it("preserves rejected phase errors for downstream diagnostics", async () => {
+		const diagnosticError = Object.assign(
+			new Error("codex failed with exit code 1"),
+			{
+				backend: "codex",
+				command: "codex",
+				cwd: "/tmp/workspace",
+				code: 1,
+				stdout: '{"type":"error"}',
+				stderr: "adapter stderr",
+			},
+		);
+		const metadata = createBuiltInWorkflowMetadata(fakeProject());
+		const phase = metadata.phases.find((candidate) => candidate.id === "plan");
+		if (!phase) {
+			throw new Error("Expected built-in metadata to include the plan phase");
+		}
+		const phaseRunner = new PhaseRunner({
+			runAgent: async () => {
+				throw diagnosticError;
+			},
+		});
+
+		const result = await phaseRunner.run({
+			config: fakeProject(),
+			state: fakeRunState("plan"),
+			phase,
+			metadata,
+		});
+
+		expect(result.status).toBe("rejected");
+		if (result.status !== "rejected") {
+			throw new Error("Expected rejected phase result");
+		}
+		expect(result.error).toBe(diagnosticError);
+		expect(
+			resolvePipelineFailureError({ ok: false, phaseResults: [result] }),
+		).toBe(diagnosticError);
 	});
 });
 

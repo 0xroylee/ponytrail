@@ -59,7 +59,7 @@ export type PhaseRunResult =
 	| {
 			status: "rejected";
 			phase: WorkflowPhaseDefinition;
-			error: string;
+			error: unknown;
 	  }
 	| {
 			status: "skipped";

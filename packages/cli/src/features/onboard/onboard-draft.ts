@@ -1,4 +1,5 @@
 import path from "node:path";
+import { CODEX_DEFAULT_STAGE_MODELS } from "adapters/codex";
 import { clackPromptAdapter } from "../prompts";
 import type { PromptAdapter } from "../prompts";
 import {
@@ -13,13 +14,6 @@ import type {
 	OnboardDraftPromptDeps,
 } from "./types/onboard.types";
 import { resolveUserPath } from "./wizard-helpers";
-
-const DEFAULT_CODEX_MODELS = {
-	brainstorm: "gpt-5.5",
-	plan: "gpt-5.5",
-	implement: "gpt-5.3-codex",
-	reviewTest: "gpt-5.3-codex",
-} as const;
 
 const ISOLATED_WORKTREES_DESCRIPTION =
 	"Keeps each workflow task in its own git worktree so agent changes do not collide with your main checkout or other running tasks.";
@@ -62,11 +56,11 @@ export async function collectOnboardDraft(
 				githubComment: DEFAULT_REASONING_EFFORTS.reviewTest,
 			},
 			models: {
-				brainstorm: DEFAULT_CODEX_MODELS.brainstorm,
-				plan: DEFAULT_CODEX_MODELS.plan,
-				implement: DEFAULT_CODEX_MODELS.implement,
-				reviewTest: DEFAULT_CODEX_MODELS.reviewTest,
-				githubComment: DEFAULT_CODEX_MODELS.reviewTest,
+				brainstorm: CODEX_DEFAULT_STAGE_MODELS.brainstorm,
+				plan: CODEX_DEFAULT_STAGE_MODELS.plan,
+				implement: CODEX_DEFAULT_STAGE_MODELS.implement,
+				reviewTest: CODEX_DEFAULT_STAGE_MODELS.reviewTest,
+				githubComment: CODEX_DEFAULT_STAGE_MODELS.githubComment,
 			},
 			plugins: ["github@openai-curated"],
 			skillsets: ["devos"],

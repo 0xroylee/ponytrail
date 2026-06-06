@@ -1,4 +1,5 @@
 import { availableAgentModels } from "adapters";
+import { normalizeCodexModel } from "adapters/codex";
 import {
 	loadInstanceConfig,
 	saveInstanceConfig,
@@ -59,7 +60,7 @@ function renderSettingsModels(
 			id: stage.id,
 			label: stage.label,
 			...(config.codex?.models?.[stage.configKey]
-				? { model: config.codex.models[stage.configKey] }
+				? { model: normalizeCodexModel(config.codex.models[stage.configKey]) }
 				: {}),
 			...(config.codex?.reasoningEfforts?.[stage.configKey]
 				? { reasoningEffort: config.codex.reasoningEfforts[stage.configKey] }

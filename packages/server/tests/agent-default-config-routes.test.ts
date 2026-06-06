@@ -84,7 +84,7 @@ describe("config-backed default agents", () => {
 			expect.objectContaining({
 				id: "testing",
 				name: "Testing",
-				model: "gpt-5.3-codex",
+				model: "gpt-5.5",
 				reasoningEffort: "medium",
 			}),
 		);

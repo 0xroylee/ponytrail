@@ -1,4 +1,8 @@
-import { CODEX_BACKEND, CODEX_DEFAULT_STAGE_MODELS } from "adapters/codex";
+import {
+	CODEX_BACKEND,
+	CODEX_DEFAULT_STAGE_MODELS,
+	normalizeCodexModel,
+} from "adapters/codex";
 import { DEFAULT_REASONING_EFFORTS } from "devos/features/onboard/constants";
 import {
 	loadInstanceConfig,
@@ -153,7 +157,7 @@ function modelForStage(
 	config: OnboardInstanceConfig,
 ): string {
 	return (
-		config.codex?.models?.[configKey] ??
+		normalizeCodexModel(config.codex?.models?.[configKey]) ??
 		CODEX_DEFAULT_STAGE_MODELS[configKey] ??
 		"gpt-5.5"
 	);

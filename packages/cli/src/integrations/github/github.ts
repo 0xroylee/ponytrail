@@ -9,6 +9,7 @@ import type {
 	PullRequestRef,
 	ResolvedProjectConfig,
 } from "../../features/types";
+import { logger } from "../../utils/logger";
 import {
 	PREP_COMMAND_TIMEOUT_MS,
 	runPrepCommandWithRetry,
@@ -22,6 +23,7 @@ import type {
 } from "./types/github.types";
 
 const GITHUB_RETRY_ATTEMPTS = 3;
+const GIT_NOT_ANCESTOR_EXIT_CODE = 1;
 
 export function issueBranchName(issueKey: string, branchName?: string): string {
 	const trimmedBranchName = branchName?.trim();
@@ -105,13 +107,22 @@ export async function ensureBaseBranchFresh(
 		return;
 	}
 
-	const ancestor = await runPrepCommandWithRetry(
-		"git verify base branch ancestor",
+	const ancestor = await commandRunner(
 		"git",
 		["merge-base", "--is-ancestor", baseBranch, `origin/${baseBranch}`],
-		{ cwd: config.executionPath },
-		commandRunner,
+		{ cwd: config.executionPath, timeoutMs: PREP_COMMAND_TIMEOUT_MS },
 	);
+	if (ancestor.code === GIT_NOT_ANCESTOR_EXIT_CODE) {
+		logger.warn(
+			{
+				baseBranch,
+				cwd: config.executionPath,
+				remoteBranch: `origin/${baseBranch}`,
+			},
+			"Skipping local base branch ref update because it has commits not in the remote base",
+		);
+		return;
+	}
 	assertOk(
 		"git",
 		["merge-base", "--is-ancestor", baseBranch, `origin/${baseBranch}`],
