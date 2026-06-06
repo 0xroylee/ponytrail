@@ -76,8 +76,29 @@ export class IssueProcessor {
 				executionStatus = "failed";
 				return;
 			}
-			issueLogger.info({ stage: runState.stage }, "Issue workflow finished");
-			emitActionProgress(runState, runState.stage, "workflow", "succeeded");
+			const finishedStage = runState.stage;
+			const terminalFailureMessage =
+				runState.lastError ?? "Workflow finished at failed stage";
+			issueLogger.info(
+				{
+					stage: finishedStage,
+					...(finishedStage === "failed"
+						? {
+								failedStage: runState.failedStage,
+								error: terminalFailureMessage,
+							}
+						: {}),
+				},
+				"Issue workflow finished",
+			);
+			if (finishedStage === "failed") {
+				executionStatus = "failed";
+				emitActionProgress(runState, finishedStage, "workflow", "failed", {
+					error: terminalFailureMessage,
+				});
+				return;
+			}
+			emitActionProgress(runState, finishedStage, "workflow", "succeeded");
 		} catch (error) {
 			executionStatus = await reporter.handleFailure(
 				error,

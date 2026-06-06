@@ -98,6 +98,7 @@ export class IssueRunStateResolver {
 		const runState = this.buildRunState(issue, key, existing);
 		await this.refreshStoredIdentity(runState, identityRefresh);
 		Object.assign(runState, normalizeBlockedPlanningFailureForResume(runState));
+		await this.prepareFailedPlanningRetry(runState);
 		if (runState.stage === "brainstorm" && isAssignedState) {
 			runState.brainstormNeedsInfoQuestions = undefined;
 		}
@@ -161,6 +162,29 @@ export class IssueRunStateResolver {
 				issueId: identityRefresh.currentIssueId,
 			},
 			"Refreshed resumed issue identity from latest task",
+		);
+		await saveRunState(this.config.workspacePath, runState);
+	}
+
+	private async prepareFailedPlanningRetry(runState: RunState): Promise<void> {
+		if (
+			!this.options.issueArg ||
+			runState.stage !== "failed" ||
+			runState.failedStage !== "plan"
+		) {
+			return;
+		}
+		runState.stage = "plan";
+		runState.failedStage = undefined;
+		runState.lastError = undefined;
+		runState.planSummary = undefined;
+		runState.successGoal = undefined;
+		runState.complexityScore = undefined;
+		runState.reviewMode = undefined;
+		runState.planningNeedsInfoQuestions = undefined;
+		this.issueLogger.info(
+			{ retryStage: "plan" },
+			"Resuming failed issue from failed stage",
 		);
 		await saveRunState(this.config.workspacePath, runState);
 	}

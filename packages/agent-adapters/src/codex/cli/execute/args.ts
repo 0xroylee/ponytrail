@@ -54,13 +54,7 @@ function appendCodexModelAndRuntimeArgs(
 	if (model) {
 		args.push("--model", model);
 	}
-	if (
-		input.config.codex.sandbox &&
-		args[0] === "exec" &&
-		args[1] !== "resume"
-	) {
-		args.push("--sandbox", input.config.codex.sandbox);
-	}
+	appendCodexSandboxArgs(args, input.config.codex.sandbox);
 	for (const override of buildCodexConfigOverrides(
 		input.config,
 		input.request,
@@ -69,4 +63,18 @@ function appendCodexModelAndRuntimeArgs(
 	)) {
 		args.push("--config", override);
 	}
+}
+
+function appendCodexSandboxArgs(
+	args: string[],
+	sandbox: AgentAdapterRuntimeConfig["codex"]["sandbox"],
+): void {
+	if (!sandbox || args[0] !== "exec") {
+		return;
+	}
+	if (args[1] === "resume") {
+		args.push("--config", `sandbox_mode="${sandbox}"`);
+		return;
+	}
+	args.push("--sandbox", sandbox);
 }
