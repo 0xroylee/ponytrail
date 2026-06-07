@@ -1,11 +1,19 @@
+import {
+	CHAT_SESSION_SUBCHANNELS,
+	CHAT_SESSION_SUBCHANNEL_LABELS,
+	buildChatSessionHref,
+} from "./chat-session-subchannels";
 import type {
 	BuildChatSessionProjectGroupsInput,
 	BuildChatSessionSidebarContentInput,
+	BuildChatSessionSubchannelRowsInput,
 	BuildProjectSessionListToggleModeInput,
 	BuildVisibleProjectSessionsInput,
 	ChatSessionProjectGroup,
 	ChatSessionSidebarContent,
+	ChatSessionSubchannelRow,
 	ProjectSessionListToggleMode,
+	ShouldShowSessionSubchannelsInput,
 	VisibleProjectSessions,
 } from "./types/chat-room-sidebar.types";
 
@@ -93,6 +101,29 @@ export function buildProjectSessionListToggleMode(
 		return null;
 	}
 	return input.isExpanded ? "expanded" : "collapsed";
+}
+
+export function shouldShowSessionSubchannels({
+	activeSessionId,
+	sessionId,
+}: ShouldShowSessionSubchannelsInput): boolean {
+	return Boolean(sessionId) && sessionId === activeSessionId;
+}
+
+export function buildChatSessionSubchannelRows({
+	activeSessionId,
+	activeSubchannel,
+	sessionId,
+}: BuildChatSessionSubchannelRowsInput): ChatSessionSubchannelRow[] {
+	if (!shouldShowSessionSubchannels({ activeSessionId, sessionId })) {
+		return [];
+	}
+	return CHAT_SESSION_SUBCHANNELS.map((subchannel) => ({
+		href: buildChatSessionHref(sessionId, subchannel),
+		id: subchannel,
+		isActive: subchannel === activeSubchannel,
+		label: CHAT_SESSION_SUBCHANNEL_LABELS[subchannel],
+	}));
 }
 
 function createSessionProjectGroup(

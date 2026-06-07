@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Loader2, Pin, PinOff } from "lucide-react";
+import { Archive, Hash, Loader2, Pin, PinOff } from "lucide-react";
 import Link from "next/link";
 import type { MouseEvent, ReactElement } from "react";
 
@@ -17,20 +17,29 @@ import {
 } from "@/components/ui/dialog";
 import { Typography } from "@/components/ui/typography";
 import { cn } from "@/lib/utils";
+import { buildChatSessionSubchannelRows } from "./chat-room-sidebar-utils";
+import { buildChatSessionHref } from "./chat-session-subchannels";
 import type { ChatRoomSessionRowProps } from "./types/chat-room-sidebar.types";
 
 export function ChatRoomSessionRow({
 	activeSessionId,
+	activeSubchannel,
 	isPinned,
 	isRunning,
 	session,
 	onArchiveSession,
 	onPinSession,
 	onSelectSession,
+	onSelectSessionSubchannel,
 	onUnpinSession,
 }: ChatRoomSessionRowProps): ReactElement {
 	const pinLabel = isPinned ? `Unpin ${session.title}` : `Pin ${session.title}`;
-	const sessionHref = `/session/${encodeURIComponent(session.id)}`;
+	const sessionHref = buildChatSessionHref(session.id);
+	const subchannelRows = buildChatSessionSubchannelRows({
+		activeSessionId,
+		activeSubchannel,
+		sessionId: session.id,
+	});
 
 	function handlePinClick(): void {
 		if (isPinned) {
@@ -55,92 +64,136 @@ export function ChatRoomSessionRow({
 		onSelectSession(session.id);
 	}
 
+	function handleSubchannelClick(
+		event: MouseEvent<HTMLAnchorElement>,
+		subchannel: typeof activeSubchannel,
+	): void {
+		if (
+			event.defaultPrevented ||
+			event.button !== 0 ||
+			event.metaKey ||
+			event.altKey ||
+			event.ctrlKey ||
+			event.shiftKey
+		) {
+			return;
+		}
+		event.preventDefault();
+		onSelectSessionSubchannel(session.id, subchannel);
+	}
+
 	return (
-		<div
-			className={cn(
-				"group grid min-w-0 grid-cols-[minmax(0,1fr)_2rem_2rem] gap-0 rounded-md border border-transparent hover:bg-surface-active hover:text-zinc-200",
-				isRunning && "border-emerald-400/30 bg-emerald-500/5",
-				session.id === activeSessionId
-					? "bg-[#111110] text-zinc-100"
-					: "text-zinc-400",
-			)}
-		>
-			<Link
+		<div className="grid min-w-0 gap-1">
+			<div
 				className={cn(
-					buttonVariants({ variant: "ghost" }),
-					"h-auto min-w-0 justify-start gap-2 pl-2 pr-0 py-2 text-left text-sm",
+					"group grid min-w-0 grid-cols-[minmax(0,1fr)_2rem_2rem] gap-0 rounded-md border border-transparent hover:bg-surface-active hover:text-zinc-200",
+					isRunning && "border-emerald-400/30 bg-emerald-500/5",
+					session.id === activeSessionId
+						? "bg-[#111110] text-zinc-100"
+						: "text-zinc-400",
 				)}
-				href={sessionHref}
-				onClick={handleSessionClick}
 			>
-				{isRunning ? (
-					<span
-						className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-emerald-300"
-						title="AI model running"
-					>
-						<Loader2 aria-hidden="true" className="animate-spin" size={14} />
-						<span className="sr-only">AI model running</span>
+				<Link
+					className={cn(
+						buttonVariants({ variant: "ghost" }),
+						"h-auto min-w-0 justify-start gap-2 py-2 pl-2 pr-0 text-left text-sm",
+					)}
+					href={sessionHref}
+					onClick={handleSessionClick}
+				>
+					{isRunning ? (
+						<span
+							className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-emerald-300"
+							title="AI model running"
+						>
+							<Loader2 aria-hidden="true" className="animate-spin" size={14} />
+							<span className="sr-only">AI model running</span>
+						</span>
+					) : null}
+					<span className="min-w-0 flex-1">
+						<Typography as="span" className="block truncate">
+							{session.title}
+						</Typography>
 					</span>
-				) : null}
-				<span className="min-w-0 flex-1">
-					<Typography as="span" className="block truncate">
-						{session.title}
-					</Typography>
-				</span>
-			</Link>
-			<Button
-				aria-label={pinLabel}
-				aria-pressed={isPinned}
-				className={cn(
-					"transition-opacity group-hover:opacity-100 group-focus-within:opacity-100",
-					isPinned ? "opacity-100" : "opacity-0",
-				)}
-				onClick={handlePinClick}
-				size="icon"
-				title={isPinned ? "Unpin session" : "Pin session"}
-				type="button"
-				variant="ghost"
-			>
-				{isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-			</Button>
-			<Dialog>
-				<DialogTrigger asChild>
-					<Button
-						aria-label={`Archive ${session.title}`}
-						className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-						size="icon"
-						title="Archive session"
-						type="button"
-						variant="ghost"
-					>
-						<Archive size={14} />
-					</Button>
-				</DialogTrigger>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Archive session?</DialogTitle>
-						<DialogDescription>
-							Archive "{session.title}" and remove it from the sidebar.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<DialogClose asChild>
-							<Button type="button" variant="outline">
-								Cancel
-							</Button>
-						</DialogClose>
-						<DialogClose asChild>
-							<Button
-								onClick={() => onArchiveSession(session.id)}
-								type="button"
-								variant="destructive"
-							>
-								Archive
-							</Button>
-						</DialogClose>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+				</Link>
+				<Button
+					aria-label={pinLabel}
+					aria-pressed={isPinned}
+					className={cn(
+						"transition-opacity group-hover:opacity-100 group-focus-within:opacity-100",
+						isPinned ? "opacity-100" : "opacity-0",
+					)}
+					onClick={handlePinClick}
+					size="icon"
+					title={isPinned ? "Unpin session" : "Pin session"}
+					type="button"
+					variant="ghost"
+				>
+					{isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+				</Button>
+				<Dialog>
+					<DialogTrigger asChild>
+						<Button
+							aria-label={`Archive ${session.title}`}
+							className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+							size="icon"
+							title="Archive session"
+							type="button"
+							variant="ghost"
+						>
+							<Archive size={14} />
+						</Button>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Archive session?</DialogTitle>
+							<DialogDescription>
+								Archive "{session.title}" and remove it from the sidebar.
+							</DialogDescription>
+						</DialogHeader>
+						<DialogFooter>
+							<DialogClose asChild>
+								<Button type="button" variant="outline">
+									Cancel
+								</Button>
+							</DialogClose>
+							<DialogClose asChild>
+								<Button
+									onClick={() => onArchiveSession(session.id)}
+									type="button"
+									variant="destructive"
+								>
+									Archive
+								</Button>
+							</DialogClose>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			</div>
+			{subchannelRows.length > 0 ? (
+				<div className="grid gap-1 pl-6">
+					{subchannelRows.map((row) => (
+						<Link
+							aria-current={row.isActive ? "page" : undefined}
+							className={cn(
+								buttonVariants({ variant: "ghost" }),
+								"h-8 min-w-0 justify-start gap-2 px-2 text-left text-xs",
+								row.isActive
+									? "bg-surface-active text-zinc-100"
+									: "text-zinc-400 hover:bg-surface-active hover:text-zinc-200",
+							)}
+							href={row.href}
+							key={row.id}
+							onClick={(event) => handleSubchannelClick(event, row.id)}
+						>
+							<Hash aria-hidden="true" className="shrink-0" size={13} />
+							<Typography as="span" className="min-w-0 flex-1 truncate">
+								{row.label}
+							</Typography>
+						</Link>
+					))}
+				</div>
+			) : null}
 		</div>
 	);
 }

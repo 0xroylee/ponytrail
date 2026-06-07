@@ -7,25 +7,25 @@ import type {
 	TaskClarificationQuestion,
 	TaskCreateAnswer,
 } from "@/lib/api";
+import type { ChatSessionSubchannel } from "../chat-session-subchannels";
 import type { ChatMissionProgressViewModel } from "./chat-mission-progress.types";
 
 export interface ChatRoomPanelProps {
 	commandDraftRequest: CommandDraftRequest | null;
 	initialSessionId?: string;
+	initialSubchannel?: ChatSessionSubchannel;
 	onOpenSidebar: () => void;
 }
 
 export interface ChatRoomHeaderProps {
-	activeTaskId: string | null;
 	isRerunDisabled: boolean;
 	isRerunning: boolean;
 	isRerunVisible: boolean;
-	isTaskDetailPanelOpen: boolean;
 	projectId: string;
+	subchannelLabel: string;
 	title: string;
 	onOpenSidebar: () => void;
 	onRerunWorkflow: () => void;
-	onToggleTaskDetails: () => void;
 }
 
 export interface ChatCommandContext {
@@ -64,13 +64,8 @@ export interface ChatTranscriptProps {
 	onDraftCommand: (draft: string) => void;
 }
 
-export interface ChatTaskDetailPanelProps {
-	isOpen: boolean;
-	taskId: string | null;
-	onClose: () => void;
-}
-
 export interface ChatRoomPanelViewProps {
+	activeSubchannel: ChatSessionSubchannel;
 	activeTaskId: string | null;
 	draft: string;
 	isBusy: boolean;
@@ -80,7 +75,6 @@ export interface ChatRoomPanelViewProps {
 	isRerunVisible: boolean;
 	isSending: boolean;
 	isPlanning: boolean;
-	isTaskDetailPanelOpen: boolean;
 	isThinking: boolean;
 	missionProgress: ChatMissionProgressViewModel | null;
 	messages: ChatMessageRecord[];
@@ -91,11 +85,9 @@ export interface ChatRoomPanelViewProps {
 	streamLines: ChatStreamLine[];
 	workingStartedAt: string | null;
 	onAnswerChange: (index: number, value: string) => void;
-	onCloseTaskDetails: () => void;
 	onDraftChange: (value: string) => void;
 	onOpenSidebar: () => void;
 	onRerunWorkflow: () => void;
-	onToggleTaskDetails: () => void;
 	onSelectCommand: (value: string) => void;
 	onSelectOption: (index: number, value: string) => Promise<void> | void;
 	onSubmit: () => void;

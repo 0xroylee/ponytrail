@@ -30,9 +30,9 @@ import { ChatRoomPanelView } from "./chat-room-panel-view";
 import { selectChatSession } from "./chat-room-selection";
 import { resolveChatRoomStreamState } from "./chat-room-stream-state";
 import { resolveChatSessionRerunState } from "./chat-session-rerun-state";
+import { buildChatSessionHref } from "./chat-session-subchannels";
 import { useWorkingSectionState } from "./chat-working-section-state";
 import type * as CRT from "./types/chat-room.types";
-import { useChatTaskDetailPanelState } from "./use-chat-task-detail-panel-state";
 
 const NO_REFETCH = { refetchIntervalMs: false } as const;
 const apiClient = createWebApiClient();
@@ -40,6 +40,7 @@ const apiClient = createWebApiClient();
 export function ChatRoomPanel({
 	commandDraftRequest,
 	initialSessionId = "",
+	initialSubchannel = "chat",
 	onOpenSidebar,
 }: CRT.ChatRoomPanelProps): ReactElement {
 	const [activeSessionId, setActiveSessionId] = useState(initialSessionId);
@@ -78,10 +79,6 @@ export function ChatRoomPanel({
 		missionProgress,
 		refetchActiveTask,
 	} = useChatRoomMission(selectedSession, messages);
-	const taskDetails = useChatTaskDetailPanelState({
-		activeTaskId,
-		selectedSessionId,
-	});
 	const { pendingAnswers, pendingQuestionIndex } =
 		clarificationState.readPending(selectedSessionId);
 	const chatStreamsByRunId = useRealtimeStore(
@@ -124,9 +121,8 @@ export function ChatRoomPanel({
 		}
 		const session = await createSession.mutateAsync({ workspaceId });
 		setActiveSessionId(session.id);
-		router.push(`/session/${encodeURIComponent(session.id)}`);
+		router.push(buildChatSessionHref(session.id));
 		setDraft("");
-		taskDetails.close();
 	}
 
 	async function handleSubmit(): Promise<void> {
@@ -143,7 +139,7 @@ export function ChatRoomPanel({
 					selectedSession ?? (await createSession.mutateAsync({ workspaceId }));
 				if (!selectedSession) {
 					setActiveSessionId(session.id);
-					router.push(`/session/${encodeURIComponent(session.id)}`);
+					router.push(buildChatSessionHref(session.id));
 				}
 				const command = parseChatCommand(content, {
 					projectId: session.projectId,
@@ -211,6 +207,7 @@ export function ChatRoomPanel({
 
 	return (
 		<ChatRoomPanelView
+			activeSubchannel={initialSubchannel}
 			activeTaskId={activeTaskId}
 			draft={draft}
 			isBusy={isBusy}
@@ -220,7 +217,6 @@ export function ChatRoomPanel({
 			isRerunVisible={rerunState.isVisible}
 			isSending={sendMessage.isPending}
 			isPlanning={isPlanning}
-			isTaskDetailPanelOpen={taskDetails.isOpen}
 			isThinking={isThinking}
 			missionProgress={missionProgress}
 			messages={messages}
@@ -233,11 +229,9 @@ export function ChatRoomPanel({
 			onAnswerChange={(index, value) =>
 				clarificationState.updateAnswerDraft(selectedSessionId, index, value)
 			}
-			onCloseTaskDetails={taskDetails.close}
 			onDraftChange={handleDraftChange}
 			onOpenSidebar={onOpenSidebar}
 			onRerunWorkflow={() => void handleRerunWorkflow()}
-			onToggleTaskDetails={taskDetails.toggle}
 			onSelectCommand={setDraft}
 			onSelectOption={(index, value) =>
 				clarificationSubmitters.submitAnswerValue(index, value)

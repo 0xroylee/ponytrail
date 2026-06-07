@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { ChatRoomSidebar } from "@/components/chat-room/chat-room-sidebar";
 import { activeChatStreamSessionIds } from "@/components/chat-room/chat-room-stream-utils";
 import {
+	type ChatSessionSubchannel,
+	buildChatSessionHref,
+} from "@/components/chat-room/chat-session-subchannels";
+import {
 	useChatSessionsQuery,
 	useCreateChatSessionMutation,
 	useUpdateChatSessionMutation,
@@ -26,6 +30,7 @@ const NO_REFETCH = { refetchIntervalMs: false } as const;
 
 function OperatorChatSidebarView({
 	activeSessionId,
+	activeSubchannel,
 	isMobileOpen,
 	onCloseMobileSidebar,
 	onSearch,
@@ -67,7 +72,7 @@ function OperatorChatSidebarView({
 		}
 		const session = await createSession.mutateAsync({ workspaceId });
 		requestMessageInputFocus(session.id);
-		router.push(`/session/${encodeURIComponent(session.id)}`);
+		router.push(buildChatSessionHref(session.id));
 		closeMobileSidebar();
 	}
 
@@ -91,7 +96,15 @@ function OperatorChatSidebarView({
 	}
 
 	function selectSession(sessionId: string): void {
-		router.push(`/session/${encodeURIComponent(sessionId)}`);
+		router.push(buildChatSessionHref(sessionId));
+		closeMobileSidebar();
+	}
+
+	function selectSessionSubchannel(
+		sessionId: string,
+		subchannel: ChatSessionSubchannel,
+	): void {
+		router.push(buildChatSessionHref(sessionId, subchannel));
 		closeMobileSidebar();
 	}
 
@@ -107,6 +120,7 @@ function OperatorChatSidebarView({
 			) : null}
 			<ChatRoomSidebar
 				activeSessionId={activeSessionId}
+				activeSubchannel={activeSubchannel}
 				error={sessionsQuery.error}
 				isCollapsed={isSessionSidebarCollapsed}
 				isCreating={createSession.isPending}
@@ -120,6 +134,7 @@ function OperatorChatSidebarView({
 				onNewSession={() => void startNewSession()}
 				onSearch={search}
 				onSelectSession={selectSession}
+				onSelectSessionSubchannel={selectSessionSubchannel}
 				onToggleCollapsed={toggleSessionSidebar}
 			/>
 		</>

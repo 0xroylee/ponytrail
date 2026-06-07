@@ -17,6 +17,7 @@ import type { ChatRoomSidebarView } from "./types/chat-room.types";
 
 export function ChatRoomSidebar({
 	activeSessionId,
+	activeSubchannel,
 	error,
 	isCollapsed,
 	isCreating,
@@ -30,6 +31,7 @@ export function ChatRoomSidebar({
 	onCloseSidebar,
 	onSearch,
 	onSelectSession,
+	onSelectSessionSubchannel,
 	onToggleCollapsed,
 }: ChatRoomSidebarProps): ReactElement {
 	const [collapsedProjectIds, setCollapsedProjectIds] = useState<Set<string>>(
@@ -186,6 +188,7 @@ export function ChatRoomSidebar({
 					<div className={cn("min-h-0", isCollapsed && "md:hidden")}>
 						<ChatRoomSessionList
 							activeSessionId={activeSessionId}
+							activeSubchannel={activeSubchannel}
 							collapsedProjectIds={collapsedProjectIds}
 							error={error}
 							isLoading={isLoading}
@@ -195,6 +198,7 @@ export function ChatRoomSidebar({
 							onArchiveSession={onArchiveSession}
 							onPinSession={pinSession}
 							onSelectSession={onSelectSession}
+							onSelectSessionSubchannel={onSelectSessionSubchannel}
 							onToggleProjectGroup={toggleProjectGroup}
 							onUnpinSession={unpinSession}
 						/>

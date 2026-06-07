@@ -1,7 +1,9 @@
 import type { ChatSessionRecord, WorkspaceProjectRecord } from "@/lib/api";
+import type { ChatSessionSubchannel } from "../chat-session-subchannels";
 
 export interface ChatRoomSidebarProps {
 	activeSessionId: string;
+	activeSubchannel: ChatSessionSubchannel;
 	error: Error | null;
 	isCollapsed: boolean;
 	isCreating: boolean;
@@ -15,6 +17,10 @@ export interface ChatRoomSidebarProps {
 	onArchiveSession: (sessionId: string) => void;
 	onSearch: () => void;
 	onSelectSession: (sessionId: string) => void;
+	onSelectSessionSubchannel: (
+		sessionId: string,
+		subchannel: ChatSessionSubchannel,
+	) => void;
 	onToggleCollapsed: () => void;
 }
 
@@ -31,6 +37,7 @@ export interface ChatRoomSidebarNavProps {
 
 export interface ChatRoomSessionListProps {
 	activeSessionId: string;
+	activeSubchannel: ChatSessionSubchannel;
 	collapsedProjectIds: Set<string>;
 	error: Error | null;
 	isLoading: boolean;
@@ -40,6 +47,10 @@ export interface ChatRoomSessionListProps {
 	onArchiveSession: (sessionId: string) => void;
 	onPinSession: (sessionId: string) => void;
 	onSelectSession: (sessionId: string) => void;
+	onSelectSessionSubchannel: (
+		sessionId: string,
+		subchannel: ChatSessionSubchannel,
+	) => void;
 	onToggleProjectGroup: (
 		groupId: string,
 		isExpanded: boolean,
@@ -89,13 +100,36 @@ export interface BuildProjectSessionListToggleModeInput {
 	visibleProjectSessions: VisibleProjectSessions;
 }
 
+export interface ChatSessionSubchannelRow {
+	href: string;
+	id: ChatSessionSubchannel;
+	isActive: boolean;
+	label: string;
+}
+
+export interface BuildChatSessionSubchannelRowsInput {
+	activeSessionId: string;
+	activeSubchannel: ChatSessionSubchannel;
+	sessionId: string;
+}
+
+export interface ShouldShowSessionSubchannelsInput {
+	activeSessionId: string;
+	sessionId: string;
+}
+
 export interface ChatRoomSessionRowProps {
 	activeSessionId: string;
+	activeSubchannel: ChatSessionSubchannel;
 	isPinned: boolean;
 	isRunning: boolean;
 	session: ChatSessionRecord;
 	onArchiveSession: (sessionId: string) => void;
 	onPinSession: (sessionId: string) => void;
 	onSelectSession: (sessionId: string) => void;
+	onSelectSessionSubchannel: (
+		sessionId: string,
+		subchannel: ChatSessionSubchannel,
+	) => void;
 	onUnpinSession: (sessionId: string) => void;
 }

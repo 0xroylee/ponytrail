@@ -3,8 +3,10 @@ import { describe, expect, it } from "bun:test";
 import {
 	buildChatSessionProjectGroups,
 	buildChatSessionSidebarContent,
+	buildChatSessionSubchannelRows,
 	buildProjectSessionListToggleMode,
 	buildVisibleProjectSessions,
+	shouldShowSessionSubchannels,
 } from "../src/components/chat-room/chat-room-sidebar-utils";
 import type { ChatSessionRecord, WorkspaceProjectRecord } from "../src/lib/api";
 
@@ -224,6 +226,54 @@ describe("chat room sidebar utilities", () => {
 				visibleProjectSessions: shortProjectSessions,
 			}),
 		).toBeNull();
+	});
+
+	it("shows subchannel rows only for the active session", () => {
+		expect(
+			shouldShowSessionSubchannels({
+				activeSessionId: "session-1",
+				sessionId: "session-1",
+			}),
+		).toBe(true);
+		expect(
+			shouldShowSessionSubchannels({
+				activeSessionId: "session-1",
+				sessionId: "session-2",
+			}),
+		).toBe(false);
+	});
+
+	it("builds chat and task-info child rows for the active session", () => {
+		const rows = buildChatSessionSubchannelRows({
+			activeSessionId: "session-1",
+			activeSubchannel: "task-info",
+			sessionId: "session-1",
+		});
+
+		expect(rows).toEqual([
+			{
+				href: "/session/session-1/chat",
+				id: "chat",
+				isActive: false,
+				label: "Chat",
+			},
+			{
+				href: "/session/session-1/task-info",
+				id: "task-info",
+				isActive: true,
+				label: "Task Info",
+			},
+		]);
+	});
+
+	it("returns no child rows for inactive sessions", () => {
+		expect(
+			buildChatSessionSubchannelRows({
+				activeSessionId: "session-1",
+				activeSubchannel: "chat",
+				sessionId: "session-2",
+			}),
+		).toEqual([]);
 	});
 });
 

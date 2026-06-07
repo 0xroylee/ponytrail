@@ -21,6 +21,7 @@ import { CommandSearchDialog } from "./command-search-dialog";
 import { OperatorChatSidebar } from "./operator-chat-sidebar";
 import {
 	activeChatSessionIdFromPathname,
+	activeChatSessionSubchannelFromPathname,
 	isChatSurfacePathname,
 } from "./operator-chat-sidebar-route";
 import { OperatorIssueActionsProvider } from "./operator-issue-actions-context";
@@ -62,6 +63,7 @@ export function WebOperatorShell({
 	const activeNavKey = getActiveNavKey(pathname);
 	const isChatSurface = isChatSurfacePathname(pathname);
 	const activeSessionId = activeChatSessionIdFromPathname(pathname);
+	const activeSubchannel = activeChatSessionSubchannelFromPathname(pathname);
 
 	const createIssue = useCallback(() => {
 		router.push("/issues");
@@ -163,6 +165,7 @@ export function WebOperatorShell({
 			sidebar={
 				<OperatorChatSidebar
 					activeSessionId={activeSessionId}
+					activeSubchannel={activeSubchannel}
 					isMobileOpen={isChatSidebarMobileOpen}
 					onCloseMobileSidebar={closeChatSidebar}
 					onSearch={openSearch}

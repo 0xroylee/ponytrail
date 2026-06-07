@@ -16,6 +16,7 @@ import type { ChatRoomSessionListProps } from "./types/chat-room-sidebar.types";
 
 export function ChatRoomSessionList({
 	activeSessionId,
+	activeSubchannel,
 	collapsedProjectIds,
 	error,
 	isLoading,
@@ -25,6 +26,7 @@ export function ChatRoomSessionList({
 	onArchiveSession,
 	onPinSession,
 	onSelectSession,
+	onSelectSessionSubchannel,
 	onToggleProjectGroup,
 	onUnpinSession,
 }: ChatRoomSessionListProps): ReactElement {
@@ -63,12 +65,14 @@ export function ChatRoomSessionList({
 								{pinnedSessions.map((session) => (
 									<ChatRoomSessionRow
 										activeSessionId={activeSessionId}
+										activeSubchannel={activeSubchannel}
 										isPinned={true}
 										isRunning={runningSessionIds.has(session.id)}
 										key={session.id}
 										onArchiveSession={onArchiveSession}
 										onPinSession={onPinSession}
 										onSelectSession={onSelectSession}
+										onSelectSessionSubchannel={onSelectSessionSubchannel}
 										onUnpinSession={onUnpinSession}
 										session={session}
 									/>
@@ -132,12 +136,14 @@ export function ChatRoomSessionList({
 											{visibleSessions.sessions.map((session) => (
 												<ChatRoomSessionRow
 													activeSessionId={activeSessionId}
+													activeSubchannel={activeSubchannel}
 													isPinned={false}
 													isRunning={runningSessionIds.has(session.id)}
 													key={session.id}
 													onArchiveSession={onArchiveSession}
 													onPinSession={onPinSession}
 													onSelectSession={onSelectSession}
+													onSelectSessionSubchannel={onSelectSessionSubchannel}
 													onUnpinSession={onUnpinSession}
 													session={session}
 												/>

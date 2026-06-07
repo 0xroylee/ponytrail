@@ -2,6 +2,8 @@ import { describe, expect, it } from "bun:test";
 
 import {
 	activeChatSessionIdFromPathname,
+	activeChatSessionRouteFromPathname,
+	activeChatSessionSubchannelFromPathname,
 	isChatSurfacePathname,
 } from "../src/components/web-shell/operator-chat-sidebar-route";
 
@@ -35,5 +37,31 @@ describe("operator chat sidebar route helpers", () => {
 		expect(activeChatSessionIdFromPathname("/session/%E0%A4%A")).toBe(
 			"%E0%A4%A",
 		);
+	});
+
+	it("reads session subchannels from session routes", () => {
+		expect(activeChatSessionSubchannelFromPathname("/chat")).toBe("chat");
+		expect(activeChatSessionSubchannelFromPathname("/session/session-1")).toBe(
+			"chat",
+		);
+		expect(
+			activeChatSessionSubchannelFromPathname("/session/session-1/task-info"),
+		).toBe("task-info");
+		expect(
+			activeChatSessionSubchannelFromPathname("/session/session-1/unknown"),
+		).toBe("chat");
+	});
+
+	it("reads session id and subchannel together", () => {
+		expect(
+			activeChatSessionRouteFromPathname("/session/session%2Fone/task-info"),
+		).toEqual({
+			sessionId: "session/one",
+			subchannel: "task-info",
+		});
+		expect(activeChatSessionRouteFromPathname("/issues")).toEqual({
+			sessionId: "",
+			subchannel: "chat",
+		});
 	});
 });

@@ -6,6 +6,7 @@ export function areOperatorChatSidebarPropsEqual(
 ): boolean {
 	return (
 		previous.activeSessionId === next.activeSessionId &&
+		previous.activeSubchannel === next.activeSubchannel &&
 		previous.isMobileOpen === next.isMobileOpen &&
 		previous.onCloseMobileSidebar === next.onCloseMobileSidebar &&
 		previous.onSearch === next.onSearch
