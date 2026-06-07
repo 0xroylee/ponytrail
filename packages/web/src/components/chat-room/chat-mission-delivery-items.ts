@@ -7,9 +7,11 @@ import type {
 export function createMissionDeliveryItems({
 	linkedPr,
 	phases,
+	taskStatus,
 }: {
 	linkedPr: string | null;
 	phases: ChatMissionPhase[];
+	taskStatus: string;
 }): ChatMissionDeliveryItem[] {
 	const items: ChatMissionDeliveryItem[] = [];
 	const testing = phases.find((phase) => phase.id === "testing");
@@ -24,7 +26,7 @@ export function createMissionDeliveryItems({
 			id: "pullRequest",
 			label: "Pull request",
 			tone: "success",
-			value: formatPullRequestValue(prUrl),
+			value: formatPullRequestValue(prUrl, taskStatus),
 		});
 	}
 	return items;
@@ -51,7 +53,24 @@ function createTestingDeliveryItem(
 	return { id: "testing", label: "Testing", tone: status, value: "Running" };
 }
 
-function formatPullRequestValue(prUrl: string): string {
+function formatPullRequestValue(prUrl: string, taskStatus: string): string {
 	const match = prUrl.match(/\/pull\/(\d+)(?:\D*)?$/);
-	return match ? `PR #${match[1]}` : "Open PR";
+	const pullRequestLabel = match ? `PR #${match[1]}` : "Open PR";
+	const statusLabel = formatTaskStatus(taskStatus);
+	return statusLabel
+		? `${pullRequestLabel} - ${statusLabel}`
+		: pullRequestLabel;
+}
+
+function formatTaskStatus(status: string): string {
+	return status
+		.trim()
+		.split(/[_\s-]+/)
+		.filter(Boolean)
+		.map((part, index) =>
+			index === 0
+				? `${part.charAt(0).toUpperCase()}${part.slice(1).toLowerCase()}`
+				: part.toLowerCase(),
+		)
+		.join(" ");
 }

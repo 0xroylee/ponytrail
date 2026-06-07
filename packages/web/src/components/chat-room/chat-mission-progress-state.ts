@@ -134,6 +134,7 @@ export function createChatMissionProgressModel({
 		deliveryItems: createMissionDeliveryItems({
 			linkedPr: task.linkedPr,
 			phases,
+			taskStatus: task.status,
 		}),
 		usageSummary:
 			usageRecords.length > 0 ? summarizeTokenUsage(usageRecords) : null,

@@ -236,7 +236,7 @@ describe("chat mission progress", () => {
 				id: "pullRequest",
 				label: "Pull request",
 				tone: "success",
-				value: "PR #302",
+				value: "PR #302 - In review",
 			},
 		]);
 	});
