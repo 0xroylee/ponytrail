@@ -106,9 +106,11 @@ export interface ChatComposerProps {
 	disabled: boolean;
 	draft: string;
 	isSending: boolean;
+	messageInputFocusRequestId?: number | null;
 	placeholder?: string;
 	presentation?: "compact" | "hero";
 	onDraftChange: (value: string) => void;
+	onMessageInputFocusRequestHandled?: (requestId: number) => void;
 	onSelectCommand: (value: string) => void;
 	onSubmit: () => void;
 }

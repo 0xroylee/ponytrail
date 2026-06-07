@@ -1,5 +1,6 @@
 "use client";
 
+import { useUiStore } from "@/lib/ui-store";
 import { cn } from "@/lib/utils";
 import type { ReactElement } from "react";
 import { ChatClarificationComposer } from "./chat-clarification-composer";
@@ -46,8 +47,19 @@ export function ChatRoomPanelView({
 	onSubmit,
 	onSubmitAnswers,
 }: ChatRoomPanelViewProps): ReactElement {
+	const messageInputFocusRequest = useUiStore(
+		(state) => state.messageInputFocusRequest,
+	);
+	const clearMessageInputFocusRequest = useUiStore(
+		(state) => state.clearMessageInputFocusRequest,
+	);
 	const pendingQuestions = selectedSession?.pendingQuestions ?? [];
 	const hasPendingQuestions = pendingQuestions.length > 0;
+	const messageInputFocusRequestId =
+		messageInputFocusRequest &&
+		messageInputFocusRequest.sessionId === selectedSession?.id
+			? messageInputFocusRequest.id
+			: null;
 	const hasOpenTaskDetails = isTaskDetailPanelOpen && Boolean(activeTaskId);
 	const showLoadingShell = shouldShowChatRoomLoadingShell({
 		hasSelectedSession: Boolean(selectedSession),
@@ -110,7 +122,9 @@ export function ChatRoomPanelView({
 							disabled={isBusy}
 							draft={draft}
 							isSending={isSending}
+							messageInputFocusRequestId={messageInputFocusRequestId}
 							onDraftChange={onDraftChange}
+							onMessageInputFocusRequestHandled={clearMessageInputFocusRequest}
 							onSelectCommand={onSelectCommand}
 							onSubmit={onSubmit}
 						/>

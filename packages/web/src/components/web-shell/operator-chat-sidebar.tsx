@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/queries";
 import { useWorkspaceProjectsQuery } from "@/lib/api/realtime-queries";
 import { useRealtimeStore } from "@/lib/realtime";
+import { useUiStore } from "@/lib/ui-store";
 
 import { areOperatorChatSidebarPropsEqual } from "./operator-chat-sidebar-render-utils";
 import type { OperatorChatSidebarProps } from "./types/operator-chat-sidebar.types";
@@ -42,6 +43,9 @@ function OperatorChatSidebarView({
 	const chatStreamsByRunId = useRealtimeStore(
 		(state) => state.chatStreamsByRunId,
 	);
+	const requestMessageInputFocus = useUiStore(
+		(state) => state.requestMessageInputFocus,
+	);
 	const runningSessionIds = activeChatStreamSessionIds(
 		chatStreamsByRunId,
 		sessionsQuery.data ?? [],
@@ -62,6 +66,7 @@ function OperatorChatSidebarView({
 			return;
 		}
 		const session = await createSession.mutateAsync({ workspaceId });
+		requestMessageInputFocus(session.id);
 		router.push(`/session/${encodeURIComponent(session.id)}`);
 		closeMobileSidebar();
 	}

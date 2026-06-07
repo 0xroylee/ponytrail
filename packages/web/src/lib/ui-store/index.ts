@@ -3,6 +3,7 @@ export type {
 	AgentRunStatusFilter,
 	RunSortOrder,
 	UiDraftState,
+	UiMessageInputFocusRequest,
 	UiModalKind,
 	UiModalState,
 	UiPinnedIssue,

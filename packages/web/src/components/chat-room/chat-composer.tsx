@@ -25,9 +25,11 @@ export function ChatComposer({
 	disabled,
 	draft,
 	isSending,
+	messageInputFocusRequestId = null,
 	placeholder = "Message or /command",
 	presentation = "compact",
 	onDraftChange,
+	onMessageInputFocusRequestHandled,
 	onSelectCommand,
 	onSubmit,
 }: ChatComposerProps): ReactElement {
@@ -89,6 +91,13 @@ export function ChatComposer({
 		onDraftChange(value);
 	}
 
+	function handleFocus(): void {
+		setIsFocused(true);
+		if (messageInputFocusRequestId) {
+			onMessageInputFocusRequestHandled?.(messageInputFocusRequestId);
+		}
+	}
+
 	function selectCommand(command: string): void {
 		setIsCommandMenuDismissed(true);
 		setSelectedIndex(0);
@@ -130,10 +139,11 @@ export function ChatComposer({
 								className="min-h-0 resize-none overflow-y-hidden border-0 bg-transparent px-1 py-1 text-base leading-7 focus-visible:border-transparent focus-visible:ring-0"
 								disabled={disabled}
 								draft={draft}
+								focusRequestId={messageInputFocusRequestId}
 								menuId={menuId}
 								onBlur={() => setIsFocused(false)}
 								onChange={handleDraftChange}
-								onFocus={() => setIsFocused(true)}
+								onFocus={handleFocus}
 								onKeyDown={handleKeyDown}
 								placeholder={placeholder}
 								showCommands={showCommands}
@@ -188,10 +198,11 @@ export function ChatComposer({
 								className="min-h-0 resize-none overflow-y-hidden border-0 bg-transparent px-1 py-2 focus-visible:border-transparent focus-visible:ring-0"
 								disabled={disabled}
 								draft={draft}
+								focusRequestId={messageInputFocusRequestId}
 								menuId={menuId}
 								onBlur={() => setIsFocused(false)}
 								onChange={handleDraftChange}
-								onFocus={() => setIsFocused(true)}
+								onFocus={handleFocus}
 								onKeyDown={handleKeyDown}
 								placeholder={placeholder}
 								showCommands={showCommands}

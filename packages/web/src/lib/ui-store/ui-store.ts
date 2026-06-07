@@ -39,6 +39,7 @@ const createDefaultState = (): UiStoreState => ({
 	chatRoomSidebarView: defaultChatRoomSidebarView,
 	pinnedIssues: [],
 	pinnedSessionIds: [],
+	messageInputFocusRequest: null,
 	modal: defaultModalState,
 });
 
@@ -95,6 +96,21 @@ export const useUiStore = create<UiStore>()(
 						(item) => item !== sessionId,
 					),
 				}));
+			},
+			requestMessageInputFocus: (sessionId) => {
+				set((state) => ({
+					messageInputFocusRequest: {
+						id: (state.messageInputFocusRequest?.id ?? 0) + 1,
+						sessionId,
+					},
+				}));
+			},
+			clearMessageInputFocusRequest: (requestId) => {
+				set((state) =>
+					state.messageInputFocusRequest?.id === requestId
+						? { messageInputFocusRequest: null }
+						: {},
+				);
 			},
 			openModal: (kind, contextId = null) => {
 				set({ modal: { kind, contextId } });

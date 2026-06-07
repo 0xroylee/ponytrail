@@ -39,6 +39,11 @@ export type UiModalState =
 			contextId: string | null;
 	  };
 
+export interface UiMessageInputFocusRequest {
+	id: number;
+	sessionId: string;
+}
+
 export interface UiStoreState {
 	selectedWorkspaceId: WorkspaceId | null;
 	viewFilters: UiViewFilters;
@@ -46,6 +51,7 @@ export interface UiStoreState {
 	chatRoomSidebarView: UiChatRoomSidebarView;
 	pinnedIssues: UiPinnedIssue[];
 	pinnedSessionIds: string[];
+	messageInputFocusRequest: UiMessageInputFocusRequest | null;
 	modal: UiModalState;
 }
 
@@ -60,6 +66,8 @@ export interface UiStoreActions {
 	unpinIssue(issueId: string): void;
 	pinSession(sessionId: string): void;
 	unpinSession(sessionId: string): void;
+	requestMessageInputFocus(sessionId: string): void;
+	clearMessageInputFocusRequest(requestId: number): void;
 	openModal(kind: UiModalKind, contextId?: string | null): void;
 	closeModal(): void;
 	resetUiState(): void;

@@ -18,6 +18,7 @@ interface ChatComposerTextareaProps {
 	className: string;
 	disabled: boolean;
 	draft: string;
+	focusRequestId: number | null;
 	menuId: string;
 	placeholder: string;
 	showCommands: boolean;
@@ -32,6 +33,7 @@ export function ChatComposerTextarea({
 	className,
 	disabled,
 	draft,
+	focusRequestId,
 	menuId,
 	placeholder,
 	showCommands,
@@ -45,6 +47,13 @@ export function ChatComposerTextarea({
 	useLayoutEffect(() => {
 		resizeTextarea(textareaRef.current);
 	});
+
+	useLayoutEffect(() => {
+		if (!focusRequestId || disabled) {
+			return;
+		}
+		textareaRef.current?.focus({ preventScroll: true });
+	}, [disabled, focusRequestId]);
 
 	useLayoutEffect(() => {
 		const textarea = textareaRef.current;
