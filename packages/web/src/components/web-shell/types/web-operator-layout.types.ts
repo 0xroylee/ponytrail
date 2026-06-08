@@ -4,5 +4,6 @@ export interface WebOperatorLayoutProps {
 	children: ReactNode;
 	mobileSidebarTrigger: ReactNode;
 	overlays: ReactNode;
-	sidebar: ReactNode;
+	primarySidebar: ReactNode;
+	secondarySidebar: ReactNode;
 }

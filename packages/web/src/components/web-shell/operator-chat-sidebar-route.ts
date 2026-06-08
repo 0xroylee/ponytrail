@@ -1,10 +1,19 @@
 const sessionRoutePrefix = "/session/";
+const projectsRoutePrefix = "/projects";
 
 export function isChatSurfacePathname(pathname: string): boolean {
 	return (
 		pathname === "/chat" ||
 		pathname.startsWith("/chat/") ||
 		pathname.startsWith(sessionRoutePrefix)
+	);
+}
+
+export function shouldShowProjectSessionSidebar(pathname: string): boolean {
+	return (
+		isChatSurfacePathname(pathname) ||
+		pathname === projectsRoutePrefix ||
+		pathname.startsWith(`${projectsRoutePrefix}/`)
 	);
 }
 

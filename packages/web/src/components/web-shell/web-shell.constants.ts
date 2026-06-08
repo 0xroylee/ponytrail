@@ -5,13 +5,12 @@ import type {
 } from "@/components/web-shell/types/web-shell.types";
 
 export const navItems: SidebarNavItem[] = [
-	{ key: "agents", label: "Agents", href: "/agents" },
 	{ key: "projects", label: "Projects", href: "/projects" },
 	{ key: "issues", label: "Issues", href: "/issues" },
 	{ key: "integrations", label: "Integrations", href: "/integrations" },
-	{ key: "git", label: "Git", href: "/git" },
-	{ key: "usage", label: "Usage", href: "/usage" },
+	{ key: "agents", label: "Agents", href: "/agents" },
 	{ key: "runtimes", label: "Runtimes", href: "/runtimes" },
+	{ key: "git", label: "Git", href: "/git" },
 ];
 
 export const sectionContentByKey: Record<
@@ -73,5 +72,5 @@ export const sectionContentByKey: Record<
 };
 
 export function hrefForNavKey(key: SidebarNavKey): SidebarNavItem["href"] {
-	return navItems.find((item) => item.key === key)?.href ?? "/chat";
+	return navItems.find((item) => item.key === key)?.href ?? "/projects";
 }

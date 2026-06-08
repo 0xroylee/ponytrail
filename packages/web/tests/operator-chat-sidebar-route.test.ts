@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 import {
 	activeChatSessionIdFromPathname,
 	isChatSurfacePathname,
+	shouldShowProjectSessionSidebar,
 } from "../src/components/web-shell/operator-chat-sidebar-route";
 
 describe("operator chat sidebar route helpers", () => {
@@ -17,6 +18,15 @@ describe("operator chat sidebar route helpers", () => {
 		expect(activeChatSessionIdFromPathname("/chat")).toBe("");
 		expect(activeChatSessionIdFromPathname("/issues")).toBe("");
 		expect(activeChatSessionIdFromPathname("/settings/models")).toBe("");
+	});
+
+	it("shows the project/session secondary sidebar only for project and session surfaces", () => {
+		expect(shouldShowProjectSessionSidebar("/projects")).toBe(true);
+		expect(shouldShowProjectSessionSidebar("/projects/local")).toBe(true);
+		expect(shouldShowProjectSessionSidebar("/chat")).toBe(true);
+		expect(shouldShowProjectSessionSidebar("/session/session-1")).toBe(true);
+		expect(shouldShowProjectSessionSidebar("/issues")).toBe(false);
+		expect(shouldShowProjectSessionSidebar("/integrations")).toBe(false);
 	});
 
 	it("reads the session id from session routes", () => {

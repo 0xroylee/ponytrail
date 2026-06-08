@@ -100,7 +100,7 @@ function OperatorChatSidebarView({
 			{isMobileOpen ? (
 				<button
 					aria-label="Close chat sidebar"
-					className="fixed inset-0 z-30 bg-black/60 md:hidden"
+					className="fixed inset-y-0 left-20 right-0 z-30 bg-black/60 md:hidden"
 					onClick={closeMobileSidebar}
 					type="button"
 				/>

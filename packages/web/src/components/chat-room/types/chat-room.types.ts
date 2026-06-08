@@ -125,15 +125,6 @@ export interface ChatClarificationComposerProps {
 	onSubmit: () => void;
 }
 
-export type ChatRoomSidebarView = "main" | "settings";
-
-export interface ChatRoomSettingsSidebarProps {
-	isActive: boolean;
-	onBack: () => void;
-	onClose: () => void;
-	onNavigate: () => void;
-}
-
 export interface CommandRunResult {
 	events: CliCommandStreamEvent[];
 	status: "succeeded" | "failed" | "rejected";

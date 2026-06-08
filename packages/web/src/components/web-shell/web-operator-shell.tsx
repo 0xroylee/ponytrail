@@ -22,8 +22,10 @@ import { OperatorChatSidebar } from "./operator-chat-sidebar";
 import {
 	activeChatSessionIdFromPathname,
 	isChatSurfacePathname,
+	shouldShowProjectSessionSidebar,
 } from "./operator-chat-sidebar-route";
 import { OperatorIssueActionsProvider } from "./operator-issue-actions-context";
+import { OperatorPrimarySidebar } from "./operator-primary-sidebar";
 import type {
 	CommandDraftRequest,
 	OperatorIssueActionsContextValue,
@@ -32,6 +34,9 @@ import { WebOperatorLayout } from "./web-operator-layout";
 import { hrefForNavKey, navItems } from "./web-shell.constants";
 
 function getActiveNavKey(pathname: string): SidebarNavKey {
+	if (shouldShowProjectSessionSidebar(pathname)) {
+		return "projects";
+	}
 	return (
 		navItems.find(
 			(item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
@@ -60,6 +65,7 @@ export function WebOperatorShell({
 	});
 	const activeNavKey = getActiveNavKey(pathname);
 	const isChatSurface = isChatSurfacePathname(pathname);
+	const showProjectSessionSidebar = shouldShowProjectSessionSidebar(pathname);
 	const activeSessionId = activeChatSessionIdFromPathname(pathname);
 
 	const openSearch = useCallback(() => {
@@ -119,10 +125,10 @@ export function WebOperatorShell({
 	return (
 		<WebOperatorLayout
 			mobileSidebarTrigger={
-				!isChatSurface ? (
+				showProjectSessionSidebar && !isChatSurface ? (
 					<Button
-						aria-label="Open chat sidebar"
-						className="absolute left-4 top-4 z-20 cursor-pointer md:hidden"
+						aria-label="Open project sessions"
+						className="absolute left-24 top-4 z-20 cursor-pointer md:hidden"
 						onClick={openChatSidebar}
 						size="icon"
 						type="button"
@@ -149,13 +155,18 @@ export function WebOperatorShell({
 					tasks={searchTasksQuery.data}
 				/>
 			}
-			sidebar={
-				<OperatorChatSidebar
-					activeSessionId={activeSessionId}
-					isMobileOpen={isChatSidebarMobileOpen}
-					onCloseMobileSidebar={closeChatSidebar}
-					onSearch={openSearch}
-				/>
+			primarySidebar={
+				<OperatorPrimarySidebar activeKey={activeNavKey} navItems={navItems} />
+			}
+			secondarySidebar={
+				showProjectSessionSidebar ? (
+					<OperatorChatSidebar
+						activeSessionId={activeSessionId}
+						isMobileOpen={isChatSidebarMobileOpen}
+						onCloseMobileSidebar={closeChatSidebar}
+						onSearch={openSearch}
+					/>
+				) : null
 			}
 		>
 			<OperatorIssueActionsProvider value={issueActionsValue}>

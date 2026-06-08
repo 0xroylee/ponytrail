@@ -53,3 +53,9 @@ body {
 html {
 	font-size: 14px;
 }
+
+@media (min-width: 768px) {
+	.project-session-sidebar {
+		transform: none !important;
+	}
+}

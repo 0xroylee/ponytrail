@@ -6,6 +6,17 @@ import {
 } from "../src/components/web-shell/web-shell.constants";
 
 describe("web shell navigation", () => {
+	it("exposes the Slack-style primary operator sections in order", () => {
+		expect(navItems).toEqual([
+			{ key: "projects", label: "Projects", href: "/projects" },
+			{ key: "issues", label: "Issues", href: "/issues" },
+			{ key: "integrations", label: "Integrations", href: "/integrations" },
+			{ key: "agents", label: "Agents", href: "/agents" },
+			{ key: "runtimes", label: "Runtimes", href: "/runtimes" },
+			{ key: "git", label: "Git", href: "/git" },
+		]);
+	});
+
 	it("shows Git in workspace navigation and routes it to the Git instructions page", () => {
 		expect(navItems).toContainEqual({
 			key: "git",

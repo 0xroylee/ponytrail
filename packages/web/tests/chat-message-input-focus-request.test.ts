@@ -41,12 +41,7 @@ describe("chat message input focus request", () => {
 
 		useUiStore.getState().requestMessageInputFocus("session-1");
 
-		expect(storage.getItem("devos.chatRoom.sidebarView")).toBe(
-			JSON.stringify({
-				state: { chatRoomSidebarView: "main" },
-				version: 0,
-			}),
-		);
+		expect(storage.length).toBe(0);
 	});
 });
 
