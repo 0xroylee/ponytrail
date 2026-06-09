@@ -38,6 +38,7 @@ export const sessionCreateSchema = z.object({
 
 export const sessionUpdateSchema = z.object({
 	archived: z.boolean().optional(),
+	lastSeenAt: z.string().trim().min(1).nullable().optional(),
 	projectId: z.string().trim().min(1).nullable().optional(),
 	title: z.string().trim().min(1).optional(),
 	pendingRequest: z.string().nullable().optional(),

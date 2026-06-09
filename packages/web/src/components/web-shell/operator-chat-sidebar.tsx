@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type ReactElement, memo, useState } from "react";
+import { type ReactElement, memo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ChatRoomSidebar } from "@/components/chat-room/chat-room-sidebar";
 import { activeChatStreamSessionIds } from "@/components/chat-room/chat-room-stream-utils";
+import { resolveChatSessionSeenUpdate } from "@/components/chat-room/chat-session-read-state";
 import {
 	useChatSessionsQuery,
 	useCreateChatSessionMutation,
@@ -40,6 +41,7 @@ function OperatorChatSidebarView({
 	const projectsQuery = useWorkspaceProjectsQuery(workspaceId, NO_REFETCH);
 	const createSession = useCreateChatSessionMutation();
 	const updateSession = useUpdateChatSessionMutation();
+	const readMarkerRequests = useRef<Set<string>>(new Set());
 	const chatStreamsByRunId = useRealtimeStore(
 		(state) => state.chatStreamsByRunId,
 	);
@@ -51,6 +53,32 @@ function OperatorChatSidebarView({
 		sessionsQuery.data ?? [],
 		tasksQuery.data ?? [],
 	);
+	const activeSession =
+		sessionsQuery.data?.find((session) => session.id === activeSessionId) ??
+		null;
+
+	useEffect(() => {
+		if (!activeSession) {
+			return;
+		}
+		const update = resolveChatSessionSeenUpdate(activeSession);
+		if (!update) {
+			return;
+		}
+		const requestKey = `${activeSession.id}:${activeSession.updatedAt}`;
+		if (readMarkerRequests.current.has(requestKey)) {
+			return;
+		}
+		readMarkerRequests.current.add(requestKey);
+		updateSession.mutate(
+			{ sessionId: activeSession.id, session: update },
+			{
+				onError: () => {
+					readMarkerRequests.current.delete(requestKey);
+				},
+			},
+		);
+	}, [activeSession, updateSession]);
 
 	function closeMobileSidebar(): void {
 		onCloseMobileSidebar();

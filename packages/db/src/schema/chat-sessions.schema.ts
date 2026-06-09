@@ -17,4 +17,5 @@ export const chatSessionsTable = pgTable("chat_sessions", {
 	archived: boolean("archived").notNull().default(false),
 	createdAt: timestamp("created_at", { mode: "string" }).notNull(),
 	updatedAt: timestamp("updated_at", { mode: "string" }).notNull(),
+	lastSeenAt: timestamp("last_seen_at", { mode: "string" }),
 });

@@ -64,6 +64,7 @@ export interface ChatSessionCreateInput {
 
 export interface ChatSessionUpdateInput {
 	archived?: boolean;
+	lastSeenAt?: string | null;
 	projectId?: string | null;
 	taskId?: string | null;
 	title?: string;

@@ -53,6 +53,7 @@ export function createChatService(
 					archived: false,
 					createdAt: now,
 					updatedAt: now,
+					lastSeenAt: now,
 				}),
 			);
 		},

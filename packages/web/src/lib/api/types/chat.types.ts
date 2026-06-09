@@ -32,6 +32,7 @@ export interface ChatSessionRecord {
 	workflowState: ChatSessionWorkflowState | null;
 	createdAt: string;
 	updatedAt: string;
+	lastSeenAt?: string | null;
 }
 
 export interface ChatMessageRecord {
@@ -54,6 +55,7 @@ export interface ChatSessionCreateRequest {
 
 export interface ChatSessionUpdateRequest {
 	archived?: boolean;
+	lastSeenAt?: string | null;
 	projectId?: string | null;
 	title?: string;
 	pendingRequest?: string | null;

@@ -197,6 +197,7 @@ function chatSession(overrides: Partial<ChatSessionRow> = {}): ChatSessionRow {
 		archived: false,
 		createdAt: "2026-05-16T00:00:00.000Z",
 		updatedAt: "2026-05-16T00:00:00.000Z",
+		lastSeenAt: "2026-05-16T00:00:00.000Z",
 		...overrides,
 	};
 }
@@ -235,6 +236,8 @@ function defaultProject(): BoardProjectRow {
 		lead: null,
 		category: null,
 		priority: null,
+		preHookScript: null,
+		afterHookScript: null,
 		createdAt: "2026-05-16T00:00:00.000Z",
 		updatedAt: "2026-05-16T00:00:00.000Z",
 	};

@@ -84,6 +84,28 @@ describe("chat realtime routes", () => {
 		expect(events).toMatchObject([
 			{ type: "chat.session.updated", session: { title: "Renamed" } },
 		]);
+		const renamed = events[0];
+		if (renamed?.type !== "chat.session.updated") {
+			throw new Error("Expected chat.session.updated event");
+		}
+		const renamedUpdatedAt = renamed.session.updatedAt;
+
+		events.length = 0;
+		await app(
+			createJsonRequest("PATCH", `/api/chat/sessions/${session.id}`, {
+				lastSeenAt: renamedUpdatedAt,
+			}),
+		);
+		expect(events).toMatchObject([
+			{
+				type: "chat.session.updated",
+				session: {
+					id: session.id,
+					lastSeenAt: renamedUpdatedAt,
+					updatedAt: renamedUpdatedAt,
+				},
+			},
+		]);
 
 		events.length = 0;
 		await app(

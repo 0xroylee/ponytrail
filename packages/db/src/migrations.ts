@@ -81,6 +81,10 @@ const MIGRATIONS: Migration[] = [
 		id: "0021_project_run_hooks",
 		fileName: "0021_project_run_hooks.sql",
 	},
+	{
+		id: "0022_chat_session_last_seen",
+		fileName: "0022_chat_session_last_seen.sql",
+	},
 ];
 
 async function ensureMigrationsTable(

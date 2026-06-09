@@ -49,6 +49,10 @@ export function parseChatSessionRecord(payload: unknown): ChatSessionRecord {
 		workflowState: readChatSessionWorkflowState(row),
 		createdAt: readString(row, "createdAt", CHAT_SESSIONS_PATH),
 		updatedAt: readString(row, "updatedAt", CHAT_SESSIONS_PATH),
+		lastSeenAt:
+			"lastSeenAt" in row
+				? readNullableString(row, "lastSeenAt", CHAT_SESSIONS_PATH)
+				: null,
 	};
 }
 
