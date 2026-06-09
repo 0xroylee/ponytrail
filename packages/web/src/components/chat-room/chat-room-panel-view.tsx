@@ -16,6 +16,7 @@ import { ChatTaskDetailView } from "./chat-task-detail-view";
 import { ChatTranscript } from "./chat-transcript";
 import { ChatNoSessionHome } from "./chat-welcome-states";
 import type { ChatRoomPanelViewProps } from "./types/chat-room.types";
+import { useMinimumChatRoomLoadingShell } from "./use-minimum-chat-room-loading-shell";
 
 export function ChatRoomPanelView({
 	activeContentMode,
@@ -66,15 +67,20 @@ export function ChatRoomPanelView({
 		activeContentMode,
 		hasActiveTask: Boolean(activeTaskId),
 	});
-	const showLoadingShell = shouldShowChatRoomLoadingShell({
+	const isRealtimeActive =
+		Boolean(workingStartedAt) || isPlanning || isThinking;
+	const rawShowLoadingShell = shouldShowChatRoomLoadingShell({
 		hasSelectedSession: Boolean(selectedSession),
 		isMessagesLoading,
-		isRealtimeActive: Boolean(workingStartedAt) || isPlanning || isThinking,
 	});
+	const showLoadingShell = useMinimumChatRoomLoadingShell(
+		rawShowLoadingShell,
+		selectedSession?.id ?? null,
+	);
 	// const showLoadingShell = true
 	const showMissionSkeleton = shouldShowMissionProgressSkeleton({
 		hasActiveTask: Boolean(activeTaskId),
-		isChatRoomLoading: showLoadingShell,
+		isChatRoomLoading: showLoadingShell || isRealtimeActive,
 	});
 
 	return (
@@ -110,6 +116,7 @@ export function ChatRoomPanelView({
 								isThinking={isThinking}
 								missionProgress={missionProgress}
 								messages={messages}
+								showMissionPanel={layout.showMissionPanelInTranscript}
 								showMissionSkeleton={showMissionSkeleton}
 								session={selectedSession}
 								streamLines={streamLines}

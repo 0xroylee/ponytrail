@@ -1,11 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import {
+	resolveMinimumLoadingShellState,
 	shouldShowChatRoomLoadingShell,
 	shouldShowMissionProgressSkeleton,
 } from "../src/components/chat-room/chat-room-loading-state";
 
 describe("chat room loading state", () => {
-	it("shows the loading shell only while a selected chat session is loading", () => {
+	it("shows the loading shell only while selected session messages are fetching", () => {
 		expect(
 			shouldShowChatRoomLoadingShell({
 				hasSelectedSession: true,
@@ -32,7 +33,7 @@ describe("chat room loading state", () => {
 				isMessagesLoading: false,
 				isRealtimeActive: true,
 			}),
-		).toBe(true);
+		).toBe(false);
 		expect(
 			shouldShowChatRoomLoadingShell({
 				hasSelectedSession: false,
@@ -63,5 +64,59 @@ describe("chat room loading state", () => {
 				isChatRoomLoading: false,
 			}),
 		).toBe(false);
+	});
+
+	it("keeps a visible loading shell for at least one second", () => {
+		expect(
+			resolveMinimumLoadingShellState({
+				isLoading: true,
+				now: 1_000,
+				visible: false,
+				visibleSince: null,
+			}),
+		).toEqual({
+			remainingMs: 0,
+			visible: true,
+			visibleSince: 1_000,
+		});
+
+		expect(
+			resolveMinimumLoadingShellState({
+				isLoading: false,
+				now: 1_200,
+				visible: true,
+				visibleSince: 1_000,
+			}),
+		).toEqual({
+			remainingMs: 800,
+			visible: true,
+			visibleSince: 1_000,
+		});
+
+		expect(
+			resolveMinimumLoadingShellState({
+				isLoading: false,
+				now: 2_000,
+				visible: true,
+				visibleSince: 1_000,
+			}),
+		).toEqual({
+			remainingMs: 0,
+			visible: false,
+			visibleSince: null,
+		});
+
+		expect(
+			resolveMinimumLoadingShellState({
+				isLoading: false,
+				now: 3_000,
+				visible: false,
+				visibleSince: null,
+			}),
+		).toEqual({
+			remainingMs: 0,
+			visible: false,
+			visibleSince: null,
+		});
 	});
 });

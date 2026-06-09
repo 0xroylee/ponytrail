@@ -9,4 +9,5 @@ export interface ChatRoomPanelLayout {
 	contentMode: ChatRoomMainContentMode;
 	rootClassName: string;
 	sessionClassName: string;
+	showMissionPanelInTranscript: boolean;
 }

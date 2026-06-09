@@ -24,5 +24,6 @@ export function resolveChatRoomPanelLayout({
 		contentMode,
 		rootClassName: ROOT_CLASS_NAME,
 		sessionClassName: `${SESSION_BASE_CLASS_NAME} ${rowsClassName}`,
+		showMissionPanelInTranscript: false,
 	};
 }

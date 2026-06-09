@@ -25,6 +25,7 @@ export function ChatTranscript({
 	isThinking,
 	missionProgress,
 	messages,
+	showMissionPanel,
 	showMissionSkeleton,
 	session,
 	streamLines,
@@ -115,11 +116,13 @@ export function ChatTranscript({
 			ref={scrollContainerRef}
 		>
 			<div className="mx-auto flex flex-col min-w-0 max-w-6xl gap-4">
-				{showMissionSkeleton ? (
-					<ChatMissionProgressSkeleton />
-				) : (
-					<ChatMissionProgress mission={missionProgress} />
-				)}
+				{showMissionPanel ? (
+					showMissionSkeleton ? (
+						<ChatMissionProgressSkeleton />
+					) : (
+						<ChatMissionProgress mission={missionProgress} />
+					)
+				) : null}
 				<div
 					className="mx-auto grid w-full min-w-0 max-w-4xl gap-4"
 					data-chat-transcript-message-column="true"

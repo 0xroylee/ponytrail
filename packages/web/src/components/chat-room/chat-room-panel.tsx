@@ -214,7 +214,7 @@ export function ChatRoomPanel({
 			activeTaskId={activeTaskId}
 			draft={draft}
 			isBusy={isBusy}
-			isMessagesLoading={messagesQuery.isLoading}
+			isMessagesLoading={messagesQuery.isFetching}
 			isRerunDisabled={rerunState.isDisabled}
 			isRerunning={isRerunning}
 			isRerunVisible={rerunState.isVisible}

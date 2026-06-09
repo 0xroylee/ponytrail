@@ -23,6 +23,16 @@ describe("chat room panel layout", () => {
 		).toBe("messages");
 	});
 
+	it("does not show the mission panel inside the messages tab", () => {
+		const layout = resolveChatRoomPanelLayout({
+			activeContentMode: "messages",
+			hasActiveTask: true,
+		});
+
+		expect(layout.contentMode).toBe("messages");
+		expect(layout.showMissionPanelInTranscript).toBe(false);
+	});
+
 	it("uses the main content slot for action status", () => {
 		const layout = resolveChatRoomPanelLayout({
 			activeContentMode: "action",

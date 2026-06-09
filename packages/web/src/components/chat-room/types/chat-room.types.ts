@@ -60,6 +60,7 @@ export interface ChatTranscriptProps {
 	isThinking: boolean;
 	missionProgress: ChatMissionProgressViewModel | null;
 	messages: ChatMessageRecord[];
+	showMissionPanel: boolean;
 	showMissionSkeleton: boolean;
 	session: ChatSessionRecord | null;
 	streamLines: ChatStreamLine[];

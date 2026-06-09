@@ -7,7 +7,7 @@ import {
 	MessageSquareText,
 	MoreHorizontal,
 } from "lucide-react";
-import type { ReactElement } from "react";
+import { type ReactElement, useId, useState } from "react";
 
 import { Typography } from "@/components/ui/typography";
 import type { ProjectBoardTaskRecord, TaskActivityRecord } from "@/lib/api";
@@ -15,7 +15,10 @@ import { isApiRequestError } from "@/lib/api";
 import { useTaskActivityQuery } from "@/lib/api/task-activity-query";
 
 import { ActivityRichText } from "./issue-activity-rich-text";
-import { createTaskCreatedActivity } from "./issue-activity-utils";
+import {
+	createActivityDisclosureState,
+	createTaskCreatedActivity,
+} from "./issue-activity-utils";
 
 export function IssueActivityPanel({
 	task,
@@ -62,15 +65,29 @@ function ActivityList({
 }: {
 	activities: TaskActivityRecord[];
 }): ReactElement {
+	const listId = useId();
+	const [isCollapsed, setIsCollapsed] = useState(false);
+	const disclosureState = createActivityDisclosureState({
+		activityCount: activities.length,
+		isCollapsed,
+	});
+
 	return (
 		<div className="grid gap-3">
-			<div className="flex h-8 items-center gap-2 rounded-md border border-zinc-700 bg-surface-inset px-2 text-sm text-zinc-400">
-				<ChevronDown size={16} />
-				<Typography variant="metadata">
-					{formatCount(activities.length)}
-				</Typography>
-			</div>
-			<div className="grid gap-3">
+			<button
+				aria-controls={listId}
+				aria-expanded={disclosureState.ariaExpanded}
+				className="flex h-8 w-full items-center gap-2 rounded-md border border-zinc-700 bg-surface-inset px-2 text-left text-sm text-zinc-400 transition hover:border-zinc-600 hover:text-zinc-300"
+				onClick={() => setIsCollapsed((current) => !current)}
+				type="button"
+			>
+				<ChevronDown
+					className={isCollapsed ? "-rotate-90 transition" : "transition"}
+					size={16}
+				/>
+				<Typography variant="metadata">{disclosureState.countLabel}</Typography>
+			</button>
+			<div className={disclosureState.listClassName} id={listId}>
 				{activities.map((activity) => (
 					<ActivityItem activity={activity} key={activity.id} />
 				))}
@@ -191,10 +208,6 @@ function ActivityState({ label }: { label: string }): ReactElement {
 			<Typography variant="description">{label}</Typography>
 		</div>
 	);
-}
-
-function formatCount(count: number): string {
-	return count === 1 ? "1 activity" : `${count} activities`;
 }
 
 function formatRelativeTime(value: string): string {
