@@ -34,6 +34,7 @@ describe("chat API client", () => {
 				],
 				createdAt: "2026-05-20T00:00:00.000Z",
 				updatedAt: "2026-05-20T00:00:00.000Z",
+				lastSeenAt: "2026-05-20T00:00:00.000Z",
 			});
 		}) as typeof fetch;
 		const client = createApiClient({ fetchFn });
@@ -43,6 +44,7 @@ describe("chat API client", () => {
 		expect(session.taskId).toBe("task-1");
 		expect(session.projectId).toBe("default");
 		expect(session.archived).toBe(false);
+		expect(session.lastSeenAt).toBe("2026-05-20T00:00:00.000Z");
 		expect(session.pendingQuestions[0]?.options?.[0]?.recommended).toBe(true);
 	});
 
@@ -62,6 +64,7 @@ describe("chat API client", () => {
 				archived: true,
 				createdAt: "2026-05-20T00:00:00.000Z",
 				updatedAt: "2026-05-20T00:01:00.000Z",
+				lastSeenAt: "2026-05-20T00:00:00.000Z",
 			});
 		}) as typeof fetch;
 		const client = createApiClient({ fetchFn });
@@ -92,6 +95,7 @@ describe("chat API client", () => {
 					archived: false,
 					createdAt: "2026-05-20T00:00:00.000Z",
 					updatedAt: "2026-05-20T00:01:00.000Z",
+					lastSeenAt: "2026-05-20T00:00:00.000Z",
 				},
 				messages: [
 					{

@@ -87,6 +87,7 @@ export interface BuildProjectSessionListToggleModeInput {
 
 export interface ChatRoomSessionRowProps {
 	activeSessionId: string;
+	isUnread: boolean;
 	isPinned: boolean;
 	isRunning: boolean;
 	session: ChatSessionRecord;

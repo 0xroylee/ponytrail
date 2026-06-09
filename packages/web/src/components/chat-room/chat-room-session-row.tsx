@@ -21,6 +21,7 @@ import type { ChatRoomSessionRowProps } from "./types/chat-room-sidebar.types";
 
 export function ChatRoomSessionRow({
 	activeSessionId,
+	isUnread,
 	isPinned,
 	isRunning,
 	session,
@@ -80,6 +81,15 @@ export function ChatRoomSessionRow({
 					>
 						<Loader2 aria-hidden="true" className="animate-spin" size={14} />
 						<span className="sr-only">AI model running</span>
+					</span>
+				) : null}
+				{isUnread ? (
+					<span
+						className="inline-flex h-4 w-4 shrink-0 items-center justify-center"
+						title="Unread"
+					>
+						<span className="h-2 w-2 rounded-full bg-sky-400" />
+						<span className="sr-only">Unread</span>
 					</span>
 				) : null}
 				<span className="min-w-0 flex-1">

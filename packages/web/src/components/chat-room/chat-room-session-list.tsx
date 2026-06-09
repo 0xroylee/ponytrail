@@ -12,6 +12,7 @@ import {
 	buildProjectSessionListToggleMode,
 	buildVisibleProjectSessions,
 } from "./chat-room-sidebar-utils";
+import { isChatSessionUnread } from "./chat-session-read-state";
 import type { ChatRoomSessionListProps } from "./types/chat-room-sidebar.types";
 
 export function ChatRoomSessionList({
@@ -63,6 +64,7 @@ export function ChatRoomSessionList({
 								{pinnedSessions.map((session) => (
 									<ChatRoomSessionRow
 										activeSessionId={activeSessionId}
+										isUnread={isChatSessionUnread(session)}
 										isPinned={true}
 										isRunning={runningSessionIds.has(session.id)}
 										key={session.id}
@@ -132,6 +134,7 @@ export function ChatRoomSessionList({
 											{visibleSessions.sessions.map((session) => (
 												<ChatRoomSessionRow
 													activeSessionId={activeSessionId}
+													isUnread={isChatSessionUnread(session)}
 													isPinned={false}
 													isRunning={runningSessionIds.has(session.id)}
 													key={session.id}
