@@ -71,4 +71,28 @@ describe("issue activity display utilities", () => {
 		expect(text).not.toContain("codex exec");
 		expect(text).not.toContain("internal prompt");
 	});
+
+	it("extracts embedded JSON results when strings contain unmatched delimiters", () => {
+		const text = formatOperatorActivityText(
+			[
+				"prefix",
+				"{",
+				'  "result": "Remove the trailing } character.",',
+				'  "payload": {',
+				'    "prompt": "secret"',
+				"  }",
+				"}",
+				"suffix",
+			].join("\n"),
+		);
+
+		expect(text).toBe(
+			["prefix", "Result: Remove the trailing } character.", "suffix"].join(
+				"\n",
+			),
+		);
+		expect(text).not.toContain("prompt");
+		expect(text).not.toContain("secret");
+		expect(text).not.toContain("{");
+	});
 });

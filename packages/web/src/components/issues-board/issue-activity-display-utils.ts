@@ -38,13 +38,11 @@ function readJsonBlock(
 ): { text: string; endIndex: number } | null {
 	const firstLine = lines[startIndex]?.trim() ?? "";
 	if (!firstLine.startsWith("{") && !firstLine.startsWith("[")) return null;
-	let balance = 0;
 	const blockLines: string[] = [];
 	for (let index = startIndex; index < lines.length; index += 1) {
 		const line = lines[index] ?? "";
 		blockLines.push(line);
-		balance += jsonBalanceDelta(line);
-		if (balance <= 0) {
+		if (parseJsonValue(blockLines.join("\n").trim()) !== null) {
 			return { text: blockLines.join("\n"), endIndex: index };
 		}
 	}
@@ -136,15 +134,6 @@ function hasRawJsonDumpField(text: string): boolean {
 	return text
 		.split(/\r?\n/)
 		.some((line) => RAW_JSON_FIELD_LINE.test(line.trim()));
-}
-
-function jsonBalanceDelta(line: string): number {
-	let delta = 0;
-	for (const char of line) {
-		if (char === "{" || char === "[") delta += 1;
-		if (char === "}" || char === "]") delta -= 1;
-	}
-	return delta;
 }
 
 function labelForField(field: string): string {
