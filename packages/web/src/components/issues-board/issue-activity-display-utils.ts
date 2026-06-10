@@ -2,7 +2,7 @@ const LABELED_SAFE_FIELDS = ["result", "thinking", "planning"] as const;
 const UNLABELED_SAFE_FIELDS = ["text", "message", "detail", "summary"] as const;
 const MAX_FORMAT_DEPTH = 2;
 const RAW_JSON_FIELD_LINE =
-	/^"?(?:command|payload|arguments|args|input|parameters|recipient_name|tool_name|toolName|schema)"?\s*:/;
+	/^"?(?:command|payload|detail|arguments|args|input|parameters|recipient_name|tool_name|toolName|schema)"?\s*:/;
 
 export function formatOperatorActivityText(rawText: string): string {
 	return formatText(rawText, 0);
@@ -13,11 +13,49 @@ function formatText(rawText: string, depth: number): string {
 	if (!trimmed) return "";
 	const structuredText = formatStructuredValue(parseJsonValue(trimmed), depth);
 	if (structuredText !== null) return structuredText;
-	return trimmed
-		.split(/\r?\n/)
-		.map((line) => formatLine(line, depth))
-		.filter(Boolean)
-		.join("\n");
+	return formatMixedLines(trimmed.split(/\r?\n/), depth);
+}
+
+function formatMixedLines(lines: string[], depth: number): string {
+	const output: string[] = [];
+	for (let index = 0; index < lines.length; index += 1) {
+		const block = readJsonBlock(lines, index);
+		if (block) {
+			const text = formatJsonBlock(block.text, depth);
+			if (text) output.push(text);
+			index = block.endIndex;
+			continue;
+		}
+		const text = formatLine(lines[index] ?? "", depth);
+		if (text) output.push(text);
+	}
+	return output.join("\n");
+}
+
+function readJsonBlock(
+	lines: string[],
+	startIndex: number,
+): { text: string; endIndex: number } | null {
+	const firstLine = lines[startIndex]?.trim() ?? "";
+	if (!firstLine.startsWith("{") && !firstLine.startsWith("[")) return null;
+	let balance = 0;
+	const blockLines: string[] = [];
+	for (let index = startIndex; index < lines.length; index += 1) {
+		const line = lines[index] ?? "";
+		blockLines.push(line);
+		balance += jsonBalanceDelta(line);
+		if (balance <= 0) {
+			return { text: blockLines.join("\n"), endIndex: index };
+		}
+	}
+	return null;
+}
+
+function formatJsonBlock(text: string, depth: number): string {
+	const value = parseJsonValue(text.trim());
+	const structuredText = formatStructuredValue(value, depth);
+	if (structuredText !== null) return structuredText;
+	return hasRawJsonDumpField(text) ? "" : text.trim();
 }
 
 function formatLine(line: string, depth: number): string {
@@ -92,6 +130,21 @@ function isRawJsonDumpLine(text: string): boolean {
 		text === "]," ||
 		RAW_JSON_FIELD_LINE.test(text)
 	);
+}
+
+function hasRawJsonDumpField(text: string): boolean {
+	return text
+		.split(/\r?\n/)
+		.some((line) => RAW_JSON_FIELD_LINE.test(line.trim()));
+}
+
+function jsonBalanceDelta(line: string): number {
+	let delta = 0;
+	for (const char of line) {
+		if (char === "{" || char === "[") delta += 1;
+		if (char === "}" || char === "]") delta -= 1;
+	}
+	return delta;
 }
 
 function labelForField(field: string): string {

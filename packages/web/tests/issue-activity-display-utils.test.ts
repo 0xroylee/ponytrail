@@ -52,4 +52,23 @@ describe("issue activity display utilities", () => {
 		);
 		expect(text).not.toContain("codex exec");
 	});
+
+	it("suppresses embedded pretty-printed command payload blocks", () => {
+		const text = formatOperatorActivityText(
+			[
+				"prefix",
+				"{",
+				'  "command": "codex exec --prompt secret",',
+				'  "payload": {',
+				'    "prompt": "internal prompt"',
+				"  }",
+				"}",
+				"suffix",
+			].join("\n"),
+		);
+
+		expect(text).toBe(["prefix", "suffix"].join("\n"));
+		expect(text).not.toContain("codex exec");
+		expect(text).not.toContain("internal prompt");
+	});
 });
