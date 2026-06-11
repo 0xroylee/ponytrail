@@ -20,15 +20,15 @@ import type {
 } from "./types/chat-transcript-message.types";
 
 const PHASE_RESULT_TITLES = new Map<ChatMissionPhaseId, string>([
-	["plan", "Planned result"],
-	["implement", "Implement result"],
-	["testing", "Testing result"],
+	["plan", "Plan"],
+	["implement", "Action"],
+	["testing", "Running"],
 ]);
 const WORKFLOW_STATE_LABELS = new Map<string, string>([
 	["brainstorm", "Thinking"],
-	["plan", "Planning"],
-	["implement", "Processing"],
-	["testing", "Testing"],
+	["plan", "Plan"],
+	["implement", "Running"],
+	["testing", "Running"],
 ]);
 
 export function createChatTranscriptRows({
@@ -72,7 +72,7 @@ function createBrainstormResultRow(
 		body: `${prefix}: ${summarySnippet(message.content)}`,
 		id: `summary:brainstorm:${message.id}`,
 		kind: "summary",
-		title: "Brainstorm result",
+		title: "Summary",
 	};
 }
 
@@ -85,7 +85,7 @@ function createProcessingRow(
 			body: mission.errorMessage ?? "Task progress is unavailable.",
 			id: `summary:${mission.taskId}:processing:error`,
 			kind: "summary",
-			title: "Processing",
+			title: "Running",
 		};
 	}
 	if (mission?.state === "loading") {
@@ -93,7 +93,7 @@ function createProcessingRow(
 			body: `${mission.statusLabel}: Loading task updates.`,
 			id: `summary:${mission.taskId}:processing:loading`,
 			kind: "summary",
-			title: "Processing",
+			title: "Running",
 		};
 	}
 	if (mission?.state === "ready") {
@@ -102,7 +102,7 @@ function createProcessingRow(
 			body: detail ? `${mission.statusLabel}: ${detail}` : mission.statusLabel,
 			id: `summary:${mission.taskId}:processing:${mission.status}`,
 			kind: "summary",
-			title: "Processing",
+			title: "Running",
 		};
 	}
 	return createWorkflowStateRow(workflowState);
@@ -178,7 +178,7 @@ function createFileChangeSnapshotRows(
 							body: summarySnippet(body),
 							id: `summary:${mission.taskId}:file-changes:${step.id}`,
 							kind: "summary" as const,
-							title: "File changes",
+							title: "Files changed",
 						},
 					]
 				: [];

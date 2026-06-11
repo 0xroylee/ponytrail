@@ -70,12 +70,12 @@ describe("chat transcript message state", () => {
 			"Ready: Task TASK-42: Show mission progress is ready for planning.",
 		);
 		expect(summaryTitles(rows)).toEqual([
-			"Brainstorm result",
-			"Processing",
-			"Planned result",
-			"Implement result",
-			"Testing result",
-			"File changes",
+			"Summary",
+			"Running",
+			"Plan",
+			"Action",
+			"Running",
+			"Files changed",
 		]);
 		expect(summaryBodies(rows)).toContain("Implementing: Testing completed");
 		expect(summaryBodies(rows)).toContain("Plan output");
@@ -134,7 +134,7 @@ describe("chat transcript message state", () => {
 			missionProgress: missionModel(),
 		});
 
-		expect(summaryTitles(rows)).not.toContain("File changes");
+		expect(summaryTitles(rows)).not.toContain("Files changed");
 	});
 
 	it("outputs text only from structured testing result events", () => {

@@ -23,7 +23,6 @@ import {
 } from "./chat-command-stream-lines";
 import { parseChatCommand } from "./chat-command-utils";
 import { executeChatRoomInput } from "./chat-room-execute-input";
-import { useChatRoomMission } from "./chat-room-mission";
 import { useChatRoomDraftState } from "./chat-room-panel-draft-state";
 import { ChatRoomPanelView } from "./chat-room-panel-view";
 import { selectChatSession } from "./chat-room-selection";
@@ -31,7 +30,7 @@ import { resolveChatRoomStreamState } from "./chat-room-stream-state";
 import { resolveChatSessionRerunState } from "./chat-session-rerun-state";
 import { useWorkingSectionState } from "./chat-working-section-state";
 import type * as CRT from "./types/chat-room.types";
-import { useChatRoomContentModeState } from "./use-chat-room-content-mode-state";
+import { useChatRoomMissionContentState } from "./use-chat-room-mission-content-state";
 
 const NO_REFETCH = { refetchIntervalMs: false } as const;
 const apiClient = createWebApiClient();
@@ -75,9 +74,10 @@ export function ChatRoomPanel({
 		isPlanning,
 		missionProgress,
 		refetchActiveTask,
-	} = useChatRoomMission(selectedSession, messages);
-	const contentMode = useChatRoomContentModeState({
-		activeTaskId,
+		...contentMode
+	} = useChatRoomMissionContentState({
+		messages,
+		selectedSession,
 		selectedSessionId,
 	});
 	const { pendingAnswers, pendingQuestionIndex } =

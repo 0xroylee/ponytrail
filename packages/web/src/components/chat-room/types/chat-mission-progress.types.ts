@@ -33,6 +33,15 @@ export interface ChatMissionPhase {
 	status: ChatMissionPhaseStatus;
 }
 
+export interface ChatMissionGoalAction {
+	id: "goal";
+	label: string;
+	title: string;
+	description: string | null;
+	status: ChatMissionPhaseStatus;
+	metadata: string[];
+}
+
 export interface ChatMissionExecution {
 	id: string;
 	body: string;
@@ -66,6 +75,7 @@ export interface ChatMissionProgressViewModel {
 	updatedAt: string;
 	notes: ChatMissionNote[];
 	executions: ChatMissionExecution[];
+	goalAction: ChatMissionGoalAction;
 	latestLogLines: ChatMissionLogLine[];
 	latestResult: ChatMissionResult | null;
 	usageSummary: ChatMissionUsageSummary | null;

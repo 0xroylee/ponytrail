@@ -6,6 +6,9 @@ export type ChatMessageDisplay =
 	| "plan"
 	| "standard";
 
+const PLAN_HEADING_PATTERN =
+	/^(?:#{1,3}\s*)?(?:\*\*)?(summary|instructions|plan|checkpoints|running|thinking|action|files changed|guideline)(?:\*\*)?\s*$/gim;
+
 export function resolveChatMessageDisplay(
 	message: ChatMessageRecord,
 ): ChatMessageDisplay {
@@ -43,8 +46,6 @@ export function isPlanContent(content: string): boolean {
 }
 
 function countPlanHeadings(content: string): number {
-	const matches = content.matchAll(
-		/^(?:#{1,3}\s*)?(?:\*\*)?(title|summary|agent plan|key changes|checkpoints \(steps\)|test plan|assumptions)(?:\*\*)?\s*$/gim,
-	);
+	const matches = content.matchAll(PLAN_HEADING_PATTERN);
 	return new Set([...matches].map((match) => match[1]?.toLowerCase())).size;
 }

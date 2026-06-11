@@ -62,8 +62,8 @@ describe("chat session agent output state", () => {
 		});
 
 		expect(outputs).toEqual([
-			{ id: "stream:line-1", text: "Reading files..." },
-			{ id: "stream:line-2", text: "Running focused tests..." },
+			{ id: "stream:line-1", text: "Running: Reading files..." },
+			{ id: "stream:line-2", text: "Running: focused tests..." },
 		]);
 	});
 
@@ -211,6 +211,14 @@ function missionWithLogs(
 		updatedAt: "2026-05-29T00:00:00.000Z",
 		notes: [],
 		executions: [],
+		goalAction: {
+			id: "goal",
+			label: "Goal",
+			title: "Agent output task",
+			description: null,
+			status: "running",
+			metadata: ["TASK-1", "Implementing"],
+		},
 		latestLogLines: logs,
 		latestResult: null,
 		usageSummary: null,

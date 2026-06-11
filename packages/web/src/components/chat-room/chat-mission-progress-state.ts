@@ -10,11 +10,10 @@ import { useBoardTaskQuery, useTokenUsageQuery } from "@/lib/api/queries";
 import { useTaskActivityQuery } from "@/lib/api/task-activity-query";
 
 import { summarizeTokenUsage } from "../issues-board/issue-task-detail-panel-utils";
+import { createMissionGoalAction } from "./chat-mission-goal-action";
 import { resolveMissionStatusLabel } from "./chat-mission-phase-labels";
-import {
-	createEmptyPhaseLogLines,
-	createPhaseLogLines,
-} from "./chat-mission-progress-logs";
+import { createMissionState } from "./chat-mission-progress-empty-state";
+import { createPhaseLogLines } from "./chat-mission-progress-logs";
 import { createMissionPhases } from "./chat-mission-progress-phases";
 import type {
 	ChatMissionExecution,
@@ -29,33 +28,36 @@ const MAX_LATEST_LOG_LINES = 8;
 
 export function useChatMissionProgress(
 	taskId: string | null,
+	options: { enabled?: boolean } = {},
 ): ChatMissionProgressViewModel | null {
-	const taskQuery = useBoardTaskQuery(taskId ?? "", {
-		enabled: Boolean(taskId),
+	const resolvedTaskId = taskId ?? "";
+	const isEnabled = Boolean(taskId) && options.enabled !== false;
+	const taskQuery = useBoardTaskQuery(resolvedTaskId, {
+		enabled: isEnabled,
 	});
 	const shouldLoadActivity =
-		Boolean(taskId) &&
+		isEnabled &&
 		Boolean(taskQuery.data && isMissionVisibleStatus(taskQuery.data.status));
-	const activityQuery = useTaskActivityQuery(taskId ?? "", {
+	const activityQuery = useTaskActivityQuery(resolvedTaskId, {
 		enabled: shouldLoadActivity,
 	});
-	const usageQuery = useTokenUsageQuery({ enabled: Boolean(taskId) });
-	if (!taskId) return null;
+	const usageQuery = useTokenUsageQuery({ enabled: isEnabled });
+	if (!isEnabled) return null;
 	if (taskQuery.error) {
-		return createMissionState(taskId, "error", {
+		return createMissionState(resolvedTaskId, "error", {
 			errorMessage: taskQuery.error?.message ?? "Mission progress unavailable.",
 		});
 	}
 	if (taskQuery.isLoading || !taskQuery.data) return null;
 	if (!isMissionVisibleStatus(taskQuery.data.status)) return null;
 	if (activityQuery.error) {
-		return createMissionState(taskId, "error", {
+		return createMissionState(resolvedTaskId, "error", {
 			errorMessage:
 				activityQuery.error?.message ?? "Mission progress unavailable.",
 		});
 	}
 	if (activityQuery.isLoading) {
-		return createMissionState(taskId, "loading", {
+		return createMissionState(resolvedTaskId, "loading", {
 			taskKey: taskQuery.data.taskKey,
 			title: taskQuery.data.title,
 			status: taskQuery.data.status,
@@ -115,53 +117,33 @@ export function createChatMissionProgressModel({
 		latestResult,
 		taskStatus: task.status,
 	});
+	const statusLabel = resolveMissionStatusLabel({
+		phases,
+		taskStatus: task.status,
+	});
 	return {
 		state: "ready",
 		taskId: task.id,
 		taskKey: task.taskKey,
 		title: task.title,
 		status: task.status,
-		statusLabel: resolveMissionStatusLabel({
-			phases,
-			taskStatus: task.status,
-		}),
+		statusLabel,
 		updatedAt: task.updatedAt,
 		notes,
 		executions,
+		goalAction: createMissionGoalAction({
+			executions,
+			latestResult,
+			phases,
+			statusLabel,
+			task,
+		}),
 		latestLogLines: createLatestLogLines(executions),
 		latestResult,
 		usageSummary:
 			usageRecords.length > 0 ? summarizeTokenUsage(usageRecords) : null,
 		phaseLogLines: createPhaseLogLines({ executions, phases }),
 		phases,
-	};
-}
-
-function createMissionState(
-	taskId: string,
-	state: "loading" | "error",
-	overrides: Partial<ChatMissionProgressViewModel> = {},
-): ChatMissionProgressViewModel {
-	return {
-		state,
-		taskId,
-		taskKey: "",
-		title: "",
-		status: "",
-		statusLabel: state === "loading" ? "Loading" : "Unavailable",
-		updatedAt: "",
-		notes: [],
-		executions: [],
-		latestLogLines: [],
-		latestResult: null,
-		usageSummary: null,
-		phaseLogLines: createEmptyPhaseLogLines(),
-		phases: createMissionPhases({
-			executions: [],
-			latestResult: null,
-			taskStatus: "",
-		}),
-		...overrides,
 	};
 }
 

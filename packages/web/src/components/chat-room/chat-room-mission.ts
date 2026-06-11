@@ -11,10 +11,17 @@ import { useChatMissionProgress } from "./chat-mission-progress-state";
 import { findActiveTaskId } from "./chat-task-utils";
 import { shouldShowChatPlanningIndicator } from "./chat-thinking-state";
 import type { ChatMissionProgressViewModel } from "./types/chat-mission-progress.types";
+import type { ChatRoomMainContentMode } from "./types/chat-room-panel-layout.types";
+
+interface ChatRoomMissionOptions {
+	activeTaskId?: string | null;
+	loadMissionProgress?: boolean;
+}
 
 export function useChatRoomMission(
 	session: ChatSessionRecord | null,
 	messages: ChatMessageRecord[],
+	options: ChatRoomMissionOptions = {},
 ): {
 	activeTaskId: string | null;
 	activeTask: ProjectBoardTaskRecord | null;
@@ -22,11 +29,14 @@ export function useChatRoomMission(
 	missionProgress: ChatMissionProgressViewModel | null;
 	refetchActiveTask: () => Promise<unknown>;
 } {
-	const activeTaskId = findActiveTaskId(session, messages);
+	const activeTaskId =
+		options.activeTaskId ?? findActiveTaskId(session, messages);
 	const taskQuery = useBoardTaskQuery(activeTaskId ?? "", {
 		enabled: Boolean(activeTaskId),
 	});
-	const missionProgress = useChatMissionProgress(activeTaskId);
+	const missionProgress = useChatMissionProgress(activeTaskId, {
+		enabled: options.loadMissionProgress !== false,
+	});
 	return {
 		activeTaskId,
 		activeTask: taskQuery.data ?? null,
@@ -37,4 +47,10 @@ export function useChatRoomMission(
 		missionProgress,
 		refetchActiveTask: taskQuery.refetch,
 	};
+}
+
+export function shouldLoadMissionProgressForContentMode(
+	contentMode: ChatRoomMainContentMode,
+): boolean {
+	return contentMode === "action";
 }

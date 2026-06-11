@@ -92,9 +92,30 @@ function readStreamOutputText(line: ChatStreamLine): string | null {
 	if (structured) return structured;
 	if (parseJsonRecord(line.text)) return null;
 	if (line.stream === "system") {
-		return line.text.trim() || null;
+		return readSystemStreamOutputText(line.text);
 	}
 	return readAgentOutputText(line.text);
+}
+
+function readSystemStreamOutputText(rawText: string): string | null {
+	const text = rawText.trim();
+	if (!text) return null;
+	return isRunningStreamText(text) ? formatRunningStreamText(text) : text;
+}
+
+function isRunningStreamText(text: string): boolean {
+	const normalized = text.toLowerCase();
+	return (
+		/^(bun|git|rtk|rg|sed|cat|ls|find|grep)\b/.test(normalized) ||
+		/^(reading|writing|searching|coding|running)\b/.test(normalized) ||
+		normalized.includes("search_query") ||
+		normalized.includes("apply_patch")
+	);
+}
+
+function formatRunningStreamText(text: string): string {
+	const detail = text.replace(/^running\s+/i, "").trim();
+	return detail ? `Running: ${detail}` : "Running";
 }
 
 function readAgentOutputText(rawText: string): string | null {
