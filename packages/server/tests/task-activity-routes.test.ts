@@ -48,11 +48,20 @@ describe("task activity routes", () => {
 			"[2026-05-13T00:02:15.000Z stdout] Agent output: ready for review",
 		);
 		expect(activity.activities[2]?.body).not.toContain("[devos-event:");
-		expect(activity.activities[2]?.steps).toHaveLength(1);
+		expect(activity.activities[2]?.steps).toHaveLength(2);
 		expect(JSON.stringify(activity.activities[2])).not.toContain("codex exec");
 		expect(activity.activities[2]?.steps?.[0]).toMatchObject({
 			detail: "bun test passed",
 		});
+		expect(activity.activities[2]?.steps?.[1]).toMatchObject({
+			detail: "- `bun test` passed: 1103 tests, 0 failures",
+		});
+		expect(JSON.stringify(activity.activities[2])).not.toContain(
+			"input_tokens",
+		);
+		expect(JSON.stringify(activity.activities[2])).not.toContain(
+			"agent_message",
+		);
 
 		const updateResponse = await app(
 			new Request("http://localhost/api/tasks/task-activity-1", {
@@ -160,5 +169,21 @@ async function seedActivityRows(db: ServerDatabase["db"]): Promise<void> {
 			command: "codex exec --ask-for-approval never --prompt huge-command",
 		}),
 		recordedAt: "2026-05-13T00:02:30.000Z",
+	});
+	await db.insert(taskExecutionStepsTable).values({
+		id: "step-2",
+		executionLogId: "exec-1",
+		stepNumber: 2,
+		action: "review-testing",
+		status: "success",
+		detail: JSON.stringify({
+			type: "item.completed",
+			item: {
+				type: "agent_message",
+				text: "- `bun test` passed: 1103 tests, 0 failures",
+			},
+			usage: { input_tokens: 1 },
+		}),
+		recordedAt: "2026-05-13T00:02:45.000Z",
 	});
 }

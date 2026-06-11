@@ -4,6 +4,7 @@ import type {
 	RunOptions,
 	RunState,
 } from "../../types";
+import { emitPhaseFileChangesSnapshot } from "../file-change-snapshot";
 import {
 	runProjectHookScript,
 	runProjectHookScriptSafely,
@@ -92,6 +93,14 @@ export class IssuePipelineExecutor {
 							state,
 						);
 					return parked ? "skip" : "continue";
+				},
+				afterPhase: async (phase) => {
+					await emitPhaseFileChangesSnapshot({
+						config: this.config,
+						phaseId: phase.id,
+						stage: phase.stage,
+						state,
+					});
 				},
 			});
 			if (!pipelineResult.ok) {

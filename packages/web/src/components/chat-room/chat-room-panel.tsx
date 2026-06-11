@@ -243,7 +243,7 @@ export function ChatRoomPanel({
 				clarificationSubmitters.submitAnswerValue(index, value)
 			}
 			onSubmit={() => void handleSubmit()}
-			onSubmitAnswers={() => void clarificationSubmitters.submitAnswers()}
+			onSubmitAnswers={() => clarificationSubmitters.submitAnswers()}
 		/>
 	);
 }

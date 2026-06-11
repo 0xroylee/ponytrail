@@ -1,75 +1,39 @@
 "use client";
-import { TextShimmer } from "@/components/loading/text-shimmer";
 import { Typography } from "@/components/ui/typography";
-import { type ReactElement, useEffect, useRef, useState } from "react";
-import {
-	ChatMessageBubble,
-	ErrorLine,
-	PlanMessage,
-} from "./chat-message-bubbles";
-import { ChatMissionProgress } from "./chat-mission-progress";
-import { ChatMissionProgressSkeleton } from "./chat-mission-progress-skeleton";
-import { resolveMissionPlanMessageContent } from "./chat-plan-message-state";
-import { ChatSessionAgentOutputBubbles } from "./chat-session-agent-output-bubbles";
-import { createChatSessionAgentOutputs } from "./chat-session-agent-output-state";
-import { formatWaitDurationLabel } from "./chat-wait-label";
+import { type ReactElement, useEffect, useRef } from "react";
+import { ChatMessageBubble, ErrorLine } from "./chat-message-bubbles";
+import { createChatTranscriptRows } from "./chat-transcript-message-state";
 import type { ChatTranscriptProps } from "./types/chat-room.types";
+import type { ChatTranscriptSummaryRow } from "./types/chat-transcript-message.types";
 export function ChatTranscript({
 	contentWidthClassName,
 	error,
 	isLoading,
-	isPlanning,
-	isThinking,
 	missionProgress,
 	messages,
-	showMissionPanel,
-	showMissionSkeleton,
 	session,
-	streamLines,
-	workingStartedAt,
 }: ChatTranscriptProps): ReactElement {
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const previousSessionIdRef = useRef<string | null>(null);
 	const sessionId = session?.id ?? null;
-	const sessionTaskId = session?.taskId ?? null;
-	const missionTaskId = missionProgress?.taskId ?? null;
-	const missionIsPending =
-		Boolean(sessionTaskId) &&
-		(missionTaskId !== sessionTaskId || missionProgress?.state === "loading");
-	const planMessageContent = resolveMissionPlanMessageContent(
-		missionProgress,
-		messages,
-	);
-	const agentOutputs = createChatSessionAgentOutputs({
+	const transcriptRows = createChatTranscriptRows({
 		messages,
 		missionProgress,
-		planMessageContent,
-		streamLines,
+		session,
 	});
-	const renderedContentKey = [
-		messages.length,
-		missionProgress?.updatedAt ?? "",
-		missionProgress?.notes.length ?? 0,
-		missionProgress?.executions.length ?? 0,
-		missionProgress?.latestLogLines.length ?? 0,
-		streamLines.length,
-		agentOutputs.map((output) => output.id).join(","),
-	].join(":");
-	const hasAgentOutputs = agentOutputs.length > 0;
-	const showThinking =
-		isThinking && streamLines.length === 0 && !hasAgentOutputs;
-	const showPlanning =
-		isPlanning && !showThinking && streamLines.length === 0 && !hasAgentOutputs;
-	const showWorkingHeader =
-		Boolean(workingStartedAt) &&
-		(showThinking || showPlanning || streamLines.length > 0 || hasAgentOutputs);
+	const renderedContentKey = transcriptRows
+		.map((row) =>
+			row.kind === "message"
+				? `${row.message.id}:${row.message.createdAt}`
+				: `${row.id}:${row.body}`,
+		)
+		.join(",");
 	useEffect(() => {
 		if (!sessionId) {
 			previousSessionIdRef.current = null;
 			return;
 		}
 		if (previousSessionIdRef.current === sessionId || isLoading) return;
-		if (missionIsPending) return;
 		if (!renderedContentKey) return;
 		const frame = window.requestAnimationFrame(() => {
 			const container = scrollContainerRef.current;
@@ -78,7 +42,7 @@ export function ChatTranscript({
 			previousSessionIdRef.current = sessionId;
 		});
 		return () => window.cancelAnimationFrame(frame);
-	}, [sessionId, isLoading, missionIsPending, renderedContentKey]);
+	}, [sessionId, isLoading, renderedContentKey]);
 
 	return (
 		<div
@@ -88,75 +52,40 @@ export function ChatTranscript({
 			<div
 				className={`mx-auto flex w-full min-w-0 ${contentWidthClassName} flex-col gap-4`}
 			>
-				{showMissionPanel ? (
-					showMissionSkeleton ? (
-						<ChatMissionProgressSkeleton
-							contentWidthClassName={contentWidthClassName}
-						/>
-					) : (
-						<ChatMissionProgress
-							contentWidthClassName={contentWidthClassName}
-							mission={missionProgress}
-						/>
-					)
-				) : null}
 				<div
 					className={`mx-auto grid w-full min-w-0 ${contentWidthClassName} gap-4`}
 					data-chat-transcript-message-column="true"
 				>
 					{error ? <ErrorLine text={error.message} /> : null}
-					{messages.map((message) => (
-						<ChatMessageBubble key={message.id} message={message} />
-					))}
-					{planMessageContent ? (
-						<PlanMessage content={planMessageContent} />
-					) : null}
-					{showWorkingHeader ? (
-						<WorkingSectionHeader startedAt={workingStartedAt ?? ""} />
-					) : null}
-					<ChatSessionAgentOutputBubbles outputs={agentOutputs} />
-					{showThinking ? <ThinkingLine /> : null}
-					{showPlanning ? <PlanningLine /> : null}
+					{transcriptRows.map((row) =>
+						row.kind === "message" ? (
+							<ChatMessageBubble key={row.message.id} message={row.message} />
+						) : (
+							<ChatTranscriptSummaryBubble key={row.id} row={row} />
+						),
+					)}
 				</div>
 			</div>
 		</div>
 	);
 }
 
-function WorkingSectionHeader({
-	startedAt,
+function ChatTranscriptSummaryBubble({
+	row,
 }: {
-	startedAt: string;
+	row: ChatTranscriptSummaryRow;
 }): ReactElement {
-	const [now, setNow] = useState(() => Date.now());
-
-	useEffect(() => {
-		const timer = window.setInterval(() => setNow(Date.now()), 1000);
-		return () => window.clearInterval(timer);
-	}, []);
-
 	return (
-		<div className="grid gap-4 pt-2">
-			<Typography className="" variant="description">
-				{formatWaitDurationLabel(startedAt, now)}
+		<article
+			className="grid max-w-[min(42rem,90%)] justify-self-start gap-1 rounded-md border border-zinc-700 bg-surface-panel px-3 py-2 text-sm text-zinc-200"
+			data-chat-message-display="summary"
+		>
+			<Typography className="text-zinc-400" variant="eyebrow">
+				{row.title}
 			</Typography>
-			<div className="h-px bg-surface-active" />
-		</div>
-	);
-}
-
-function ThinkingLine(): ReactElement {
-	return (
-		<div className="p-1">
-			<TextShimmer>Thinking...</TextShimmer>
-		</div>
-	);
-}
-
-function PlanningLine(): ReactElement {
-	return (
-		<div className="p-1">
-			<TextShimmer>Planning...</TextShimmer>
-		</div>
+			<Typography className="whitespace-pre-wrap break-words leading-6">
+				{row.body}
+			</Typography>
+		</article>
 	);
 }

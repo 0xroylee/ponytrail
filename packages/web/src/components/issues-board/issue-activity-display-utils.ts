@@ -1,5 +1,6 @@
 const LABELED_SAFE_FIELDS = ["result", "thinking", "planning"] as const;
-const UNLABELED_SAFE_FIELDS = ["text", "message", "detail", "summary"] as const;
+const UNLABELED_SAFE_FIELDS = ["message", "detail", "summary"] as const;
+const TEXT_CONTAINER_FIELDS = ["item", "content", "output"] as const;
 const MAX_FORMAT_DEPTH = 2;
 const RAW_JSON_FIELD_LINE =
 	/^"?(?:command|payload|detail|arguments|args|input|parameters|recipient_name|tool_name|toolName|schema)"?\s*:/;
@@ -72,6 +73,8 @@ function formatStructuredValue(value: unknown, depth: number): string | null {
 		return lines.length > 0 ? lines.join("\n") : "";
 	}
 	if (!isRecord(value)) return null;
+	const textOnly = formatStructuredTextOnly(value, depth);
+	if (textOnly) return textOnly;
 	const lines = [
 		...LABELED_SAFE_FIELDS.flatMap((field) =>
 			formatSafeField(value, field, depth, labelForField(field)),
@@ -86,6 +89,40 @@ function formatStructuredValue(value: unknown, depth: number): string | null {
 		if (itemText) lines.push(itemText);
 	}
 	return uniqueLines(lines).join("\n");
+}
+
+function formatStructuredTextOnly(
+	record: Record<string, unknown>,
+	depth: number,
+): string | null {
+	const text = record.text;
+	if (typeof text === "string" && text.trim()) {
+		return depth >= MAX_FORMAT_DEPTH
+			? text.trim()
+			: formatText(text, depth + 1);
+	}
+	const lines = TEXT_CONTAINER_FIELDS.flatMap((field) => {
+		const value = record[field];
+		return formatNestedStructuredText(value, depth);
+	});
+	const unique = uniqueLines(lines);
+	return unique.length > 0 ? unique.join("\n") : null;
+}
+
+function formatNestedStructuredText(value: unknown, depth: number): string[] {
+	if (typeof value === "string" && value.trim()) {
+		const text =
+			depth >= MAX_FORMAT_DEPTH ? value.trim() : formatText(value, depth + 1);
+		return text ? [text] : [];
+	}
+	if (Array.isArray(value)) {
+		return value.flatMap((item) => formatNestedStructuredText(item, depth));
+	}
+	if (isRecord(value)) {
+		const text = formatStructuredTextOnly(value, depth);
+		return text ? [text] : [];
+	}
+	return [];
 }
 
 function formatSafeField(

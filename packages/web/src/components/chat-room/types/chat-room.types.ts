@@ -111,7 +111,7 @@ export interface ChatRoomPanelViewProps {
 	onSelectCommand: (value: string) => void;
 	onSelectOption: (index: number, value: string) => Promise<void> | void;
 	onSubmit: () => void;
-	onSubmitAnswers: () => void;
+	onSubmitAnswers: () => Promise<void> | void;
 }
 
 export interface ChatComposerProps {
@@ -136,7 +136,7 @@ export interface ChatClarificationComposerProps {
 	questions: TaskClarificationQuestion[];
 	onAnswerChange: (index: number, value: string) => void;
 	onSelectOption: (index: number, value: string) => Promise<void> | void;
-	onSubmit: () => void;
+	onSubmit: () => Promise<void> | void;
 }
 
 export interface CommandRunResult {

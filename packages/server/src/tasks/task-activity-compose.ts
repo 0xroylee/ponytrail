@@ -3,6 +3,8 @@ import type {
 	TaskActivitySourceRows,
 } from "./types/task-activity.types";
 
+const TEXT_CONTAINER_FIELDS = ["item", "content", "output"] as const;
+
 export function composeTaskActivity(rows: TaskActivitySourceRows) {
 	const stepsByLog = new Map(
 		rows.executionLogs.map((log) => [
@@ -102,11 +104,32 @@ function parseJsonRecord(value: string): Record<string, unknown> | null {
 }
 
 function readSafeEventDetail(event: Record<string, unknown>): string | null {
+	const text = readStructuredEventText(event);
+	if (text) return text;
 	for (const field of ["detail", "summary", "error"]) {
 		const value = event[field];
 		if (typeof value === "string" && value.trim()) {
 			return value;
 		}
+	}
+	return null;
+}
+
+function readStructuredEventText(value: unknown): string | null {
+	if (typeof value === "string" && value.trim()) return value.trim();
+	if (Array.isArray(value)) {
+		const lines = value
+			.map((item) => readStructuredEventText(item))
+			.filter((text): text is string => Boolean(text));
+		return lines.length > 0 ? lines.join("\n") : null;
+	}
+	if (!value || typeof value !== "object") return null;
+	const record = value as Record<string, unknown>;
+	const text = record.text;
+	if (typeof text === "string" && text.trim()) return text.trim();
+	for (const field of TEXT_CONTAINER_FIELDS) {
+		const nested = readStructuredEventText(record[field]);
+		if (nested) return nested;
 	}
 	return null;
 }

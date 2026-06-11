@@ -25,30 +25,68 @@ export function ChatClarificationComposer({
 	onSubmit,
 }: ChatClarificationComposerProps): ReactElement | null {
 	const [isSubmittingOption, setIsSubmittingOption] = useState(false);
+	const [submittedQuestionKey, setSubmittedQuestionKey] = useState<
+		string | null
+	>(null);
+	const pendingQuestionKey = JSON.stringify(
+		questions.map((question) => ({
+			options: question.options ?? [],
+			question: question.question,
+		})),
+	);
 	const step = resolveClarificationStep(questions, pendingQuestionIndex);
 	const answer = answers[step.currentIndex] ?? "";
 	const controlsDisabled = disabled || isSubmittingOption;
 	const canSubmit = step.currentQuestion !== null && answer.trim().length > 0;
+	const hideSubmittedComposer =
+		step.isFinalStep && submittedQuestionKey === pendingQuestionKey;
 
 	function handleKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
 		if (event.key !== "Enter" || !canSubmit || controlsDisabled) {
 			return;
 		}
 		event.preventDefault();
-		onSubmit();
+		void handleSubmitAnswer();
+	}
+
+	async function submitAndHide(
+		submit: () => Promise<void> | void,
+	): Promise<void> {
+		setSubmittedQuestionKey(pendingQuestionKey);
+		try {
+			await submit();
+		} catch (error) {
+			setSubmittedQuestionKey(null);
+			throw error;
+		}
+	}
+
+	async function handleSubmitAnswer(): Promise<void> {
+		if (!canSubmit || controlsDisabled) return;
+		if (!step.isFinalStep) {
+			await onSubmit();
+			return;
+		}
+		await submitAndHide(onSubmit);
 	}
 
 	async function handleSelectOption(optionAnswer: string): Promise<void> {
 		if (controlsDisabled) return;
 		setIsSubmittingOption(true);
 		try {
+			if (step.isFinalStep) {
+				await submitAndHide(() =>
+					onSelectOption(step.currentIndex, optionAnswer),
+				);
+				return;
+			}
 			await onSelectOption(step.currentIndex, optionAnswer);
 		} finally {
 			setIsSubmittingOption(false);
 		}
 	}
 
-	if (!step.currentQuestion) {
+	if (!step.currentQuestion || hideSubmittedComposer) {
 		return null;
 	}
 
@@ -95,7 +133,7 @@ export function ChatClarificationComposer({
 						/>
 						<Button
 							disabled={controlsDisabled || !canSubmit}
-							onClick={onSubmit}
+							onClick={() => void handleSubmitAnswer()}
 							type="button"
 						>
 							{step.isFinalStep ? "Submit" : "Next"}
