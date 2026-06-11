@@ -19,6 +19,26 @@ const nextConfig: NextConfig = {
 	async rewrites() {
 		return [
 			{
+				source: "/api-docs",
+				destination: `${serverBaseUrl}/api-docs`,
+			},
+			{
+				source: "/api-docs/:path*",
+				destination: `${serverBaseUrl}/api-docs/:path*`,
+			},
+			{
+				source: "/openapi",
+				destination: `${serverBaseUrl}/openapi`,
+			},
+			{
+				source: "/openapi/:path*",
+				destination: `${serverBaseUrl}/openapi/:path*`,
+			},
+			{
+				source: "/openapi.yaml",
+				destination: `${serverBaseUrl}/openapi.yaml`,
+			},
+			{
 				source: "/api/:path*",
 				destination: `${serverBaseUrl}/api/:path*`,
 			},
