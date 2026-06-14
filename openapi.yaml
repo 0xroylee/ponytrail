@@ -2,35 +2,65 @@ openapi: 3.0.3
 info:
   title: devos.ing Server API
   version: 0.1.0
-  description: Implemented HTTP routes for the Express-backed server.
+  description: |
+    The devos.ing Server API powers the local operator UI and workflow control
+    plane. Use it to inspect workspace state, manage project/task board records,
+    coordinate chat-driven workflow runs, configure model and GitHub settings,
+    and observe worker/poller health.
+
+    The API is served by the local Express server at `http://localhost:3001`;
+    the web app proxies `/api/*`, `/api-docs`, `/openapi`, and `/openapi.yaml`
+    through `http://localhost:3000` during development.
 servers:
   - url: http://localhost:3001
+    description: Local Express server
+  - url: http://localhost:3000
+    description: Local web app proxy
 tags:
   - name: Health
+    description: Liveness endpoints for checking whether the local API process is running.
   - name: CLI
+    description: Local CLI execution, workflow worker registration, and operator command state.
   - name: GitHub
+    description: GitHub connection, OAuth/device authentication, and repository discovery.
   - name: Read Models
+    description: Read-side records used by the operator UI for dashboards and history views.
   - name: Board
+    description: Project and task board records that route work through devos.ing.
   - name: Chat
+    description: Chat sessions, messages, and workflow send/status operations.
+  - name: Settings
+    description: Operator-managed model, reasoning, commit, and pull request instructions.
   - name: Notifications
+    description: Internal and email notification requests emitted by workflow operations.
   - name: Polling
+    description: Poller health and recent events for background task intake.
   - name: Workspace
+    description: Current workspace identity and local environment readiness.
+  - name: Docs
+    description: Generated route documentation consumed by the operator UI.
 paths:
   /health:
     get:
       tags: [Health]
+      summary: Check server health
+      description: Confirms that the local Express API process is accepting requests.
       responses:
         '200':
           description: Server health.
   /api/cli/history:
     get:
       tags: [CLI]
+      summary: List CLI execution history
+      description: Returns the in-memory command history captured by the server process for the current runtime.
       responses:
         '200':
           description: In-memory CLI execution history.
   /api/github/repositories/search:
     get:
       tags: [GitHub]
+      summary: Search GitHub repositories
+      description: Searches repositories visible to the configured GitHub integration using the required query string.
       parameters:
         - in: query
           name: q
@@ -56,6 +86,8 @@ paths:
   /api/computers:
     get:
       tags: [CLI]
+      summary: List registered workflow workers
+      description: Returns computers that have connected as workflow workers and can receive workflow commands.
       responses:
         '200':
           description: Registered workflow worker computers.
@@ -68,23 +100,43 @@ paths:
   /api/token-usage:
     get:
       tags: [Read Models]
+      summary: List token usage records
+      description: Reads token usage rows for dashboard and reporting views.
       responses:
         '200':
           description: Token usage rows.
   /api/jobs:
     get:
       tags: [Read Models]
+      summary: List job records
+      description: Reads job rows for operator status and history views.
       responses:
         '200':
           description: Job rows.
+  /api/docs/routes:
+    get:
+      tags: [Docs]
+      summary: List generated route documentation
+      description: Returns the server route metadata used by the operator UI and generated Markdown API reference.
+      responses:
+        '200':
+          description: Generated API route documentation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiDocsResponse'
   /api/projects:
     get:
       tags: [Board]
+      summary: List projects
+      description: Reads project board records that define the workspaces and repositories available to the operator UI.
       responses:
         '200':
           description: Project rows.
     post:
       tags: [Board]
+      summary: Create a project
+      description: Creates a project board record used to route tasks and workflow runs.
       requestBody:
         required: true
         content:
@@ -101,6 +153,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Board]
+      summary: Read a project
+      description: Reads one project board record by id.
       responses:
         '200':
           description: Project row.
@@ -108,6 +162,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     patch:
       tags: [Board]
+      summary: Update a project
+      description: Updates mutable project routing and display fields for a board record.
       requestBody:
         required: true
         content:
@@ -123,6 +179,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     delete:
       tags: [Board]
+      summary: Delete a project
+      description: Deletes a project board record by id when it is no longer available to operators.
       responses:
         '200':
           description: Deleted project.
@@ -131,6 +189,8 @@ paths:
   /api/github/connection:
     get:
       tags: [GitHub]
+      summary: Read GitHub connection status
+      description: Reports whether GitHub OAuth is configured and whether a local account is currently connected.
       responses:
         '200':
           description: GitHub OAuth connection state.
@@ -140,6 +200,8 @@ paths:
                 $ref: '#/components/schemas/GitHubConnectionResponse'
     delete:
       tags: [GitHub]
+      summary: Disconnect GitHub
+      description: Clears the locally stored GitHub OAuth connection and returns the updated connection state.
       responses:
         '200':
           description: Cleared local GitHub OAuth connection.
@@ -150,6 +212,8 @@ paths:
   /api/github/oauth/start:
     get:
       tags: [GitHub]
+      summary: Start GitHub OAuth
+      description: Redirects the browser to GitHub OAuth when OAuth credentials are configured.
       parameters:
         - in: query
           name: returnTo
@@ -175,6 +239,8 @@ paths:
   /api/github/oauth/callback:
     get:
       tags: [GitHub]
+      summary: Complete GitHub OAuth
+      description: Handles GitHub OAuth callback parameters and redirects the operator back into the app.
       parameters:
         - in: query
           name: code
@@ -196,6 +262,8 @@ paths:
   /api/github/device/start:
     post:
       tags: [GitHub]
+      summary: Start GitHub device flow
+      description: Starts a GitHub device authorization flow for local environments where browser OAuth is not preferred.
       requestBody:
         required: false
         content:
@@ -214,6 +282,8 @@ paths:
   /api/github/device/poll:
     post:
       tags: [GitHub]
+      summary: Poll GitHub device flow
+      description: Checks whether the active GitHub device authorization flow has completed.
       responses:
         '200':
           description: GitHub device authorization status.
@@ -226,6 +296,8 @@ paths:
   /api/github/repositories:
     get:
       tags: [GitHub]
+      summary: List connected GitHub repositories
+      description: Lists repositories available to the currently connected GitHub account.
       responses:
         '200':
           description: GitHub repositories available to the connected account.
@@ -236,12 +308,16 @@ paths:
   /api/workspace/current:
     get:
       tags: [Workspace]
+      summary: Read current workspace
+      description: Returns the workspace identity resolved by server startup configuration.
       responses:
         '200':
           description: Current configured workspace identity.
   /api/chat/sessions:
     get:
       tags: [Chat]
+      summary: List chat sessions
+      description: Lists chat sessions, optionally scoped to a workspace id.
       parameters:
         - in: query
           name: workspaceId
@@ -254,6 +330,8 @@ paths:
           description: Chat sessions for the workspace.
     post:
       tags: [Chat]
+      summary: Create a chat session
+      description: Creates a chat session that can collect operator messages and queue workflow actions.
       requestBody:
         required: true
         content:
@@ -270,6 +348,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     patch:
       tags: [Chat]
+      summary: Update a chat session
+      description: Updates chat session metadata such as title, archived state, project binding, and pending request fields.
       requestBody:
         required: true
         content:
@@ -285,6 +365,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     delete:
       tags: [Chat]
+      summary: Archive a chat session
+      description: Archives a chat session by id without deleting its persisted conversation records.
       responses:
         '200':
           description: Archived chat session.
@@ -295,6 +377,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Chat]
+      summary: Read chat session status
+      description: Reads current runtime state for a chat session, including pending workflow activity when present.
       responses:
         '200':
           description: Current chat session runtime and workflow status.
@@ -309,6 +393,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Chat]
+      summary: List chat messages
+      description: Lists persisted messages for a chat session in display order.
       responses:
         '200':
           description: Chat session messages.
@@ -316,6 +402,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     post:
       tags: [Chat]
+      summary: Append a chat message
+      description: Adds a message to a chat session without directly sending it to the workflow worker.
       requestBody:
         required: true
         content:
@@ -334,6 +422,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     post:
       tags: [Chat]
+      summary: Send a chat workflow request
+      description: Queues a chat request for the workflow worker and returns the accepted send status.
       requestBody:
         required: true
         content:
@@ -350,11 +440,15 @@ paths:
   /api/tasks:
     get:
       tags: [Board]
+      summary: List tasks
+      description: Reads task board records used by the operator UI.
       responses:
         '200':
           description: Task rows.
     post:
       tags: [Board]
+      summary: Create a task
+      description: Creates a task board record that can later be routed into a workflow run.
       requestBody:
         required: true
         content:
@@ -369,6 +463,8 @@ paths:
   /api/tasks/chat-create:
     post:
       tags: [Board]
+      summary: Create a task from chat
+      description: Converts a chat task creation request into structured task fields and clarification questions when needed.
       requestBody:
         required: true
         content:
@@ -385,6 +481,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Board]
+      summary: Read a task
+      description: Reads one task board record by id.
       responses:
         '200':
           description: Task row.
@@ -392,6 +490,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     patch:
       tags: [Board]
+      summary: Update a task
+      description: Updates mutable task board fields such as status, title, project, assignee, and workflow metadata.
       requestBody:
         required: true
         content:
@@ -407,6 +507,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     delete:
       tags: [Board]
+      summary: Delete a task
+      description: Deletes one task board record by id.
       responses:
         '200':
           description: Deleted task.
@@ -417,6 +519,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Board]
+      summary: Read task activity
+      description: Reads the activity timeline associated with a task board record.
       responses:
         '200':
           description: Task activity timeline.
@@ -425,11 +529,15 @@ paths:
   /api/agents:
     get:
       tags: [Read Models]
+      summary: List agent records
+      description: Reads configured agent rows used by dashboards and agent selection views.
       responses:
         '200':
           description: Agent rows.
     post:
       tags: [Read Models]
+      summary: Create an agent record
+      description: Creates an agent row for local read-model configuration.
       requestBody:
         required: true
         content:
@@ -446,6 +554,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Read Models]
+      summary: Read an agent record
+      description: Reads one configured agent row by id.
       responses:
         '200':
           description: Agent row.
@@ -453,6 +563,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     patch:
       tags: [Read Models]
+      summary: Update an agent record
+      description: Updates mutable agent metadata, model settings, status, skills, and instructions.
       requestBody:
         required: true
         content:
@@ -468,6 +580,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     delete:
       tags: [Read Models]
+      summary: Delete an agent record
+      description: Deletes one configured agent row by id.
       responses:
         '204':
           description: Deleted agent.
@@ -476,11 +590,15 @@ paths:
   /api/skills:
     get:
       tags: [Read Models]
+      summary: List skill records
+      description: Reads skill rows used by the operator UI and agent configuration surfaces.
       responses:
         '200':
           description: Skill rows.
     post:
       tags: [Read Models]
+      summary: Create a skill record
+      description: Creates a skill row with source metadata for local operator views.
       requestBody:
         required: true
         content:
@@ -497,6 +615,8 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Read Models]
+      summary: Read a skill record
+      description: Reads one skill row by id.
       responses:
         '200':
           description: Skill row.
@@ -504,6 +624,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     patch:
       tags: [Read Models]
+      summary: Update a skill record
+      description: Updates mutable skill metadata and source content.
       requestBody:
         required: true
         content:
@@ -519,6 +641,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     delete:
       tags: [Read Models]
+      summary: Delete a skill record
+      description: Deletes one skill row by id.
       responses:
         '204':
           description: Deleted skill.
@@ -527,6 +651,8 @@ paths:
   /api/command-history:
     get:
       tags: [Read Models]
+      summary: List command history records
+      description: Reads persisted command history records for operator history views.
       responses:
         '200':
           description: Command history rows
@@ -540,6 +666,7 @@ paths:
     get:
       tags: [Read Models]
       summary: Read project board records
+      description: Reads project board records used to assemble board views.
       responses:
         '200':
           description: Project board rows
@@ -553,6 +680,7 @@ paths:
     get:
       tags: [Read Models]
       summary: Read board project records
+      description: Reads board project rows for project-oriented dashboard views.
       responses:
         '200':
           description: Board project rows
@@ -566,6 +694,7 @@ paths:
     get:
       tags: [Read Models]
       summary: Read board task records
+      description: Reads board task rows for task lists and board columns.
       responses:
         '200':
           description: Board task rows
@@ -579,6 +708,7 @@ paths:
     get:
       tags: [Polling]
       summary: Read polling health and recent operational events
+      description: Returns poller status rows and recent events so operators can see whether background task intake is active.
       responses:
         '200':
           description: Poller status rows and recent event rows.
@@ -590,6 +720,7 @@ paths:
     get:
       tags: [Settings]
       summary: Read workflow model and reasoning settings
+      description: Reads per-stage model and reasoning-effort settings plus available options.
       responses:
         '200':
           description: Workflow model settings.
@@ -602,6 +733,7 @@ paths:
     patch:
       tags: [Settings]
       summary: Update workflow model and reasoning settings
+      description: Updates model and reasoning-effort selections for one or more workflow stages.
       requestBody:
         required: true
         content:
@@ -623,6 +755,7 @@ paths:
     get:
       tags: [Settings]
       summary: Read GitHub commit and PR instructions
+      description: Reads operator-authored instructions used when workflows prepare commits and pull request context.
       responses:
         '200':
           description: GitHub workflow instructions.
@@ -635,6 +768,7 @@ paths:
     patch:
       tags: [Settings]
       summary: Update GitHub commit and PR instructions
+      description: Updates commit and pull request instruction text used by workflow runs.
       requestBody:
         required: true
         content:
@@ -657,6 +791,8 @@ paths:
       - $ref: '#/components/parameters/WorkspaceId'
     get:
       tags: [Board]
+      summary: List workspace projects
+      description: Lists projects associated with a workspace for board navigation.
       responses:
         '200':
           description: Workspace project list.
@@ -666,6 +802,8 @@ paths:
       - $ref: '#/components/parameters/ProjectId'
     get:
       tags: [Board]
+      summary: Read a workspace project board
+      description: Reads board columns and tasks for a project within a workspace.
       responses:
         '200':
           description: Workspace project board.
@@ -674,6 +812,8 @@ paths:
   /api/inbox/messages:
     get:
       tags: [Read Models]
+      summary: List inbox messages
+      description: Reads inbox messages scoped to a workspace, user, and workflow run.
       parameters:
         - in: query
           name: workspaceId
@@ -706,6 +846,8 @@ paths:
           $ref: '#/components/responses/TypedError'
     post:
       tags: [Read Models]
+      summary: Create an inbox message
+      description: Creates an inbox message for a workspace/user/run context.
       requestBody:
         required: true
         content:
@@ -724,6 +866,8 @@ paths:
   /api/notifications:
     post:
       tags: [Notifications]
+      summary: Send an internal notification
+      description: Accepts an internal notification request from workflow or operator actions.
       requestBody:
         required: true
         content:
@@ -739,6 +883,8 @@ paths:
   /api/notifications/email:
     post:
       tags: [Notifications]
+      summary: Send an email notification
+      description: Sends an email notification when email delivery is configured.
       requestBody:
         required: true
         content:
@@ -782,8 +928,46 @@ components:
           schema:
             $ref: '#/components/schemas/TypedError'
   schemas:
+    ApiDocsResponse:
+      type: object
+      description: Generated route documentation returned for API reference and operator docs surfaces.
+      additionalProperties: false
+      required: [routes]
+      properties:
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiRouteDoc'
+    ApiRouteDoc:
+      type: object
+      description: One implemented server route as exposed by the generated route-doc endpoint.
+      additionalProperties: false
+      required: [group, method, path, response, summary]
+      properties:
+        group: { type: string, minLength: 1 }
+        method:
+          type: string
+          enum: [DELETE, GET, PATCH, POST]
+        path: { type: string, minLength: 1 }
+        response: { type: string, minLength: 1 }
+        summary: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1 }
+        pathParams:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        queryParams:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        requestBody:
+          type: string
+          minLength: 1
     TypedError:
       type: object
+      description: Standard JSON error envelope returned for validation, lookup, and integration failures.
       additionalProperties: false
       required: [error]
       properties:
@@ -791,6 +975,7 @@ components:
           type: string
     AgentCreateRequest:
       type: object
+      description: Agent read-model payload used to create a locally configured agent row.
       additionalProperties: false
       required: [id, name, backend, model, createdAt]
       properties:
@@ -805,6 +990,7 @@ components:
             - $ref: '#/components/schemas/SettingsReasoningEffort'
         createdAt: { type: string, minLength: 1 }
     AgentUpdateRequest:
+      description: Partial update payload for a configured agent row.
       allOf:
         - $ref: '#/components/schemas/AgentPatchFields'
         - minProperties: 1
@@ -850,6 +1036,7 @@ components:
         instructions: { type: string }
     SkillCreateRequest:
       type: object
+      description: Skill read-model payload used to register a local skill record.
       additionalProperties: false
       required: [id, name, description, source, updatedAt]
       properties:
@@ -859,11 +1046,13 @@ components:
         source: { type: string, minLength: 1 }
         updatedAt: { type: string, minLength: 1 }
     SkillUpdateRequest:
+      description: Partial update payload for a skill record.
       allOf:
         - $ref: '#/components/schemas/SkillPatchFields'
         - minProperties: 1
     SettingsModelsResponse:
       type: object
+      description: Model and reasoning-effort settings available to workflow stages.
       additionalProperties: false
       required: [stages, availableModels, reasoningEfforts]
       properties:
@@ -881,6 +1070,7 @@ components:
             $ref: '#/components/schemas/SettingsReasoningEffort'
     SettingsGithubResponse:
       type: object
+      description: Commit and pull request instruction text used by workflow runs.
       additionalProperties: false
       required: [commitInstruction, prInstruction]
       properties:
@@ -919,6 +1109,7 @@ components:
             type: string
     SettingsModelsUpdateRequest:
       type: object
+      description: Update payload for per-stage workflow model and reasoning settings.
       additionalProperties: false
       required: [stages]
       properties:
@@ -928,6 +1119,7 @@ components:
             $ref: '#/components/schemas/SettingsModelStageUpdate'
     SettingsGithubUpdateRequest:
       type: object
+      description: Update payload for GitHub commit and pull request instructions.
       additionalProperties: false
       properties:
         commitInstruction:
@@ -963,6 +1155,7 @@ components:
         updatedAt: { type: string, minLength: 1 }
     GitHubConnectionResponse:
       type: object
+      description: Local GitHub integration configuration and connection state.
       additionalProperties: false
       required: [isConfigured, isConnected, login, unavailableReason]
       properties:
@@ -976,6 +1169,7 @@ components:
           nullable: true
     GitHubDeviceStartRequest:
       type: object
+      description: Optional device-flow start options for GitHub authentication.
       additionalProperties: false
       properties:
         clientId:
@@ -984,6 +1178,7 @@ components:
           minLength: 1
     GitHubDeviceStartResponse:
       type: object
+      description: GitHub device authorization instructions shown to the operator.
       additionalProperties: false
       required: [userCode, verificationUri, expiresIn, interval]
       properties:
@@ -993,6 +1188,7 @@ components:
         interval: { type: integer, minimum: 1 }
     GitHubDevicePollResponse:
       type: object
+      description: Current status of a GitHub device authorization attempt.
       additionalProperties: false
       required: [status, interval, connection, message]
       properties:
@@ -1013,6 +1209,7 @@ components:
           nullable: true
     GitHubRepositoriesResponse:
       type: object
+      description: Repositories visible to the connected GitHub account.
       additionalProperties: false
       required: [isAvailable, unavailableReason, repositories]
       properties:
@@ -1039,6 +1236,7 @@ components:
         isPrivate: { type: boolean }
     ProjectCreateRequest:
       type: object
+      description: Project board payload that binds a local project to repository and routing metadata.
       additionalProperties: false
       required: [boardId, name, ownerId]
       properties:
@@ -1076,6 +1274,7 @@ components:
           type: integer
           nullable: true
     ProjectUpdateRequest:
+      description: Partial update payload for project board routing and display metadata.
       allOf:
         - $ref: '#/components/schemas/ProjectPatchFields'
         - minProperties: 1
@@ -1118,6 +1317,7 @@ components:
           nullable: true
     GitHubRepositorySearchResponse:
       type: object
+      description: Search results returned from GitHub repository lookup.
       additionalProperties: false
       required: [repositories]
       properties:
@@ -1152,6 +1352,7 @@ components:
         isPrivate: { type: boolean }
     TaskCreateRequest:
       type: object
+      description: Task board payload used to create operator-visible work.
       additionalProperties: false
       required: [title, priority, status, creatorId]
       properties:
@@ -1175,6 +1376,7 @@ components:
           nullable: true
     TaskChatCreateRequest:
       type: object
+      description: Natural-language task intake request plus optional clarification answers.
       additionalProperties: false
       required: [request]
       properties:
@@ -1215,6 +1417,7 @@ components:
                 $ref: '#/components/schemas/ClarificationOption'
     ChatSessionCreateRequest:
       type: object
+      description: Payload for creating an operator chat session, optionally bound to a workspace or project.
       additionalProperties: false
       properties:
         workspaceId: { type: string, minLength: 1 }
@@ -1225,6 +1428,7 @@ components:
         title: { type: string, minLength: 1 }
     ChatSessionUpdateRequest:
       type: object
+      description: Partial update payload for chat session metadata and pending workflow request state.
       additionalProperties: false
       properties:
         archived: { type: boolean }
@@ -1246,6 +1450,7 @@ components:
             $ref: '#/components/schemas/ClarificationQuestion'
     ChatSessionStatusResponse:
       type: object
+      description: Runtime state for a chat session and its associated workflow task, when present.
       additionalProperties: false
       required: [sessionId, taskId, status, taskStatus, workflowState]
       properties:
@@ -1267,6 +1472,7 @@ components:
           nullable: true
     ChatMessageCreateRequest:
       type: object
+      description: Message payload appended to a chat transcript.
       additionalProperties: false
       required: [role, content]
       properties:
@@ -1291,6 +1497,7 @@ components:
           nullable: true
     ChatSendMessageRequest:
       type: object
+      description: Operator message payload sent to the workflow worker through a chat session.
       additionalProperties: false
       required: [content]
       properties:
@@ -1305,11 +1512,13 @@ components:
               question: { type: string, minLength: 1 }
               answer: { type: string, minLength: 1 }
     TaskUpdateRequest:
+      description: Partial update payload for task board metadata and workflow status fields.
       allOf:
         - $ref: '#/components/schemas/TaskPatchFields'
         - minProperties: 1
     InboxMessageCreateRequest:
       type: object
+      description: Inbox message payload scoped to a workspace, user, and workflow run.
       additionalProperties: false
       required: [workspaceId, userId, runId, source, kind, body]
       properties:
@@ -1506,6 +1715,7 @@ components:
           type: string
     PollingStatusResponse:
       type: object
+      description: Poller status rows plus recent events for background intake diagnostics.
       additionalProperties: false
       required: [pollers, events]
       properties:
