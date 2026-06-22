@@ -67,26 +67,49 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
 
   program
     .command("onboard")
-    .description("Create a local .ponytrail manifest and onboarding files.")
+    .description("Create local .ponytrail files and install the default Pony Trail skill.")
     .option("-d, --dir <dir>", "target directory", rootDir)
     .option("-n, --name <name>", "project name")
+    .option(
+      "-a, --agents <agents>",
+      "comma-separated skill install targets: claude,copilot,codex",
+      "claude,copilot,codex",
+    )
+    .option("--home <dir>", "home directory that contains agent config folders", homedir())
     .option("-y, --yes", "use defaults without prompting", false)
-    .action(async (commandOptions: { dir: string; name?: string; yes: boolean }) => {
-      const targetDir = resolvePath(rootDir, commandOptions.dir);
-      const projectName =
-        commandOptions.name ??
-        (commandOptions.yes
-          ? basename(targetDir)
-          : await promptForProjectName(basename(targetDir)));
+    .action(
+      async (commandOptions: {
+        dir: string;
+        name?: string;
+        agents: string;
+        home: string;
+        yes: boolean;
+      }) => {
+        const targetDir = resolvePath(rootDir, commandOptions.dir);
+        const projectName =
+          commandOptions.name ??
+          (commandOptions.yes
+            ? basename(targetDir)
+            : await promptForProjectName(basename(targetDir)));
 
-      const result = await createOnboardingFiles({
-        rootDir: targetDir,
-        projectName,
-      });
+        const result = await createOnboardingFiles({
+          rootDir: targetDir,
+          projectName,
+        });
 
-      console.log(pc.green("Ponytrail onboarding complete"));
-      console.log(pc.dim(`Manifest: ${result.manifestPath}`));
-    });
+        console.log(pc.green("Ponytrail onboarding complete"));
+        console.log(pc.dim(`Manifest: ${result.manifestPath}`));
+
+        const skillResult = await installAgentSkill({
+          source: "pony-trail",
+          cwd: rootDir,
+          homeDir: resolveHomePath(commandOptions.home),
+          agents: parseSkillInstallAgents(commandOptions.agents),
+        });
+
+        printSkillInstallResult(skillResult);
+      },
+    );
 
   program
     .command("bots")

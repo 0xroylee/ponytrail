@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildProgram, type GoalClarificationPrompter } from "../src/cli";
@@ -33,7 +33,7 @@ describe("cli", () => {
 
     try {
       await buildProgram({ cwd: rootDir }).parseAsync(
-        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes"],
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes", "--home", rootDir],
         { from: "user" },
       );
 
@@ -98,6 +98,39 @@ describe("cli", () => {
     }
   });
 
+  test("onboard installs the bundled pony trail skill by default", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes", "--home", homeDir],
+        { from: "user" },
+      );
+
+      await expect(
+        stat(join(homeDir, ".claude", "skills", "pony-trail", "SKILL.md")),
+      ).resolves.toBeTruthy();
+      await expect(
+        stat(join(homeDir, ".agents", "skills", "pony-trail", "SKILL.md")),
+      ).resolves.toBeTruthy();
+      await expect(
+        stat(join(homeDir, ".codex", "skills", "pony-trail", "SKILL.md")),
+      ).resolves.toBeTruthy();
+      expect(logs.some((line) => line.includes("Skill install result"))).toBe(true);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
   test("prints clarification questions for unclear goal requests in non-interactive mode", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const logs: string[] = [];
@@ -109,7 +142,7 @@ describe("cli", () => {
 
     try {
       await buildProgram({ cwd: rootDir }).parseAsync(
-        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes"],
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes", "--home", rootDir],
         { from: "user" },
       );
 
@@ -143,7 +176,7 @@ describe("cli", () => {
 
     try {
       await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
-        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes"],
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes", "--home", rootDir],
         { from: "user" },
       );
 
@@ -200,7 +233,7 @@ describe("cli", () => {
 
     try {
       await buildProgram({ cwd: rootDir, streamRunner, clarificationPrompter }).parseAsync(
-        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes"],
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes", "--home", rootDir],
         { from: "user" },
       );
 
@@ -239,7 +272,7 @@ describe("cli", () => {
 
     try {
       await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
-        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes"],
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--yes", "--home", rootDir],
         { from: "user" },
       );
 
