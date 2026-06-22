@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HUSKY: 0
+      NO_COLOR: 1
 
     steps:
       - name: Check out repository
@@ -35,5 +36,5 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run verification gate
-        run: bun run check
+      - name: Run CI checks
+        run: bun run ci:check
