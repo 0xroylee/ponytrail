@@ -1,4 +1,4 @@
-<img src="/assets/pony-trail.png" alt="Pony Trail" width="640" />
+![Pony Trail](/assets/pony-trail.png)
 
 # Ponytrail
 
