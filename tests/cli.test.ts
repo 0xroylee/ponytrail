@@ -2,31 +2,44 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildProgram, type GoalClarificationPrompter } from "../src/cli";
-import type { CliInvocation, CliStreamRunner } from "../src/plugins/adapters";
+import {
+  buildProgram,
+  type GoalClarificationPrompter,
+  promptForSetup,
+  type SetupPrompter,
+  type SetupPromptIo,
+} from "../src/cli";
+import { createDefaultSetupReviewBots } from "../src/runtimes/ponytrail/manifest";
 
 describe("cli", () => {
-  test("registers onboarding, bot listing, goal drafting, and vote commands", () => {
+  test("registers setup, onboarding, bot listing, goal drafting, and vote commands", () => {
     const program = buildProgram();
 
     expect(program.name()).toBe("ponytrail");
     expect(program.commands.map((command) => command.name())).toEqual([
+      "setup",
       "onboard",
       "bots",
       "goal",
       "ponyrace",
       "vote",
-      "stream-goal",
       "history",
       "revert",
       "skills",
     ]);
 
+    const setupCommand = program.commands.find((command) => command.name() === "setup");
     const onboardCommand = program.commands.find((command) => command.name() === "onboard");
     const ponyraceCommand = program.commands.find((command) => command.name() === "ponyrace");
     const revertCommand = program.commands.find((command) => command.name() === "revert");
     const skillsCommand = program.commands.find((command) => command.name() === "skills");
 
+    expect(setupCommand?.options.map((option) => option.long)).toEqual([
+      "--dir",
+      "--name",
+      "--agents",
+      "--home",
+    ]);
     expect(onboardCommand?.options.map((option) => option.long)).toEqual([
       "--dir",
       "--name",
@@ -163,6 +176,248 @@ describe("cli", () => {
     }
   });
 
+  test("setup creates a manifest and installs ponytrail skills for default agent targets", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
+    const logs: string[] = [];
+    const promptedDefaults: Array<{
+      projectName: string;
+      agents: string;
+      botCount: number;
+    }> = [];
+    const originalLog = console.log;
+    const clarificationPrompter: GoalClarificationPrompter = async () => {
+      throw new Error("setup must not ask goal clarification");
+    };
+    const setupPrompter: SetupPrompter = async (defaults) => {
+      promptedDefaults.push({
+        projectName: defaults.projectName,
+        agents: defaults.agents,
+        botCount: defaults.bots.length,
+      });
+
+      return { ...defaults, projectName: "Setup Court" };
+    };
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir, setupPrompter, clarificationPrompter }).parseAsync(
+        ["setup", "--home", homeDir],
+        { from: "user" },
+      );
+
+      for (const skill of ["pony-trail", "ponyrace"]) {
+        await expect(
+          stat(join(homeDir, ".claude", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+        await expect(
+          stat(join(homeDir, ".codex", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+        await expect(
+          stat(join(homeDir, ".agents", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+        await expect(stat(join(homeDir, ".cursor", "rules", `${skill}.mdc`))).resolves.toBeTruthy();
+      }
+
+      const manifest = JSON.parse(
+        await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
+      );
+      expect(manifest.metadata.name).toBe("Setup Court");
+      expect(manifest.deliberation.decisionRule.voterIds).toEqual([
+        "product_manager_bot",
+        "project_manager_bot",
+        "senior_engineer_bot",
+        "testing_bot",
+      ]);
+      expect(manifest.deliberation.decisionRule.requiredApprovals).toBe(3);
+      expect(promptedDefaults).toContainEqual({
+        projectName: rootDir.slice(rootDir.lastIndexOf("/") + 1),
+        agents: "codex,claude,cursor",
+        botCount: 4,
+      });
+      expect(logs.some((line) => line.includes("Ponytrail setup complete"))).toBe(true);
+      expect(logs.some((line) => line.includes("Next: ponytrail ponyrace"))).toBe(true);
+      expect(logs.some((line) => line.includes("Pony race"))).toBe(false);
+      expect(logs.some((line) => line.includes("Requirement discussion"))).toBe(false);
+      expect(logs.some((line) => line.includes("Detailed requirement"))).toBe(false);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
+  test("setup does not print completion when skill install fails after manifest creation", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const invalidHomePath = join(rootDir, "home-file");
+    const logs: string[] = [];
+    const originalLog = console.log;
+    const setupPrompter: SetupPrompter = async (defaults) => ({
+      ...defaults,
+      projectName: "Install Failure Setup",
+    });
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await writeFile(invalidHomePath, "not a directory");
+
+      await expect(
+        buildProgram({ cwd: rootDir, setupPrompter }).parseAsync(
+          ["setup", "--home", invalidHomePath],
+          { from: "user" },
+        ),
+      ).rejects.toThrow();
+
+      await expect(stat(join(rootDir, ".ponytrail", "manifest.json"))).resolves.toBeTruthy();
+      expect(logs.some((line) => line.includes("Ponytrail setup complete"))).toBe(false);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  test("setup prompt recalculates custom approval default from selected bot count", async () => {
+    const textDefaults: Array<{ message: string; defaultValue: string }> = [];
+    const promptIo: SetupPromptIo = {
+      isTty: true,
+      intro: () => {},
+      outro: () => {},
+      text: async ({ message, defaultValue }) => {
+        textDefaults.push({ message, defaultValue });
+        if (message === "Workspace name") {
+          return "Prompted Setup";
+        }
+        if (message === "Voting bot count") {
+          return "5";
+        }
+        if (message === "Skill install targets") {
+          return "codex";
+        }
+        return defaultValue;
+      },
+      select: async () => "custom",
+      confirm: async () => true,
+      isCancel: () => false,
+    };
+
+    const result = await promptForSetup(
+      {
+        projectName: "Default Setup",
+        bots: createDefaultSetupReviewBots(),
+        requiredApprovals: 3,
+        agents: "codex,claude,cursor",
+      },
+      promptIo,
+    );
+
+    expect(result.projectName).toBe("Prompted Setup");
+    expect(result.bots.length).toBe(5);
+    expect(result.bots.at(-1)?.id).toBe("review_bot_5");
+    expect(result.requiredApprovals).toBe(4);
+    expect(result.agents).toBe("codex");
+    expect(textDefaults).toContainEqual({ message: "Required approvals", defaultValue: "4" });
+  });
+
+  test("setup accepts a custom bot roster and approval count", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
+    const logs: string[] = [];
+    const originalLog = console.log;
+    const clarificationPrompter: GoalClarificationPrompter = async () => {
+      throw new Error("setup must not ask goal clarification");
+    };
+    const setupPrompter: SetupPrompter = async (defaults) => ({
+      ...defaults,
+      projectName: "Custom Setup",
+      agents: "codex",
+      requiredApprovals: 2,
+      bots: [
+        {
+          id: "product_bot",
+          displayName: "Product Bot",
+          role: "Product",
+          modelId: "product_model",
+          modelName: "product-review-model",
+          votes: true,
+        },
+        {
+          id: "engineering_bot",
+          displayName: "Engineering Bot",
+          role: "Engineering",
+          modelId: "engineering_model",
+          modelName: "engineering-review-model",
+          votes: true,
+        },
+        {
+          id: "observer_bot",
+          displayName: "Observer Bot",
+          role: "Observer",
+          modelId: "observer_model",
+          modelName: "observer-review-model",
+          votes: false,
+        },
+      ],
+    });
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir, setupPrompter, clarificationPrompter }).parseAsync(
+        ["setup", "--name", "Ignored By Prompter", "--home", homeDir],
+        { from: "user" },
+      );
+
+      for (const skill of ["pony-trail", "ponyrace"]) {
+        await expect(
+          stat(join(homeDir, ".codex", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+        await expect(
+          stat(join(homeDir, ".agents", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+        await expect(stat(join(homeDir, ".claude", "skills", skill, "SKILL.md"))).rejects.toThrow();
+        await expect(stat(join(homeDir, ".cursor", "rules", `${skill}.mdc`))).rejects.toThrow();
+      }
+
+      const manifest = JSON.parse(
+        await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
+      );
+      expect(manifest.metadata.name).toBe("Custom Setup");
+      expect(manifest.deliberation.decisionRule.voterIds).toEqual([
+        "product_bot",
+        "engineering_bot",
+      ]);
+      expect(manifest.deliberation.decisionRule.requiredApprovals).toBe(2);
+      expect(manifest.bots.some((bot: { id: string }) => bot.id === "observer_bot")).toBe(true);
+      expect(
+        manifest.bots.find((bot: { id: string; model?: string }) => bot.id === "observer_bot")
+          ?.model,
+      ).toBe("observer_model");
+      expect(
+        manifest.models.some(
+          (model: { id: string; name: string }) =>
+            model.id === "observer_model" && model.name === "observer-review-model",
+        ),
+      ).toBe(true);
+      expect(logs.some((line) => line.includes("Skill: pony-trail"))).toBe(true);
+      expect(logs.some((line) => line.includes("Skill: ponyrace"))).toBe(true);
+      expect(logs.some((line) => line.includes("Pony race"))).toBe(false);
+      expect(logs.some((line) => line.includes("Requirement discussion"))).toBe(false);
+      expect(logs.some((line) => line.includes("Detailed requirement"))).toBe(false);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
   test("onboard refreshes an older installed bundled skill", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
@@ -222,26 +477,19 @@ describe("cli", () => {
   test("goal prints requirement court discussion and does not stream by default", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const logs: string[] = [];
-    const invocations: CliInvocation[] = [];
     const originalLog = console.log;
-    const streamRunner: CliStreamRunner = async function* (invocation) {
-      invocations.push(invocation);
-      yield { type: "start", invocation };
-      yield { type: "stdout", chunk: "model started" };
-      yield { type: "exit", exitCode: 0 };
-    };
 
     console.log = (...values: unknown[]) => {
       logs.push(values.join(" "));
     };
 
     try {
-      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
+      await buildProgram({ cwd: rootDir }).parseAsync(
         ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
         { from: "user" },
       );
 
-      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
+      await buildProgram({ cwd: rootDir }).parseAsync(
         ["goal", "Add", "CSV", "import", "to", "admin", "dashboard"],
         { from: "user" },
       );
@@ -257,7 +505,6 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("Title: Add CSV import to admin dashboard"))).toBe(
         true,
       );
-      expect(invocations).toEqual([]);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });
@@ -267,26 +514,19 @@ describe("cli", () => {
   test("ponyrace prints pony race discussion and does not stream by default", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const logs: string[] = [];
-    const invocations: CliInvocation[] = [];
     const originalLog = console.log;
-    const streamRunner: CliStreamRunner = async function* (invocation) {
-      invocations.push(invocation);
-      yield { type: "start", invocation };
-      yield { type: "stdout", chunk: "model started" };
-      yield { type: "exit", exitCode: 0 };
-    };
 
     console.log = (...values: unknown[]) => {
       logs.push(values.join(" "));
     };
 
     try {
-      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
+      await buildProgram({ cwd: rootDir }).parseAsync(
         ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
         { from: "user" },
       );
 
-      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
+      await buildProgram({ cwd: rootDir }).parseAsync(
         ["ponyrace", "Add", "CSV", "import", "to", "admin", "dashboard"],
         { from: "user" },
       );
@@ -302,7 +542,6 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("Title: Add CSV import to admin dashboard"))).toBe(
         true,
       );
-      expect(invocations).toEqual([]);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });
@@ -312,7 +551,6 @@ describe("cli", () => {
   test("goal asks for custom clarification answers before requirement court discussion", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const logs: string[] = [];
-    const invocations: CliInvocation[] = [];
     const originalLog = console.log;
     const clarificationPrompter: GoalClarificationPrompter = async ({ questions }) => ({
       answers: questions.map((question, index) => ({
@@ -326,24 +564,18 @@ describe("cli", () => {
           ][index] ?? "Clarified detail.",
       })),
     });
-    const streamRunner: CliStreamRunner = async function* (invocation) {
-      invocations.push(invocation);
-      yield { type: "start", invocation };
-      yield { type: "stdout", chunk: "worker accepted goal" };
-      yield { type: "exit", exitCode: 0 };
-    };
 
     console.log = (...values: unknown[]) => {
       logs.push(values.join(" "));
     };
 
     try {
-      await buildProgram({ cwd: rootDir, streamRunner, clarificationPrompter }).parseAsync(
+      await buildProgram({ cwd: rootDir, clarificationPrompter }).parseAsync(
         ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
         { from: "user" },
       );
 
-      await buildProgram({ cwd: rootDir, streamRunner, clarificationPrompter }).parseAsync(
+      await buildProgram({ cwd: rootDir, clarificationPrompter }).parseAsync(
         ["goal", "make", "it", "better"],
         { from: "user" },
       );
@@ -354,42 +586,6 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("Create an admin dashboard CSV importer"))).toBe(
         true,
       );
-      expect(invocations).toEqual([]);
-    } finally {
-      console.log = originalLog;
-      await rm(rootDir, { recursive: true, force: true });
-    }
-  });
-
-  test("stream-goal remains a compatibility alias for requirement discussion", async () => {
-    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
-    const logs: string[] = [];
-    const invocations: CliInvocation[] = [];
-    const originalLog = console.log;
-    const streamRunner: CliStreamRunner = async function* (invocation) {
-      invocations.push(invocation);
-      yield { type: "start", invocation };
-      yield { type: "exit", exitCode: 0 };
-    };
-
-    console.log = (...values: unknown[]) => {
-      logs.push(values.join(" "));
-    };
-
-    try {
-      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
-        ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
-        { from: "user" },
-      );
-
-      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
-        ["stream-goal", "--worker", "claude", "Review", "checkout", "test", "plan", "evidence"],
-        { from: "user" },
-      );
-
-      expect(stripAnsiLines(logs)).toContain("Requirement discussion");
-      expect(logs.some((line) => line.includes("testing_bot: I think"))).toBe(true);
-      expect(invocations).toEqual([]);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });

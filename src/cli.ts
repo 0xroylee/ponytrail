@@ -5,15 +5,13 @@ import { basename, isAbsolute, join, resolve } from "node:path";
 import { confirm, intro, isCancel, outro, select, text } from "@clack/prompts";
 import { Command } from "commander";
 import pc from "picocolors";
-import {
-  type CliStreamRunner,
-  installAgentSkill,
-  parseSkillInstallAgents,
-  type SkillInstallResult,
-} from "./plugins";
+import { installAgentSkill, parseSkillInstallAgents, type SkillInstallResult } from "./plugins";
 import {
   applySnapshotRevert,
+  calculateDefaultSetupRequiredApprovals,
+  createDefaultSetupReviewBots,
   createOnboardingFiles,
+  createSetupManifest,
   type InstructionContext,
   loadManifest,
   planSnapshotRevert,
@@ -24,6 +22,7 @@ import {
   recordSnapshotPost,
   recordSnapshotPre,
   runRequirementCourt,
+  type SetupReviewBotInput,
   type SnapshotCommit,
   type SnapshotFileState,
   type SnapshotRevertAction,
@@ -53,6 +52,35 @@ export type GoalClarificationPrompter = (
 
 export type ProjectNamePrompter = (defaultName: string) => Promise<string>;
 
+export interface SetupPromptDefaults {
+  projectName: string;
+  bots: SetupReviewBotInput[];
+  requiredApprovals: number;
+  agents: string;
+}
+
+export type SetupPromptResult = SetupPromptDefaults;
+
+export type SetupPrompter = (defaults: SetupPromptDefaults) => Promise<SetupPromptResult>;
+
+export interface SetupPromptIo {
+  isTty: boolean;
+  intro(message: string): void;
+  outro(message: string): void;
+  text(input: { message: string; placeholder: string; defaultValue: string }): Promise<unknown>;
+  select(input: {
+    message: string;
+    options: Array<{ value: "default" | "custom"; label: string }>;
+  }): Promise<unknown>;
+  confirm(input: {
+    message: string;
+    active: string;
+    inactive: string;
+    initialValue: boolean;
+  }): Promise<unknown>;
+  isCancel(value: unknown): boolean;
+}
+
 export interface RevertApprovalPromptInput {
   snapshotId: string;
   actions: SnapshotRevertAction[];
@@ -65,12 +93,23 @@ type SkillChangeOperation = "install" | "update";
 
 const defaultManifestPath = ".ponytrail/manifest.json";
 const skillInstallHistorySessionId = "ponytrail-skills";
+const clackSetupPromptIo: SetupPromptIo = {
+  get isTty() {
+    return process.stdin.isTTY === true;
+  },
+  intro,
+  outro,
+  text,
+  select,
+  confirm,
+  isCancel,
+};
 
 export interface BuildProgramOptions {
   cwd?: string;
-  streamRunner?: CliStreamRunner;
   clarificationPrompter?: GoalClarificationPrompter;
   projectNamePrompter?: ProjectNamePrompter;
+  setupPrompter?: SetupPrompter;
   revertApprovalPrompter?: RevertApprovalPrompter;
 }
 
@@ -78,6 +117,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
   const rootDir = options.cwd ?? process.cwd();
   const clarificationPrompter = options.clarificationPrompter ?? promptForGoalClarifications;
   const projectNamePrompter = options.projectNamePrompter ?? promptForProjectName;
+  const setupPrompter = options.setupPrompter ?? promptForSetup;
   const revertApprovalPrompter = options.revertApprovalPrompter ?? promptForRevertApproval;
   const program = new Command();
 
@@ -85,6 +125,66 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
     .name("ponytrail")
     .description("Requirement-first runtime for supervising Codex, Claude, and other AI workers.")
     .version("0.1.0");
+
+  program
+    .command("setup")
+    .description(
+      "Create local .ponytrail files, configure review bots, and install Ponytrail skills.",
+    )
+    .option("--dir <dir>", "target directory", rootDir)
+    .option("--name <name>", "project name")
+    .option(
+      "--agents <agents>",
+      "comma-separated skill install targets: codex,claude,cursor",
+      "codex,claude,cursor",
+    )
+    .option("--home <dir>", "home directory that contains agent config folders", homedir())
+    .action(
+      async (commandOptions: { dir: string; name?: string; agents: string; home: string }) => {
+        const targetDir = resolvePath(rootDir, commandOptions.dir);
+        const defaultBots = createDefaultSetupReviewBots();
+        const defaultVotingCount = defaultBots.filter((bot) => bot.votes !== false).length;
+        const setup = await setupPrompter({
+          projectName: commandOptions.name ?? basename(targetDir),
+          bots: defaultBots,
+          requiredApprovals: calculateDefaultSetupRequiredApprovals(defaultVotingCount),
+          agents: commandOptions.agents,
+        });
+        const installAgents = parseSkillInstallAgents(setup.agents);
+        const manifest = createSetupManifest({
+          name: setup.projectName,
+          reviewBots: setup.bots,
+          requiredApprovals: setup.requiredApprovals,
+        });
+
+        const result = await createOnboardingFiles({
+          rootDir: targetDir,
+          projectName: setup.projectName,
+          manifest,
+        });
+
+        console.log(pc.dim(`Manifest: ${result.manifestPath}`));
+
+        for (const source of ["pony-trail", "ponyrace"]) {
+          const skillResult = await installSkillWithLocalHistory({
+            rootDir: targetDir,
+            operation: "install",
+            source,
+            homeDir: resolveHomePath(commandOptions.home),
+            agents: installAgents,
+            dryRun: false,
+            force: false,
+            refreshExisting: true,
+            installPrehook: false,
+          });
+
+          printSkillInstallResult(skillResult.skillInstall, skillResult.history, "install");
+        }
+
+        console.log(pc.green("Ponytrail setup complete"));
+        console.log(`Next: ponytrail ponyrace "your requirement"`);
+      },
+    );
 
   program
     .command("onboard")
@@ -211,23 +311,6 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
     });
 
   program
-    .command("stream-goal")
-    .description("Compatibility alias for goal.")
-    .argument("<request...>", "raw goal request")
-    .option("-m, --manifest <path>", "manifest path", defaultManifestPath)
-    .option("-w, --worker <id>", "accepted for compatibility; worker execution is gated")
-    .action(
-      async (requestParts: string[], commandOptions: { manifest: string; worker?: string }) => {
-        await runGoalFlow(requestParts, {
-          rootDir,
-          clarificationPrompter,
-          manifestPath: commandOptions.manifest,
-          printJson: false,
-        });
-      },
-    );
-
-  program
     .command("history")
     .description("Show Pony Trail snapshot history.")
     .option("-s, --session <id>", "only show one snapshot session")
@@ -311,6 +394,89 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
   return program;
 }
 
+export async function promptForSetup(
+  defaults: SetupPromptDefaults,
+  promptIo: SetupPromptIo = clackSetupPromptIo,
+): Promise<SetupPromptResult> {
+  if (!promptIo.isTty) {
+    return defaults;
+  }
+
+  promptIo.intro(pc.cyan("Ponytrail setup"));
+
+  const projectName = await readSetupText(promptIo, "Workspace name", defaults.projectName);
+  const defaultVotingCount = defaults.bots.filter((bot) => bot.votes !== false).length;
+  const botCount = parsePositiveIntegerInput(
+    await readSetupText(promptIo, "Voting bot count", String(defaultVotingCount)),
+    "Voting bot count",
+  );
+  const bots: SetupReviewBotInput[] = [];
+
+  for (let index = 0; index < botCount; index += 1) {
+    const defaultBot = defaults.bots[index] ?? createFallbackSetupBot(index + 1);
+    const displayName = await readSetupText(
+      promptIo,
+      `Bot ${index + 1} display name`,
+      defaultBot.displayName,
+    );
+    const role = await readSetupText(promptIo, `${displayName} role`, defaultBot.role);
+    const id = await readSetupText(promptIo, `${displayName} id`, defaultBot.id);
+    const modelId = await readSetupText(promptIo, `${displayName} model id`, defaultBot.modelId);
+    const modelName = await readSetupText(
+      promptIo,
+      `${displayName} model name`,
+      defaultBot.modelName,
+    );
+
+    bots.push({
+      ...defaultBot,
+      id,
+      displayName,
+      role,
+      modelId,
+      modelName,
+      votes: true,
+    });
+  }
+
+  const voterCount = bots.filter((bot) => bot.votes !== false).length;
+  const defaultRequiredApprovals = calculateDefaultSetupRequiredApprovals(voterCount);
+  const approvalMode = await promptIo.select({
+    message: "Approval rule",
+    options: [
+      {
+        value: "default",
+        label: `Default (${defaultRequiredApprovals} of ${voterCount})`,
+      },
+      {
+        value: "custom",
+        label: "Custom",
+      },
+    ],
+  });
+
+  if (promptIo.isCancel(approvalMode)) {
+    throw new Error("Setup cancelled");
+  }
+
+  const requiredApprovals =
+    approvalMode === "default"
+      ? defaultRequiredApprovals
+      : parseApprovalCountInput(
+          await readSetupText(promptIo, "Required approvals", String(defaultRequiredApprovals)),
+          voterCount,
+        );
+  const agents = await readSetupText(promptIo, "Skill install targets", defaults.agents);
+
+  const shouldCreate = await readSetupConfirm(promptIo, "Create setup now?", true);
+  if (!shouldCreate) {
+    throw new Error("Setup cancelled");
+  }
+
+  promptIo.outro(pc.green("Creating setup files"));
+  return { projectName, bots, requiredApprovals, agents };
+}
+
 async function promptForProjectName(defaultName: string): Promise<string> {
   intro(pc.cyan("Ponytrail onboarding"));
   const answer = await text({
@@ -325,6 +491,73 @@ async function promptForProjectName(defaultName: string): Promise<string> {
 
   outro(pc.green("Creating runtime files"));
   return String(answer);
+}
+
+async function readSetupText(
+  promptIo: SetupPromptIo,
+  message: string,
+  defaultValue: string,
+): Promise<string> {
+  const answer = await promptIo.text({
+    message,
+    placeholder: defaultValue,
+    defaultValue,
+  });
+
+  if (promptIo.isCancel(answer)) {
+    throw new Error("Setup cancelled");
+  }
+
+  return String(answer).trim() || defaultValue;
+}
+
+async function readSetupConfirm(
+  promptIo: SetupPromptIo,
+  message: string,
+  initialValue: boolean,
+): Promise<boolean> {
+  const answer = await promptIo.confirm({
+    message,
+    active: "Yes",
+    inactive: "No",
+    initialValue,
+  });
+
+  if (promptIo.isCancel(answer)) {
+    throw new Error("Setup cancelled");
+  }
+
+  return answer === true;
+}
+
+function parsePositiveIntegerInput(rawValue: string, label: string): number {
+  const value = Number(rawValue.trim());
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${label} must be a positive whole number.`);
+  }
+
+  return value;
+}
+
+function parseApprovalCountInput(rawValue: string, voterCount: number): number {
+  const value = parsePositiveIntegerInput(rawValue, "Required approvals");
+  if (value > voterCount) {
+    throw new Error(`Required approvals must be between 1 and ${voterCount}.`);
+  }
+
+  return value;
+}
+
+function createFallbackSetupBot(position: number): SetupReviewBotInput {
+  return {
+    id: `review_bot_${position}`,
+    displayName: `Review Bot ${position}`,
+    role: "Review",
+    panel: "requirement_court",
+    modelId: `review_bot_${position}_model`,
+    modelName: `review-bot-${position}-review-model`,
+    votes: true,
+  };
 }
 
 interface RunGoalFlowInput {
