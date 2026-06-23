@@ -1,10 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { createDefaultManifest, writeManifest } from "./manifest";
+import { createDefaultManifest, type Manifest, writeManifest } from "./manifest";
 
 export interface CreateOnboardingFilesInput {
   rootDir: string;
   projectName: string;
+  manifest?: Manifest;
 }
 
 export interface CreateOnboardingFilesResult {
@@ -31,7 +32,10 @@ export async function createOnboardingFiles(
     mkdir(skillsDir, { recursive: true }),
     mkdir(runtimesDir, { recursive: true }),
   ]);
-  await writeManifest(manifestPath, createDefaultManifest({ name: input.projectName }));
+  await writeManifest(
+    manifestPath,
+    input.manifest ?? createDefaultManifest({ name: input.projectName }),
+  );
   await writeFile(readmePath, createReadme(input.projectName));
   await writeFile(gitkeepPath, "");
 

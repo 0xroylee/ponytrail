@@ -2,6 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import {
+  createDefaultSetupReviewBots,
+  createSetupManifest,
+} from "../src/runtimes/ponytrail/manifest";
 import { createOnboardingFiles } from "../src/runtimes/ponytrail/onboarding";
 
 describe("onboarding", () => {
@@ -25,6 +29,30 @@ describe("onboarding", () => {
       expect(readme).toContain("/goal");
       expect(readme).toContain("Runtime Court");
       expect(readme).toContain(".ponytrail/goals");
+    } finally {
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  test("writes a provided setup manifest", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-onboarding-"));
+    const manifest = createSetupManifest({
+      name: "Injected Setup",
+      reviewBots: createDefaultSetupReviewBots().slice(0, 3),
+    });
+
+    try {
+      await createOnboardingFiles({
+        rootDir,
+        projectName: "Injected Setup",
+        manifest,
+      });
+
+      const manifestFile = await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8");
+      const writtenManifest = JSON.parse(manifestFile);
+      expect(writtenManifest.metadata.name).toBe("Injected Setup");
+      expect(writtenManifest.deliberation.decisionRule.voters).toBe(3);
+      expect(writtenManifest.deliberation.decisionRule.requiredApprovals).toBe(2);
     } finally {
       await rm(rootDir, { recursive: true, force: true });
     }
