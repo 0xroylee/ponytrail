@@ -34,6 +34,24 @@ Refresh an installed bundled skill later:
 npx ponytrail skills update pony-trail
 ```
 
+## Run A Pony Race
+
+Discuss a requirement before implementation:
+
+```bash
+npx ponytrail ponyrace "add CSV import"
+```
+
+Inside an agent chat, use the same trigger language:
+
+```text
+/ponyrace add CSV import
+```
+
+The Product Manager, Project Manager, Engineer, and Testing ponies discuss the
+direction. The default rule requires 3 of 4 approvals before the human owner can
+lock the direction for implementation.
+
 ## View History
 
 Show the snapshot tree:
