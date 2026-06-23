@@ -1,5 +1,5 @@
 import { constants } from "node:fs";
-import { access, chmod, cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { access, chmod, cp, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,6 +15,7 @@ export type SkillInstallStatus =
   | "updated"
   | "would_update"
   | "already_present";
+export type SkillInstallOperation = "install" | "update";
 
 export interface ResolvedInstallSkillSource {
   kind: "bundled" | "path";
@@ -50,6 +51,8 @@ export interface InstallAgentSkillInput {
   agents: SkillInstallAgent[];
   dryRun?: boolean;
   force?: boolean;
+  operation?: SkillInstallOperation;
+  refreshExisting?: boolean;
   installPrehook?: boolean;
 }
 
@@ -71,7 +74,7 @@ const agentSkillTargets: Record<
 > = {
   claude: { kind: "directory", path: [".claude", "skills"] },
   copilot: { kind: "directory", path: [".agents", "skills"] },
-  codex: { kind: "directory", path: [".codex", "skills"] },
+  codex: { kind: "directory", path: [".agents", "skills"] },
   cursor: { kind: "cursor_rule", path: [".cursor", "rules"] },
 };
 
@@ -95,23 +98,73 @@ export async function installAgentSkill(
   );
   const targets: SkillInstallTargetResult[] = [];
   const prehooks: SkillInstallPrehookResult[] = [];
+  const operation = input.operation ?? "install";
+  const refreshExisting = operation === "update" || input.refreshExisting === true;
+  const handledDestinations = new Map<string, SkillInstallStatus>();
 
   for (const agent of input.agents) {
     const destination = getSkillDestination(input.homeDir, agent, source.name);
+    const mirrorDestinations = getSkillMirrorDestinations(input.homeDir, agent, source.name);
+    const handledStatus = handledDestinations.get(destination);
+    if (handledStatus) {
+      if (
+        !input.dryRun &&
+        handledStatus !== "skipped_exists" &&
+        handledStatus !== "already_present"
+      ) {
+        for (const mirrorDestination of mirrorDestinations) {
+          if (await pathExists(mirrorDestination)) {
+            await rm(mirrorDestination, { recursive: true, force: true });
+          }
+          await installSkillTarget({ agent, source, destination: mirrorDestination });
+        }
+      }
+      targets.push({ agent, destination, status: handledStatus });
+      if (input.installPrehook && hasPrehookSupport(agent)) {
+        prehooks.push(
+          await installAgentSkillPrehook({
+            agent,
+            source,
+            homeDir: input.homeDir,
+            dryRun: input.dryRun ?? false,
+          }),
+        );
+      }
+      continue;
+    }
+
     const exists = await pathExists(destination);
+    const matchesSource =
+      exists && refreshExisting
+        ? await skillTargetsMatchSource({
+            agent,
+            source,
+            destinations: [destination, ...mirrorDestinations],
+          })
+        : false;
     const status = getInstallStatus({
       exists,
       dryRun: input.dryRun ?? false,
       force: input.force ?? false,
+      operation,
+      refreshExisting,
+      matchesSource,
     });
 
-    if (!input.dryRun && status !== "skipped_exists") {
+    if (!input.dryRun && status !== "skipped_exists" && status !== "already_present") {
       if (exists) {
         await rm(destination, { recursive: true, force: true });
       }
       await installSkillTarget({ agent, source, destination });
+      for (const mirrorDestination of mirrorDestinations) {
+        if (await pathExists(mirrorDestination)) {
+          await rm(mirrorDestination, { recursive: true, force: true });
+        }
+        await installSkillTarget({ agent, source, destination: mirrorDestination });
+      }
     }
 
+    handledDestinations.set(destination, status);
     targets.push({ agent, destination, status });
 
     if (input.installPrehook && hasPrehookSupport(agent)) {
@@ -209,6 +262,17 @@ function getSkillDestination(homeDir: string, agent: SkillInstallAgent, skillNam
   return join(homeDir, ...target.path, skillName);
 }
 
+function getSkillMirrorDestinations(
+  homeDir: string,
+  agent: SkillInstallAgent,
+  skillName: string,
+): string[] {
+  if (agent !== "codex") {
+    return [];
+  }
+  return [join(homeDir, ".codex", "skills", skillName)];
+}
+
 async function installSkillTarget(input: {
   agent: SkillInstallAgent;
   source: ResolvedInstallSkillSource;
@@ -223,6 +287,82 @@ async function installSkillTarget(input: {
   }
 
   await cp(input.source.path, input.destination, { recursive: true });
+}
+
+async function skillTargetsMatchSource(input: {
+  agent: SkillInstallAgent;
+  source: ResolvedInstallSkillSource;
+  destinations: string[];
+}): Promise<boolean> {
+  for (const destination of input.destinations) {
+    try {
+      const target = agentSkillTargets[input.agent];
+      if (target.kind === "cursor_rule") {
+        if ((await readFile(destination, "utf8")) !== (await renderCursorRule(input.source))) {
+          return false;
+        }
+        continue;
+      }
+
+      if (!(await directoryContentsMatch(input.source.path, destination))) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+async function directoryContentsMatch(sourceDir: string, targetDir: string): Promise<boolean> {
+  const [sourceEntries, targetEntries] = await Promise.all([
+    readSortedDirectoryEntries(sourceDir),
+    readSortedDirectoryEntries(targetDir),
+  ]);
+
+  if (sourceEntries.length !== targetEntries.length) {
+    return false;
+  }
+
+  for (const [index, sourceEntry] of sourceEntries.entries()) {
+    const targetEntry = targetEntries[index];
+    if (!targetEntry || sourceEntry.name !== targetEntry.name) {
+      return false;
+    }
+
+    const sourcePath = join(sourceDir, sourceEntry.name);
+    const targetPath = join(targetDir, targetEntry.name);
+    if (sourceEntry.isDirectory() || targetEntry.isDirectory()) {
+      if (!sourceEntry.isDirectory() || !targetEntry.isDirectory()) {
+        return false;
+      }
+      if (!(await directoryContentsMatch(sourcePath, targetPath))) {
+        return false;
+      }
+      continue;
+    }
+
+    if (!sourceEntry.isFile() || !targetEntry.isFile()) {
+      return false;
+    }
+
+    if (!(await fileContentsMatch(sourcePath, targetPath))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+async function readSortedDirectoryEntries(path: string) {
+  return (await readdir(path, { withFileTypes: true })).sort((left, right) =>
+    left.name.localeCompare(right.name),
+  );
+}
+
+async function fileContentsMatch(leftPath: string, rightPath: string): Promise<boolean> {
+  const [left, right] = await Promise.all([readFile(leftPath), readFile(rightPath)]);
+  return left.equals(right);
 }
 
 async function renderCursorRule(source: ResolvedInstallSkillSource): Promise<string> {
@@ -368,7 +508,23 @@ function getInstallStatus(input: {
   exists: boolean;
   dryRun: boolean;
   force: boolean;
+  operation: SkillInstallOperation;
+  refreshExisting: boolean;
+  matchesSource: boolean;
 }): SkillInstallStatus {
+  if (input.operation === "update" || input.refreshExisting) {
+    if (input.dryRun && input.exists) {
+      return input.matchesSource ? "already_present" : "would_update";
+    }
+    if (input.dryRun) {
+      return "would_install";
+    }
+    if (input.exists) {
+      return input.matchesSource ? "already_present" : "updated";
+    }
+    return "installed";
+  }
+
   if (input.dryRun && input.exists) {
     return "would_overwrite";
   }

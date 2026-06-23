@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildProgram, type GoalClarificationPrompter } from "../src/cli";
@@ -23,6 +23,7 @@ describe("cli", () => {
 
     const onboardCommand = program.commands.find((command) => command.name() === "onboard");
     const revertCommand = program.commands.find((command) => command.name() === "revert");
+    const skillsCommand = program.commands.find((command) => command.name() === "skills");
 
     expect(onboardCommand?.options.map((option) => option.long)).toEqual([
       "--dir",
@@ -31,6 +32,7 @@ describe("cli", () => {
       "--home",
     ]);
     expect(revertCommand?.options.map((option) => option.long)).toEqual(["--dry-run"]);
+    expect(skillsCommand?.commands.map((command) => command.name())).toEqual(["install", "update"]);
   });
 
   test("runs onboarding and manifest-backed commands", async () => {
@@ -145,6 +147,37 @@ describe("cli", () => {
       expect(promptedDefaults).toEqual([rootDir.slice(rootDir.lastIndexOf("/") + 1)]);
       expect(logs.some((line) => line.includes("Skill install result"))).toBe(true);
       expect(logs.some((line) => line.includes("Ponytrail onboarding complete"))).toBe(true);
+      expect(stripAnsiLines(logs)).toContain("Welcome to Ponytrail.");
+      expect(logs.some((line) => line.includes("Restart your agent IDE"))).toBe(true);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
+  test("onboard refreshes an older installed bundled skill", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
+    const installedSkillPath = join(homeDir, ".agents", "skills", "pony-trail", "SKILL.md");
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await mkdir(join(homeDir, ".agents", "skills", "pony-trail"), { recursive: true });
+      await writeFile(installedSkillPath, "stale pony trail skill");
+
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["onboard", "--name", "Refresh Workspace", "--home", homeDir, "--agents", "codex"],
+        { from: "user" },
+      );
+
+      expect(await readFile(installedSkillPath, "utf8")).toContain("name: pony-trail");
+      expect(logs.some((line) => line.includes("codex: updated"))).toBe(true);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });
@@ -333,6 +366,7 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("codex: would install"))).toBe(true);
       expect(logs.some((line) => line.includes("cursor: would install"))).toBe(true);
       expect(logs.some((line) => line.includes(".cursor/rules/pony-trail.mdc"))).toBe(true);
+      expect(stripAnsiLines(logs)).not.toContain("Welcome to Ponytrail.");
     } finally {
       console.log = originalLog;
       await rm(homeDir, { recursive: true, force: true });
@@ -415,6 +449,8 @@ describe("cli", () => {
       await expect(
         stat(join(homeDir, ".codex", "skills", "pony-trail", "SKILL.md")),
       ).resolves.toBeTruthy();
+      expect(stripAnsiLines(logs)).toContain("Welcome to Ponytrail.");
+      expect(logs.some((line) => line.includes("Restart your agent IDE"))).toBe(true);
       expect(logs.some((line) => line.includes("Local history:"))).toBe(true);
 
       await buildProgram({ cwd: rootDir }).parseAsync(["history", "--details"], { from: "user" });
@@ -450,6 +486,58 @@ describe("cli", () => {
     }
   });
 
+  test("skills update refreshes installed skill files and records a local project history commit", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
+    const installedSkillPath = join(homeDir, ".agents", "skills", "pony-trail", "SKILL.md");
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["skills", "install", "pony-trail", "--home", homeDir, "--agents", "codex"],
+        { from: "user" },
+      );
+      await writeFile(installedSkillPath, "stale skill");
+      logs.splice(0);
+
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["skills", "update", "pony-trail", "--home", homeDir, "--agents", "codex"],
+        { from: "user" },
+      );
+
+      expect(stripAnsiLines(logs)).toContain("Skill update result");
+      expect(logs.some((line) => line.includes("codex: updated"))).toBe(true);
+      expect(stripAnsiLines(logs)).toContain("Welcome to Ponytrail.");
+      expect(logs.some((line) => line.includes("Restart your agent IDE"))).toBe(true);
+      expect(logs.some((line) => line.includes("Local history:"))).toBe(true);
+      expect(await readFile(installedSkillPath, "utf8")).toContain("name: pony-trail");
+
+      await buildProgram({ cwd: rootDir }).parseAsync(["history", "--details"], { from: "user" });
+      const historyLogs = logs.splice(0).map(stripAnsi);
+
+      expect(historyLogs.some((line) => line.includes("action: update skill"))).toBe(true);
+      expect(
+        historyLogs.some((line) => line.includes("summary: Updated pony-trail skill for codex")),
+      ).toBe(true);
+
+      const entries = (await readFile(join(rootDir, ".pony-trail", "snapshots.jsonl"), "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+      expect(entries.at(-2)?.snapshot_id).toStartWith("skill-update-");
+      expect(entries.at(-1)?.snapshot_id).toStartWith("skill-update-");
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
   test("history supports tree, details, and JSON output", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const logs: string[] = [];
@@ -475,11 +563,18 @@ describe("cli", () => {
         "  * snapshot-001 (pre/post)",
       ]);
       expect(treeLogs.some((line) => line.includes("Updated note"))).toBe(false);
+      expect(treeLogs.some((line) => line.includes("instruction_context"))).toBe(false);
       expect(detailsLogs).toContain("Snapshot history");
       expect(detailsLogs.some((line) => line.includes("session-alpha"))).toBe(true);
       expect(detailsLogs.some((line) => line.includes("snapshot-001"))).toBe(true);
       expect(detailsLogs.some((line) => line.includes("Updated note"))).toBe(true);
+      expect(detailsLogs.some((line) => line.includes("instruction_context: pre"))).toBe(true);
+      expect(detailsLogs.some((line) => line.includes("AGENTS.md captured sha256:aaaaaaaa"))).toBe(
+        true,
+      );
+      expect(detailsLogs.some((line) => line.includes("git: main abc123 dirty"))).toBe(true);
       expect(jsonLogs.some((line) => line.includes('"sessionId": "session-alpha"'))).toBe(true);
+      expect(jsonLogs.some((line) => line.includes('"instructionContexts"'))).toBe(true);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });
@@ -633,6 +728,31 @@ async function writeSampleSnapshotLog(rootDir: string): Promise<void> {
         expected: "A note changes",
         verify: "Run tests",
         rollback: "Restore pre snapshot",
+        instruction_context: {
+          mode: "opt_in",
+          captured_at: "2026-06-22T17:04:23Z",
+          session_id_hash: "sha256:session",
+          git: { branch: "main", commit: "abc123", dirty: true },
+          files: [
+            {
+              path: "AGENTS.md",
+              status: "captured",
+              sha256: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              bytes: 12,
+            },
+            { path: "CLAUDE.md", status: "missing" },
+          ],
+          skills: [
+            {
+              name: "pony-trail",
+              path: "bundled-skills/pony-trail/SKILL.md",
+              status: "captured",
+              version_or_sha256:
+                "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            },
+          ],
+          warnings: [],
+        },
         files: [
           {
             path: "notes.txt",
