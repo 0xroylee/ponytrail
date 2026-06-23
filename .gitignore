@@ -9,3 +9,5 @@ work/
 .DS_Store
 docs/superpowers/
 .codegraph
+__pycache__/
+*.pyc
