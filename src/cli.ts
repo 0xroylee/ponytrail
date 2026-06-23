@@ -118,6 +118,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
           agents: parseSkillInstallAgents(commandOptions.agents),
           dryRun: false,
           force: false,
+          refreshExisting: true,
           installPrehook: false,
         });
 
@@ -651,6 +652,7 @@ function configureSkillChangeCommand(
           agents: parseSkillInstallAgents(commandOptions.agents),
           dryRun: commandOptions.dryRun,
           force: operation === "install" ? commandOptions.force === true : false,
+          refreshExisting: false,
           installPrehook: commandOptions.prehook,
         });
 
@@ -667,6 +669,7 @@ interface InstallSkillWithLocalHistoryInput {
   agents: ReturnType<typeof parseSkillInstallAgents>;
   dryRun: boolean;
   force: boolean;
+  refreshExisting: boolean;
   installPrehook: boolean;
 }
 
@@ -707,6 +710,7 @@ async function installSkillWithLocalHistory(
       dryRun: input.dryRun,
       force: input.force,
       operation: input.operation,
+      refreshExisting: input.refreshExisting,
       installPrehook: input.installPrehook,
     });
 

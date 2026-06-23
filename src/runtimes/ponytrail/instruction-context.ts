@@ -220,11 +220,21 @@ function readGitContext(rootDir: string): InstructionContextGit {
 }
 
 function runGit(rootDir: string, args: string[]): string | undefined {
-  const result = spawnSync("git", args, { cwd: rootDir });
+  const result = spawnSync("git", args, { cwd: rootDir, env: withoutInheritedGitEnv() });
   if (result.status !== 0) {
     return undefined;
   }
   return result.stdout.toString("utf8").trim();
+}
+
+function withoutInheritedGitEnv(): Record<string, string | undefined> {
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith("GIT_")) {
+      delete env[key];
+    }
+  }
+  return env;
 }
 
 function isSkillMetadataPath(path: string): boolean {

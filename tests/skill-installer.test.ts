@@ -111,6 +111,32 @@ describe("skill installer", () => {
     }
   });
 
+  test("keeps matching bundled skill targets when update is requested", async () => {
+    const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
+
+    try {
+      await installAgentSkill({
+        source: "pony-trail",
+        homeDir,
+        agents: ["codex"],
+      });
+
+      const result = await installAgentSkill({
+        source: "pony-trail",
+        homeDir,
+        agents: ["codex"],
+        operation: "update",
+      });
+
+      expect(result.targets[0]).toMatchObject({
+        agent: "codex",
+        status: "already_present",
+      });
+    } finally {
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
   test("dry-runs Cursor rule installation", async () => {
     const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
 

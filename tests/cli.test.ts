@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildProgram, type GoalClarificationPrompter } from "../src/cli";
@@ -147,6 +147,35 @@ describe("cli", () => {
       expect(promptedDefaults).toEqual([rootDir.slice(rootDir.lastIndexOf("/") + 1)]);
       expect(logs.some((line) => line.includes("Skill install result"))).toBe(true);
       expect(logs.some((line) => line.includes("Ponytrail onboarding complete"))).toBe(true);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
+  test("onboard refreshes an older installed bundled skill", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
+    const installedSkillPath = join(homeDir, ".codex", "skills", "pony-trail", "SKILL.md");
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await mkdir(join(homeDir, ".codex", "skills", "pony-trail"), { recursive: true });
+      await writeFile(installedSkillPath, "stale pony trail skill");
+
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["onboard", "--name", "Refresh Workspace", "--home", homeDir, "--agents", "codex"],
+        { from: "user" },
+      );
+
+      expect(await readFile(installedSkillPath, "utf8")).toContain("name: pony-trail");
+      expect(logs.some((line) => line.includes("codex: updated"))).toBe(true);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });

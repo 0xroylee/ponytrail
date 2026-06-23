@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { execFile } from "node:child_process";
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import {
   captureInstructionContext,
@@ -127,11 +127,38 @@ describe("instruction context", () => {
     }
   });
 
+  test("ignores inherited Git hook environment when reading git context", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-instructions-"));
+    const inheritedGitDir = await currentWorktreeGitDir();
+    const originalGitDir = process.env.GIT_DIR;
+
+    try {
+      process.env.GIT_DIR = inheritedGitDir;
+
+      const context = await captureInstructionContext({
+        rootDir,
+        sessionId: "session-alpha",
+        timestampUtc: "2026-06-22T17:04:23Z",
+      });
+
+      expect(context.git.branch).toBeUndefined();
+      expect(context.git.commit).toBeUndefined();
+      expect(context.git.dirty).toBeUndefined();
+    } finally {
+      if (originalGitDir === undefined) {
+        delete process.env.GIT_DIR;
+      } else {
+        process.env.GIT_DIR = originalGitDir;
+      }
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
   test("captures allowlisted git metadata when the root is a git repository", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-instructions-"));
 
     try {
-      await execFileAsync("git", ["init"], { cwd: rootDir });
+      await execFileAsync("git", ["init"], { cwd: rootDir, env: withoutGitEnv() });
       await writeFile(join(rootDir, "AGENTS.md"), "agent rules\n");
 
       const context = await captureInstructionContext({
@@ -177,3 +204,23 @@ describe("instruction context", () => {
     ).toBe(false);
   });
 });
+
+async function currentWorktreeGitDir(): Promise<string> {
+  const gitPath = join(process.cwd(), ".git");
+  const content = await readFile(gitPath, "utf8");
+  const gitDirPrefix = "gitdir:";
+  if (content.startsWith(gitDirPrefix)) {
+    return resolve(process.cwd(), content.slice(gitDirPrefix.length).trim());
+  }
+  return gitPath;
+}
+
+function withoutGitEnv(): Record<string, string | undefined> {
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith("GIT_")) {
+      delete env[key];
+    }
+  }
+  return env;
+}
