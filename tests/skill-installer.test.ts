@@ -64,7 +64,10 @@ describe("skill installer", () => {
     expect(source.name).toBe("ponyrace");
     expect(source.kind).toBe("bundled");
     expect(source.path.endsWith(join("bundled-skills", "ponyrace"))).toBe(true);
-    expect(await readFile(join(source.path, "SKILL.md"), "utf8")).toContain("name: ponyrace");
+    const skill = await readFile(join(source.path, "SKILL.md"), "utf8");
+    expect(skill).toContain("name: ponyrace");
+    expect(skill).toContain('ponytrail ponyrace "<request>"');
+    expect(skill).not.toContain("rtk bun run dev");
   });
 
   test("installs the bundled ponyrace skill into directory and Cursor targets", async () => {

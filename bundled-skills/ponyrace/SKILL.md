@@ -14,9 +14,7 @@ Core principle: discuss and approve the requirement direction before implementat
 ## Flow
 
 1. Extract the requirement text after `/ponyrace`; if the request text is missing, ask the user for the requirement in one concise question.
-2. Run the Ponytrail CLI discussion:
-   - Installed package: `ponytrail ponyrace "<request>"`
-   - Local Ponytrail repo development: `rtk bun run dev -- ponyrace "<request>"`
+2. Run the Ponytrail CLI discussion with `ponytrail ponyrace "<request>"`.
 3. If the user gives a manifest path, pass it with `--manifest <path>` instead of appending it to the request text.
 4. Preserve the important CLI output when reporting back:
    - pony discussion lines
