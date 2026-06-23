@@ -829,6 +829,14 @@ function createSetupModelConfigs(
   const modelConfigs: Manifest["models"] = [];
   const addedModelIds = new Set<string>();
 
+  const createFallbackModelConfig = (bot: SetupReviewBotInput): Manifest["models"][number] => ({
+    id: bot.modelId,
+    provider: "configurable",
+    name: bot.modelName,
+    purpose: `Review requirement direction from the ${bot.role} perspective.`,
+    temperature: 0.1,
+  });
+
   const appendModel = (modelId: string, fallback?: SetupReviewBotInput) => {
     if (addedModelIds.has(modelId)) {
       return;
@@ -836,7 +844,15 @@ function createSetupModelConfigs(
 
     const existingModel = existingModelConfigs.get(modelId);
     if (existingModel) {
-      modelConfigs.push(existingModel);
+      modelConfigs.push(
+        fallback
+          ? {
+              ...existingModel,
+              name: fallback.modelName,
+              purpose: `Review requirement direction from the ${fallback.role} perspective.`,
+            }
+          : existingModel,
+      );
       addedModelIds.add(modelId);
       return;
     }
@@ -845,13 +861,7 @@ function createSetupModelConfigs(
       return;
     }
 
-    modelConfigs.push({
-      id: fallback.modelId,
-      provider: "configurable",
-      name: fallback.modelName,
-      purpose: `Review requirement direction from the ${fallback.role} perspective.`,
-      temperature: 0.1,
-    });
+    modelConfigs.push(createFallbackModelConfig(fallback));
     addedModelIds.add(modelId);
   };
 

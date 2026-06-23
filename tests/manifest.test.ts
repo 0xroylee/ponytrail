@@ -202,6 +202,26 @@ describe("setup manifest", () => {
     expect(judgeBot?.instruction).not.toContain("3-of-4");
   });
 
+  test("preserves custom model names for existing setup model ids", () => {
+    const reviewBots = createDefaultSetupReviewBots().map((bot) =>
+      bot.id === "product_manager_bot" ? { ...bot, modelName: "custom-product-review-model" } : bot,
+    );
+
+    const manifest = ManifestSchema.parse(
+      createSetupManifest({
+        name: "Custom Model Names",
+        reviewBots,
+      }),
+    );
+
+    expect(
+      manifest.models.some(
+        (model) =>
+          model.id === "product_manager_model" && model.name === "custom-product-review-model",
+      ),
+    ).toBe(true);
+  });
+
   test("rejects duplicate setup bot ids before manifest construction", () => {
     const reviewBots = createDefaultSetupReviewBots();
     const productBot = reviewBots.find((bot) => bot.id === "product_manager_bot");
@@ -259,6 +279,40 @@ describe("setup manifest", () => {
       createSetupManifest({
         name: "Too Many Required",
         requiredApprovals: 5,
+      }),
+    ).toThrow("Required approvals must be between 1 and 4.");
+  });
+
+  test("rejects missing setup model fields and below-range approval counts", () => {
+    expect(() =>
+      createSetupManifest({
+        name: "Missing Model Id",
+        reviewBots: createDefaultSetupReviewBots().map((bot) =>
+          bot.id === "product_manager_bot" ? { ...bot, modelId: "" } : bot,
+        ),
+      }),
+    ).toThrow("Bot product_manager_bot must reference a model id.");
+
+    expect(() =>
+      createSetupManifest({
+        name: "Missing Model Name",
+        reviewBots: createDefaultSetupReviewBots().map((bot) =>
+          bot.id === "product_manager_bot" ? { ...bot, modelName: "" } : bot,
+        ),
+      }),
+    ).toThrow("Bot product_manager_bot must reference a model name.");
+
+    expect(() =>
+      createSetupManifest({
+        name: "Too Few Required",
+        requiredApprovals: 0,
+      }),
+    ).toThrow("Required approvals must be between 1 and 4.");
+
+    expect(() =>
+      createSetupManifest({
+        name: "Fractional Required",
+        requiredApprovals: 1.5,
       }),
     ).toThrow("Required approvals must be between 1 and 4.");
   });

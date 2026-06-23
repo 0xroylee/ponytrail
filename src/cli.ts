@@ -311,6 +311,23 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
     });
 
   program
+    .command("stream-goal")
+    .description("Compatibility alias for goal.")
+    .argument("<request...>", "raw goal request")
+    .option("-m, --manifest <path>", "manifest path", defaultManifestPath)
+    .option("-w, --worker <id>", "accepted for compatibility; worker execution is gated")
+    .action(
+      async (requestParts: string[], commandOptions: { manifest: string; worker?: string }) => {
+        await runGoalFlow(requestParts, {
+          rootDir,
+          clarificationPrompter,
+          manifestPath: commandOptions.manifest,
+          printJson: false,
+        });
+      },
+    );
+
+  program
     .command("history")
     .description("Show Pony Trail snapshot history.")
     .option("-s, --session <id>", "only show one snapshot session")
@@ -405,10 +422,10 @@ export async function promptForSetup(
   promptIo.intro(pc.cyan("Ponytrail setup"));
 
   const projectName = await readSetupText(promptIo, "Workspace name", defaults.projectName);
-  const defaultVotingCount = defaults.bots.filter((bot) => bot.votes !== false).length;
+  const defaultBotCount = defaults.bots.length;
   const botCount = parsePositiveIntegerInput(
-    await readSetupText(promptIo, "Voting bot count", String(defaultVotingCount)),
-    "Voting bot count",
+    await readSetupText(promptIo, "Review bot count", String(defaultBotCount)),
+    "Review bot count",
   );
   const bots: SetupReviewBotInput[] = [];
 
@@ -421,11 +438,27 @@ export async function promptForSetup(
     );
     const role = await readSetupText(promptIo, `${displayName} role`, defaultBot.role);
     const id = await readSetupText(promptIo, `${displayName} id`, defaultBot.id);
+    const panel = await readSetupText(
+      promptIo,
+      `${displayName} panel`,
+      defaultBot.panel ?? "requirement_court",
+    );
+    const instruction = await readSetupText(
+      promptIo,
+      `${displayName} instruction`,
+      defaultBot.instruction ??
+        `Review the requirement direction from the ${role} perspective before voting.`,
+    );
     const modelId = await readSetupText(promptIo, `${displayName} model id`, defaultBot.modelId);
     const modelName = await readSetupText(
       promptIo,
       `${displayName} model name`,
       defaultBot.modelName,
+    );
+    const votes = await readSetupConfirm(
+      promptIo,
+      `${displayName} votes`,
+      defaultBot.votes !== false,
     );
 
     bots.push({
@@ -433,9 +466,11 @@ export async function promptForSetup(
       id,
       displayName,
       role,
+      panel,
+      instruction,
       modelId,
       modelName,
-      votes: true,
+      votes,
     });
   }
 

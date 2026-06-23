@@ -23,6 +23,7 @@ describe("cli", () => {
       "goal",
       "ponyrace",
       "vote",
+      "stream-goal",
       "history",
       "revert",
       "skills",
@@ -31,6 +32,7 @@ describe("cli", () => {
     const setupCommand = program.commands.find((command) => command.name() === "setup");
     const onboardCommand = program.commands.find((command) => command.name() === "onboard");
     const ponyraceCommand = program.commands.find((command) => command.name() === "ponyrace");
+    const streamGoalCommand = program.commands.find((command) => command.name() === "stream-goal");
     const revertCommand = program.commands.find((command) => command.name() === "revert");
     const skillsCommand = program.commands.find((command) => command.name() === "skills");
 
@@ -50,6 +52,10 @@ describe("cli", () => {
       "--manifest",
       "--worker",
       "--json",
+    ]);
+    expect(streamGoalCommand?.options.map((option) => option.long)).toEqual([
+      "--manifest",
+      "--worker",
     ]);
     expect(revertCommand?.options.map((option) => option.long)).toEqual(["--dry-run"]);
     expect(skillsCommand?.commands.map((command) => command.name())).toEqual(["install", "update"]);
@@ -293,7 +299,7 @@ describe("cli", () => {
         if (message === "Workspace name") {
           return "Prompted Setup";
         }
-        if (message === "Voting bot count") {
+        if (message === "Review bot count") {
           return "5";
         }
         if (message === "Skill install targets") {
@@ -322,6 +328,67 @@ describe("cli", () => {
     expect(result.requiredApprovals).toBe(4);
     expect(result.agents).toBe("codex");
     expect(textDefaults).toContainEqual({ message: "Required approvals", defaultValue: "4" });
+  });
+
+  test("setup prompt captures panel, instruction, and non-voting bot choices", async () => {
+    const promptIo: SetupPromptIo = {
+      isTty: true,
+      intro: () => {},
+      outro: () => {},
+      text: async ({ message, defaultValue }) => {
+        if (message === "Review bot count") {
+          return "2";
+        }
+        if (message === "Bot 2 display name") {
+          return "Observer Bot";
+        }
+        if (message === "Observer Bot role") {
+          return "Observer";
+        }
+        if (message === "Observer Bot id") {
+          return "observer_bot";
+        }
+        if (message === "Observer Bot panel") {
+          return "advisory_panel";
+        }
+        if (message === "Observer Bot instruction") {
+          return "Observe the discussion without voting.";
+        }
+        if (message === "Observer Bot model id") {
+          return "observer_model";
+        }
+        if (message === "Observer Bot model name") {
+          return "observer-review-model";
+        }
+        return defaultValue;
+      },
+      select: async () => "default",
+      confirm: async ({ message }) => message !== "Observer Bot votes",
+      isCancel: () => false,
+    };
+
+    const result = await promptForSetup(
+      {
+        projectName: "Default Setup",
+        bots: createDefaultSetupReviewBots(),
+        requiredApprovals: 3,
+        agents: "codex,claude,cursor",
+      },
+      promptIo,
+    );
+
+    expect(result.bots).toHaveLength(2);
+    expect(result.bots[1]).toMatchObject({
+      id: "observer_bot",
+      displayName: "Observer Bot",
+      role: "Observer",
+      panel: "advisory_panel",
+      instruction: "Observe the discussion without voting.",
+      modelId: "observer_model",
+      modelName: "observer-review-model",
+      votes: false,
+    });
+    expect(result.requiredApprovals).toBe(1);
   });
 
   test("setup accepts a custom bot roster and approval count", async () => {
@@ -542,6 +609,34 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("Title: Add CSV import to admin dashboard"))).toBe(
         true,
       );
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  test("stream-goal remains a compatibility alias for requirement discussion", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
+        { from: "user" },
+      );
+
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["stream-goal", "--worker", "claude", "Review", "checkout", "test", "plan", "evidence"],
+        { from: "user" },
+      );
+
+      expect(stripAnsiLines(logs)).toContain("Requirement discussion");
+      expect(logs.some((line) => line.includes("testing_bot: I think"))).toBe(true);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });

@@ -26,9 +26,13 @@ describe("onboarding", () => {
       await expect(stat(join(rootDir, ".ponytrail", "runtimes"))).resolves.toBeTruthy();
 
       const readme = await readFile(join(rootDir, ".ponytrail", "README.md"), "utf8");
-      expect(readme).toContain("/goal");
       expect(readme).toContain("Runtime Court");
+      expect(readme).toContain('ponytrail ponyrace "<request>"');
+      expect(readme).toContain("configured review bots");
+      expect(readme).toContain("manifest approval rule");
+      expect(readme).toContain("/amend-goal");
       expect(readme).toContain(".ponytrail/goals");
+      expect(readme).not.toContain("2 of 3");
     } finally {
       await rm(rootDir, { recursive: true, force: true });
     }
