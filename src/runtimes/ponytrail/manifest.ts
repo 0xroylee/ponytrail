@@ -707,12 +707,13 @@ function upgradeManifestInput(input: unknown): unknown {
   }
 
   const manifest = { ...input };
+  const hadModelRegistry = Array.isArray(manifest.models);
 
-  if (!Array.isArray(manifest.models)) {
+  if (!hadModelRegistry) {
     manifest.models = DEFAULT_MODEL_CONFIGS;
   }
 
-  if (Array.isArray(manifest.bots) && isLegacyDefaultCourt(manifest.bots)) {
+  if (!hadModelRegistry && Array.isArray(manifest.bots) && isLegacyDefaultCourt(manifest.bots)) {
     const options: DefaultManifestOptions = {};
     if (isRecord(manifest.metadata) && typeof manifest.metadata.name === "string") {
       options.name = manifest.metadata.name;

@@ -131,6 +131,62 @@ describe("manifest", () => {
       await rm(rootDir, { recursive: true, force: true });
     }
   });
+
+  test("loads fresh setup manifests with legacy-looking custom bot ids without rewriting them", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-manifest-"));
+    const manifestPath = join(rootDir, "manifest.json");
+
+    try {
+      const manifest = createSetupManifest({
+        name: "Fresh Custom Court",
+        reviewBots: [
+          {
+            id: "product_bot",
+            displayName: "Product Bot",
+            role: "Product",
+            modelId: "product_model",
+            modelName: "product-review-model",
+            votes: true,
+          },
+          {
+            id: "engineering_bot",
+            displayName: "Engineering Bot",
+            role: "Engineering",
+            modelId: "engineering_model",
+            modelName: "engineering-review-model",
+            votes: true,
+          },
+          {
+            id: "verification_bot",
+            displayName: "Verification Bot",
+            role: "Verification",
+            modelId: "verification_model",
+            modelName: "verification-review-model",
+            votes: true,
+          },
+        ],
+      });
+
+      await writeManifest(manifestPath, manifest);
+      const loaded = await loadManifest(manifestPath);
+
+      expect(loaded.deliberation.decisionRule.voterIds).toEqual([
+        "product_bot",
+        "engineering_bot",
+        "verification_bot",
+      ]);
+      expect(loaded.bots.map((bot) => bot.id)).toEqual([
+        "requirements_brainstorm_bot",
+        "goal_draft_bot",
+        "product_bot",
+        "engineering_bot",
+        "verification_bot",
+        "requirement_judge_bot",
+      ]);
+    } finally {
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("setup manifest", () => {
