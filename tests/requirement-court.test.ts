@@ -55,6 +55,25 @@ describe("requirement court", () => {
     expect(result.votes.some((vote) => vote.botId === "requirement_judge_bot")).toBe(false);
   });
 
+  test("gives role-specific guidance for broad codebase review requests", async () => {
+    const manifest = createDefaultManifest();
+    const contract = draftGoalContract(
+      "review the codebase, make sure it's easy to manage and maintainable.",
+      { manifest },
+    );
+
+    const result = await runRequirementCourt(contract, { manifest });
+    const messages = new Map(result.discussion.map((entry) => [entry.botId, entry.message]));
+
+    expect(messages.get("product_manager_bot")).toContain("maintainability outcome");
+    expect(messages.get("project_manager_bot")).toContain("sequence the review");
+    expect(messages.get("engineer_bot")).toContain("module boundaries");
+    expect(messages.get("testing_bot")).toContain("coverage");
+    expect([...messages.values()].every((message) => message.includes("what should change"))).toBe(
+      true,
+    );
+  });
+
   test("creates discussion entries for setup-defined voter bots", async () => {
     const manifest = createSetupManifest({
       reviewBots: [
