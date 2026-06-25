@@ -18,20 +18,20 @@ describe("onboarding", () => {
         projectName: "Runtime Court",
       });
 
-      expect(result.created).toContain(join(rootDir, ".ponytrail", "manifest.json"));
-      expect(result.created).toContain(join(rootDir, ".ponytrail", "README.md"));
-      await expect(stat(join(rootDir, ".ponytrail", "goals"))).resolves.toBeTruthy();
-      await expect(stat(join(rootDir, ".ponytrail", "plugins"))).resolves.toBeTruthy();
-      await expect(stat(join(rootDir, ".ponytrail", "skills"))).resolves.toBeTruthy();
-      await expect(stat(join(rootDir, ".ponytrail", "runtimes"))).resolves.toBeTruthy();
+      expect(result.created).toContain(join(rootDir, ".ponyrace", "manifest.json"));
+      expect(result.created).toContain(join(rootDir, ".ponyrace", "README.md"));
+      await expect(stat(join(rootDir, ".ponyrace", "goals"))).resolves.toBeTruthy();
+      await expect(stat(join(rootDir, ".ponyrace", "plugins"))).resolves.toBeTruthy();
+      await expect(stat(join(rootDir, ".ponyrace", "skills"))).resolves.toBeTruthy();
+      await expect(stat(join(rootDir, ".ponyrace", "runtimes"))).resolves.toBeTruthy();
 
-      const readme = await readFile(join(rootDir, ".ponytrail", "README.md"), "utf8");
+      const readme = await readFile(join(rootDir, ".ponyrace", "README.md"), "utf8");
       expect(readme).toContain("Runtime Court");
       expect(readme).toContain('ponyrace ponyrace "<request>"');
       expect(readme).toContain("configured review ponies");
       expect(readme).toContain("manifest approval rule");
       expect(readme).toContain("/amend-goal");
-      expect(readme).toContain(".ponytrail/goals");
+      expect(readme).toContain(".ponyrace/goals");
       expect(readme).not.toContain("2 of 3");
     } finally {
       await rm(rootDir, { recursive: true, force: true });
@@ -52,7 +52,7 @@ describe("onboarding", () => {
         manifest,
       });
 
-      const manifestFile = await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8");
+      const manifestFile = await readFile(join(rootDir, ".ponyrace", "manifest.json"), "utf8");
       const writtenManifest = JSON.parse(manifestFile);
       expect(writtenManifest.metadata.name).toBe("Injected Setup");
       expect(writtenManifest.deliberation.decisionRule.voters).toBe(3);

@@ -195,7 +195,7 @@ describe("cli", () => {
         ).resolves.toBeTruthy();
       }
       const manifest = JSON.parse(
-        await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
+        await readFile(join(rootDir, ".ponyrace", "manifest.json"), "utf8"),
       );
       expect(manifest.metadata.name).toBe("Prompted Workspace");
       expect(promptedDefaults).toEqual([rootDir.slice(rootDir.lastIndexOf("/") + 1)]);
@@ -259,7 +259,7 @@ describe("cli", () => {
       }
 
       const manifest = JSON.parse(
-        await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
+        await readFile(join(rootDir, ".ponyrace", "manifest.json"), "utf8"),
       );
       expect(manifest.metadata.name).toBe("Setup Court");
       expect(manifest.kind).toBe("ai-work-runtime.ponytrail.setup");
@@ -314,7 +314,7 @@ describe("cli", () => {
         ),
       ).rejects.toThrow();
 
-      await expect(stat(join(rootDir, ".ponytrail", "manifest.json"))).resolves.toBeTruthy();
+      await expect(stat(join(rootDir, ".ponyrace", "manifest.json"))).resolves.toBeTruthy();
       expect(logs.some((line) => line.includes("Ponyrace setup complete"))).toBe(false);
     } finally {
       console.log = originalLog;
@@ -488,7 +488,7 @@ describe("cli", () => {
       }
 
       const manifest = JSON.parse(
-        await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
+        await readFile(join(rootDir, ".ponyrace", "manifest.json"), "utf8"),
       );
       expect(manifest.metadata.name).toBe("Custom Setup");
       expect(manifest.kind).toBe("ai-work-runtime.ponytrail.setup");

@@ -103,7 +103,7 @@ export type RevertApprovalPrompter = (input: RevertApprovalPromptInput) => Promi
 type SnapshotHistoryMode = "tree" | "details";
 type SkillChangeOperation = "install" | "update";
 
-const defaultManifestPath = ".ponytrail/manifest.json";
+const defaultManifestPath = ".ponyrace/manifest.json";
 const skillInstallHistorySessionId = "ponyrace-skills";
 const clackSetupPromptIo: SetupPromptIo = {
   get isTty() {
@@ -159,7 +159,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
   program
     .command("setup")
     .description(
-      "Create local .ponytrail files, configure review ponies, and install Ponyrace skills.",
+      "Create local .ponyrace files, configure review ponies, and install Ponyrace skills.",
     )
     .option("--dir <dir>", "target directory", rootDir)
     .option("--name <name>", "project name")
@@ -218,7 +218,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
 
   program
     .command("onboard")
-    .description("Create local .ponytrail files and install the default /ponyrace skills.")
+    .description("Create local .ponyrace files and install the default /ponyrace skills.")
     .option("-d, --dir <dir>", "target directory", rootDir)
     .option("-n, --name <name>", "project name")
     .option(

@@ -22,7 +22,7 @@ export interface CreateOnboardingFilesResult {
 export async function createOnboardingFiles(
   input: CreateOnboardingFilesInput,
 ): Promise<CreateOnboardingFilesResult> {
-  const courtDir = join(input.rootDir, ".ponytrail");
+  const courtDir = join(input.rootDir, ".ponyrace");
   const goalsDir = join(courtDir, "goals");
   const pluginsDir = join(courtDir, "plugins");
   const skillsDir = join(courtDir, "skills");
@@ -66,12 +66,12 @@ This directory stores Ponyrace requirement-first runtime files for AI agent work
 
 CLI fallback: \`ponyrace ponyrace "<request>"\`.
 
-Generated files under \`.ponytrail/goals\` should be treated as an append-only evidence trail.
+Generated files under \`.ponyrace/goals\` should be treated as an append-only evidence trail.
 
 ## Local Extension Folders
 
-- \`.ponytrail/runtimes\`: runtime-specific configuration and policies.
-- \`.ponytrail/plugins\`: adapters for workers, evidence sources, and integrations.
-- \`.ponytrail/skills\`: reusable judge or drafting capabilities.
+- \`.ponyrace/runtimes\`: runtime-specific configuration and policies.
+- \`.ponyrace/plugins\`: adapters for workers, evidence sources, and integrations.
+- \`.ponyrace/skills\`: reusable judge or drafting capabilities.
 `;
 }

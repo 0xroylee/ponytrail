@@ -45,7 +45,7 @@ The CLI should call this runtime through its exported interface instead of knowi
 
 `manifest.models` declares named AI model configurations for the court. Each bot references one of those model IDs through `bot.model`, and manifest validation rejects any bot that points at a missing model.
 
-The runtime treats `provider` and `name` as configuration values. This keeps goal discussion model selection editable in `.ponytrail/manifest.json` without coupling the core runtime to a specific vendor SDK or CLI flag shape.
+The runtime treats `provider` and `name` as configuration values. This keeps goal discussion model selection editable in `.ponyrace/manifest.json` without coupling the core runtime to a specific vendor SDK or CLI flag shape.
 
 `requirement-court.ts` exposes a `RequirementPonyRunner` seam. The deterministic default keeps the CLI offline-friendly, while `ponyrace --research` and tests can inject process-backed or model-backed ponies. The researched CLI path expands each pony's manifest skills into the prompt and requires visible evidence before approval. The court invokes the runner for each configured voter in each round until the manifest decision rule approves the direction or the maximum round count is reached.
 
@@ -93,7 +93,7 @@ CLI-backed researched ponies receive the descriptions for their configured manif
 Running onboarding creates a local runtime workspace:
 
 ```text
-.ponytrail/
+.ponyrace/
   manifest.json
   README.md
   goals/
@@ -102,7 +102,7 @@ Running onboarding creates a local runtime workspace:
   skills/
 ```
 
-The `.ponytrail` folder is for project-local policy, bot configuration, evidence, and extensions. Source code under `src/` defines the reusable runtime; `.ponytrail/` defines how a specific project uses it.
+The `.ponyrace` folder is for project-local policy, bot configuration, evidence, and extensions. Source code under `src/` defines the reusable runtime; `.ponyrace/` defines how a specific project uses it.
 
 ## Flow
 

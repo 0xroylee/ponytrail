@@ -40,7 +40,7 @@ Or with Bun:
 bunx ponyrace onboard
 ```
 
-Onboarding writes `.ponytrail/manifest.json` and `.ponytrail/README.md`, creates
+Onboarding writes `.ponyrace/manifest.json` and `.ponyrace/README.md`, creates
 local runtime folders, installs the bundled skills, and records the install in
 local history. By default, onboard installs for Claude, GitHub Copilot, and
 Codex; pass `--agents claude,copilot,codex,cursor` to choose explicit targets,
@@ -144,7 +144,7 @@ rewritten.
 Ponyrace keeps local runtime and evidence files out of your source tree:
 
 ```text
-.ponytrail/
+.ponyrace/
   manifest.json
   goals/
 

@@ -58,7 +58,7 @@ Human request
 - `src/skills/` is for reusable bot capability definitions and instructions.
   Skills should describe review behavior; they should not perform runtime side
   effects directly.
-- Generated `.ponytrail/` project workspaces are local runtime state. Do not
+- Generated `.ponyrace/` project workspaces are local runtime state. Do not
   make source code depend on files generated during smoke tests.
 
 ## Ponytrail Rules
@@ -81,7 +81,7 @@ Human request
 ```bash
 bun install                 # Install dependencies
 bun run dev -- --help       # Show CLI commands
-bun run dev -- onboard      # Create local .ponytrail files
+bun run dev -- onboard      # Create local .ponyrace files
 bun run dev -- bots         # List manifest-defined bots
 bun run dev -- goal "..."   # Draft a goal contract
 bun run build               # Build the packaged CLI bundle
@@ -133,5 +133,5 @@ For CLI changes, also run a smoke check against a scratch directory under
 
 ```bash
 rtk bun run dev -- onboard --dir work/smoke-runtime --name "Smoke Runtime"
-rtk bun run dev -- bots --manifest work/smoke-runtime/.ponytrail/manifest.json
+rtk bun run dev -- bots --manifest work/smoke-runtime/.ponyrace/manifest.json
 ```
