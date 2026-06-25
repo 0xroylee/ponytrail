@@ -1,4 +1,4 @@
-import { constants } from "node:fs";
+import { constants, type Dirent } from "node:fs";
 import { access, chmod, cp, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -56,7 +56,25 @@ export interface InstallAgentSkillInput {
   installPrehook?: boolean;
 }
 
+export interface ResolveInstallSkillSourceOptions {
+  cwd?: string | undefined;
+  homeDir?: string | undefined;
+}
+
+export class MissingSuperpowersBrainstormingSkillError extends Error {
+  constructor() {
+    super(
+      `Superpowers brainstorming skill not found. Install or enable the Superpowers plugin, then run: ${SUPERPOWERS_BRAINSTORMING_INSTALL_COMMAND}`,
+    );
+    this.name = "MissingSuperpowersBrainstormingSkillError";
+  }
+}
+
 const DEFAULT_BUNDLED_SKILL = "pony-trail";
+const SUPERPOWERS_BRAINSTORMING_SOURCE = "superpowers:brainstorming";
+const SUPERPOWERS_BRAINSTORMING_INSTALL_NAME = "superpowers-brainstorming";
+const SUPERPOWERS_BRAINSTORMING_INSTALL_COMMAND =
+  "ponyrace skills install superpowers:brainstorming --agents codex,claude,cursor --home ~";
 const bundledSkillAliases: Record<string, string> = {
   "record-change-evidence": "pony-trail",
   "enter-into-evidence": "pony-trail",
@@ -92,10 +110,10 @@ const agentPrehookPaths: Record<
 export async function installAgentSkill(
   input: InstallAgentSkillInput,
 ): Promise<SkillInstallResult> {
-  const source = await resolveInstallSkillSource(
-    input.source ?? DEFAULT_BUNDLED_SKILL,
-    input.cwd ? { cwd: input.cwd } : {},
-  );
+  const source = await resolveInstallSkillSource(input.source ?? DEFAULT_BUNDLED_SKILL, {
+    cwd: input.cwd,
+    homeDir: input.homeDir,
+  });
   const targets: SkillInstallTargetResult[] = [];
   const prehooks: SkillInstallPrehookResult[] = [];
   const operation = input.operation ?? "install";
@@ -190,8 +208,12 @@ export async function installAgentSkill(
 
 export async function resolveInstallSkillSource(
   sourceOrName: string,
-  options: { cwd?: string } = {},
+  options: ResolveInstallSkillSourceOptions = {},
 ): Promise<ResolvedInstallSkillSource> {
+  if (sourceOrName === SUPERPOWERS_BRAINSTORMING_SOURCE) {
+    return resolveSuperpowersBrainstormingSkill(options);
+  }
+
   const cwd = options.cwd ?? process.cwd();
   const pathCandidate = isAbsolute(sourceOrName) ? sourceOrName : resolve(cwd, sourceOrName);
 
@@ -222,6 +244,71 @@ async function resolveBundledSkillPath(skillName: string): Promise<string | null
   }
 
   return null;
+}
+
+async function resolveSuperpowersBrainstormingSkill(
+  options: ResolveInstallSkillSourceOptions,
+): Promise<ResolvedInstallSkillSource> {
+  const homeDir = options.homeDir ?? process.env.HOME ?? process.cwd();
+  const skillPath = await findSuperpowersBrainstormingSkillPath(homeDir);
+
+  if (!skillPath) {
+    throw new MissingSuperpowersBrainstormingSkillError();
+  }
+
+  return {
+    kind: "path",
+    name: SUPERPOWERS_BRAINSTORMING_INSTALL_NAME,
+    path: skillPath,
+  };
+}
+
+async function findSuperpowersBrainstormingSkillPath(homeDir: string): Promise<string | null> {
+  const roots = [
+    join(homeDir, ".codex", "plugins", "cache", "openai-curated", "superpowers"),
+    join(homeDir, ".codex", "plugins", "cache", "openai-curated-remote", "superpowers"),
+    join(homeDir, ".codex", "plugins", "cache", "openai-bundled", "superpowers"),
+  ];
+
+  for (const root of roots) {
+    const skillPath = await findNestedSuperpowersBrainstormingSkillPath(root);
+    if (skillPath) {
+      return skillPath;
+    }
+  }
+
+  return null;
+}
+
+async function findNestedSuperpowersBrainstormingSkillPath(root: string): Promise<string | null> {
+  let entries: Dirent[];
+  try {
+    entries = await readdir(root, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const skillPath = join(root, entry.name, "skills", "brainstorming");
+    if (await pathExists(join(skillPath, "SKILL.md"))) {
+      return skillPath;
+    }
+  }
+
+  return null;
+}
+
+export function isMissingSuperpowersBrainstormingSkillError(
+  error: unknown,
+): error is MissingSuperpowersBrainstormingSkillError {
+  return error instanceof MissingSuperpowersBrainstormingSkillError;
 }
 
 export function parseSkillInstallAgents(rawAgents: string): SkillInstallAgent[] {
