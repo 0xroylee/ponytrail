@@ -19,22 +19,30 @@ function botColor(botId: string): (s: string) => string {
   return BOT_COLORS[botId] ?? pc.white;
 }
 
-// ─── Small running pony (3 gallop frames, 5 lines each) ───────────────────
+// ─── MLP-style running pony (3 gallop frames) ─────────────────────────────
+//
+// Inspired by the round anime eyes, wavy mane, and chubby body of MLP ponies.
+// Each pony faces left (tail flows right) and is ~10 chars wide.
 
-const COL_W = 10; // column width per pony in the lineup
+const COL_W = 12; // column width per pony in the lineup
 
-// Shared head/body lines (same for all frames).
-const PONY_HEAD = ["    ^     ", "   (o )~  ", "   (   )  "];
+// Shared head/body lines — same for every gallop frame.
+const PONY_BODY = [
+  "  /~~~\\  ", // mane bump + ears
+  " / O   \\ ", // big round eye
+  "(       )~", // chubby body + tail nub
+  " \\_____/ ", // body bottom / hooves base
+];
 
 // Three leg positions for the gallop cycle.
 const PONY_LEGS = [
-  ["   /\\  /\\ ", "  /    \\/ "], // stride: legs spread
-  ["    ||  || ", "    ||  || "], // trot: legs together
-  ["   /\\  /\\ ", "  \\/    / "], // stride: reverse
+  ["  /\\  /\\ ", " /    \\/ "], // stride: legs spread
+  ["   |    | ", "   |    | "], // trot: legs together
+  ["  /\\  /\\ ", " \\/    / "], // stride: reverse
 ];
 
-// Total lines per animation frame (head + legs + label).
-const FRAME_H = PONY_HEAD.length + 2 + 1; // 3 + 2 + 1 = 6
+// Total lines per animation frame (body + legs + label).
+const FRAME_H = PONY_BODY.length + 2 + 1; // 4 + 2 + 1 = 7
 
 // ─── Header: starting lineup ───────────────────────────────────────────────
 
@@ -50,9 +58,9 @@ export function printHorseRaceHeader(manifest: Manifest): void {
   console.log(pc.dim("  ══════════════════════════════════"));
   console.log("");
 
-  // Render head lines side-by-side.
-  for (const headLine of PONY_HEAD) {
-    const row = bots.map((b) => botColor(b.id)(headLine.padEnd(COL_W))).join("  ");
+  // Render body lines side-by-side.
+  for (const bodyLine of PONY_BODY) {
+    const row = bots.map((b) => botColor(b.id)(bodyLine.padEnd(COL_W))).join("  ");
     process.stdout.write(`  ${row}\n`);
   }
 
@@ -125,7 +133,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function drawFrame(frameIdx: number, colorFn: (s: string) => string, label: string): void {
   const legs = PONY_LEGS[frameIdx % PONY_LEGS.length] ?? PONY_LEGS[0] ?? [];
-  const lines = [...PONY_HEAD, ...legs];
+  const lines = [...PONY_BODY, ...legs];
   for (const line of lines) {
     process.stdout.write(`${CLEAR}  ${colorFn(line)}\n`);
   }
