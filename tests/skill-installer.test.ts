@@ -58,15 +58,19 @@ describe("skill installer", () => {
     }
   });
 
-  test("resolves the bundled ponyrace skill by name", async () => {
+  test("ponyrace skill requires Superpowers brainstorming before CLI discussion", async () => {
     const source = await resolveInstallSkillSource("ponyrace");
 
     expect(source.name).toBe("ponyrace");
     expect(source.kind).toBe("bundled");
     expect(source.path.endsWith(join("bundled-skills", "ponyrace"))).toBe(true);
+
     const skill = await readFile(join(source.path, "SKILL.md"), "utf8");
     expect(skill).toContain("name: ponyrace");
-    expect(skill).toContain('ponyrace ponyrace "<request>"');
+    expect(skill).toContain("superpowers:brainstorming");
+    expect(skill).toContain('ponyrace ponyrace "<approved refined requirement>"');
+    expect(skill).toContain("Superpowers approval is not worker execution approval");
+    expect(skill).not.toContain('ponyrace ponyrace "<request>"');
     expect(skill).not.toContain("rtk bun run dev");
   });
 
