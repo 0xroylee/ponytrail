@@ -1,4 +1,5 @@
-import type { DetailedRequirement, RequirementCourtResult } from "./requirement-court";
+import type { RequirementCourtResult } from "./requirement-court";
+import { getDetailedRequirementChanges } from "./requirement-report";
 
 export function renderRequirementCourtMarkdown(result: RequirementCourtResult): string {
   const lines = [`# Pony race: ${result.detailedRequirement.title}`, "", "## Discussion", ""];
@@ -57,12 +58,6 @@ export function renderRequirementCourtMarkdown(result: RequirementCourtResult): 
   lines.push(`Human confirmation: ${result.humanConfirmation}`, "");
 
   return `${lines.join("\n")}\n`;
-}
-
-function getDetailedRequirementChanges(detailedRequirement: DetailedRequirement): string[] {
-  return detailedRequirement.include.length > 0
-    ? detailedRequirement.include
-    : [detailedRequirement.intent];
 }
 
 function pushList(lines: string[], label: string, values: string[]): void {

@@ -2,7 +2,7 @@
 
 import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { confirm, intro, isCancel, outro, select, text } from "@clack/prompts";
 import { Command } from "commander";
 import pc from "picocolors";
@@ -22,6 +22,8 @@ import {
   createCompactSetupManifest,
   createDefaultSetupReviewBots,
   createOnboardingFiles,
+  createRequirementCourtMarkdownReportPath,
+  formatRequirementCourtReportPathForOutput,
   type InstructionContext,
   loadManifest,
   planSnapshotRevert,
@@ -34,6 +36,7 @@ import {
   recordSnapshotPost,
   recordSnapshotPre,
   renderRequirementCourtMarkdown,
+  renderRequirementCourtTextReport,
   runRequirementCourt,
   type SetupReviewBotInput,
   type SnapshotCommit,
@@ -766,43 +769,11 @@ async function writeMarkdownReport(
 
   const reportPath = input.markdownReport.path
     ? resolvePath(input.rootDir, input.markdownReport.path)
-    : createDefaultMarkdownReportPath(input.rootDir, result);
+    : createRequirementCourtMarkdownReportPath(input.rootDir, result);
 
   await mkdir(dirname(reportPath), { recursive: true });
   await writeFile(reportPath, renderRequirementCourtMarkdown(result));
-  return formatReportPathForOutput(input.rootDir, reportPath);
-}
-
-function createDefaultMarkdownReportPath(rootDir: string, result: RequirementCourtResult): string {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/\.\d{3}Z$/u, "Z")
-    .replace(/[:]/gu, "-");
-  return join(
-    rootDir,
-    ".ponyrace",
-    "ponyrace",
-    `${timestamp}-${slugifyReportTitle(result.detailedRequirement.title)}.md`,
-  );
-}
-
-function slugifyReportTitle(title: string): string {
-  const slug = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, "-")
-    .replace(/^-+|-+$/gu, "")
-    .slice(0, 80);
-
-  return slug || "requirement-discussion";
-}
-
-function formatReportPathForOutput(rootDir: string, reportPath: string): string {
-  const relativePath = relative(rootDir, reportPath);
-  if (relativePath && !relativePath.startsWith("..") && !isAbsolute(relativePath)) {
-    return relativePath;
-  }
-
-  return reportPath;
+  return formatRequirementCourtReportPathForOutput(input.rootDir, reportPath);
 }
 
 function createRunRequirementCourtInput(
@@ -863,78 +834,13 @@ function printRequirementCourtResult(
   result: RequirementCourtResult,
   options: RequirementCourtOutputOptions = {},
 ): void {
-  console.log(pc.cyan(options.discussionHeading ?? "Requirement discussion"));
-  for (const round of result.rounds) {
-    console.log("");
-    console.log(pc.cyan(`Round ${round.round}`));
-    for (const entry of round.discussion) {
-      console.log(entry.line);
-    }
-  }
-
-  if (options.printVisibleThinking) {
-    printVisibleThinkingTranscript(result);
-  }
-
-  console.log("");
-  console.log(pc.cyan("Judge summary"));
-  console.log(result.judge.summary);
-  if (options.markdownReportPath) {
-    console.log(`Markdown report: ${options.markdownReportPath}`);
-  }
-
-  console.log("");
-  console.log(pc.cyan("Final votes"));
-  for (const vote of result.votes) {
-    console.log(`${vote.botId}: ${vote.vote} (${vote.confidence})`);
-  }
-
-  console.log("");
-  console.log(pc.cyan("Detailed requirement"));
-  console.log(`Title: ${result.detailedRequirement.title}`);
-  console.log(`Intent: ${result.detailedRequirement.intent}`);
-  printList("What will change", getDetailedRequirementChanges(result.detailedRequirement));
-  printList("What will not change", result.detailedRequirement.exclude);
-  printList("Acceptance criteria", result.detailedRequirement.acceptanceCriteria);
-  printList("Evidence required", result.detailedRequirement.evidenceRequired);
-  printList("Risks", result.detailedRequirement.risks);
-  printList("Open questions", result.detailedRequirement.openQuestions);
-  console.log(`Human confirmation: ${result.humanConfirmation}`);
-}
-
-function getDetailedRequirementChanges(
-  detailedRequirement: RequirementCourtResult["detailedRequirement"],
-): string[] {
-  return detailedRequirement.include.length > 0
-    ? detailedRequirement.include
-    : [detailedRequirement.intent];
-}
-
-function printVisibleThinkingTranscript(result: RequirementCourtResult): void {
-  console.log("");
-  console.log(pc.cyan("Visible thinking transcript"));
-  for (const round of result.rounds) {
-    console.log(`Round ${round.round}`);
-    for (const entry of round.discussion) {
-      console.log(`${entry.displayName} (${entry.botId})`);
-      console.log(`Focus: ${entry.visibleThinking.focus}`);
-      console.log(`Concern: ${entry.visibleThinking.concern}`);
-      console.log(`Recommendation: ${entry.visibleThinking.recommendation}`);
-      console.log(`Vote: ${entry.vote} (${Math.round(entry.confidence * 100)}% confidence)`);
-      printList("Evidence", entry.evidence);
-      printList("Required changes", entry.requiredChanges);
-    }
-  }
-}
-
-function printList(label: string, values: string[]): void {
-  if (values.length === 0) {
-    return;
-  }
-
-  console.log(`${label}:`);
-  for (const value of values) {
-    console.log(`- ${value}`);
+  for (const line of renderRequirementCourtTextReport(result, {
+    discussionHeading: options.discussionHeading,
+    includeVisibleThinking: options.printVisibleThinking,
+    markdownReportPath: options.markdownReportPath,
+    style: { heading: pc.cyan },
+  })) {
+    console.log(line);
   }
 }
 

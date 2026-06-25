@@ -5,5 +5,6 @@ export * from "./manifest";
 export * from "./markdown-report";
 export * from "./onboarding";
 export * from "./requirement-court";
+export * from "./requirement-report";
 export * from "./snapshots";
 export * from "./voting";
