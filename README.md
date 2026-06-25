@@ -4,12 +4,29 @@
 
 Run a quick requirement race before an AI agent starts implementing.
 
-Ponyrace onboards a project, installs the bundled `/ponyrace` chat trigger for
-Codex and Claude, then lets role ponies review whether a requirement direction
-matches what the human actually wants.
+Ponyrace onboards a project, installs bundled agent skills for Codex, Claude,
+GitHub Copilot, and Cursor targets, then lets role ponies review whether a
+requirement direction matches what the human actually wants.
 
-Use `ponyrace` for new commands, including `ponyrace ponyrace "<request>"`,
-`ponyrace history`, and `ponyrace revert`.
+Common commands include `ponyrace onboard`, `ponyrace setup`,
+`ponyrace ponyrace "<request>"`, `ponyrace history`, `ponyrace revert`, and
+`ponyrace skills`.
+
+## The Basic Workflow
+
+1. Onboard the project with `npx ponyrace onboard` or
+   `bunx ponyrace onboard`, or use `npx ponyrace setup` when you want to
+   configure the review ponies.
+2. Restart your agent IDE so the bundled `/ponyrace` skill is loaded.
+3. Start a requirement discussion with `/ponyrace <request>` in agent chat, or
+   run `npx ponyrace ponyrace "<request>"` from a shell.
+4. Read the role-pony discussion, Judge summary, approval tally, and detailed
+   requirement.
+5. Give explicit human approval only when the requirement direction matches what
+   you want built.
+6. Use the approved requirement with your implementation agent. Ponyrace keeps
+   worker execution gated instead of starting it automatically, and leaves the
+   report and local history available for review or rollback.
 
 ## Onboard
 
@@ -23,9 +40,12 @@ Or with Bun:
 bunx ponyrace onboard
 ```
 
-Onboarding writes `.ponytrail/manifest.json`, installs the bundled skills, and
-records the install in local history. Restart Codex or Claude after onboarding so
-the chat command is loaded.
+Onboarding writes `.ponytrail/manifest.json` and `.ponytrail/README.md`, creates
+local runtime folders, installs the bundled skills, and records the install in
+local history. By default, onboard installs for Claude, GitHub Copilot, and
+Codex; pass `--agents claude,copilot,codex,cursor` to choose explicit targets,
+including Cursor. Restart your agent IDE after onboarding so the chat command is
+loaded.
 
 ## Run A Race
 
@@ -55,18 +75,30 @@ Vote: approve (80% confidence)
 Judge summary
 Approvals: 4/4. Verdict: approved.
 
+Final votes
+product_manager_bot: approve (0.8)
+project_manager_bot: approve (0.8)
+engineer_bot: approve (0.8)
+testing_bot: approve (0.8)
+
 Detailed requirement
 Title: add CSV import to the admin dashboard
+Intent: add CSV import to the admin dashboard
 What will change:
 - add CSV import to the admin dashboard
+Acceptance criteria:
+- Human owner confirms the detailed requirement matches this request...
 Evidence required:
 - raw_human_request
+- requirements_brainstorm
 - role_bot_discussion
 - bot_votes
 - judge_summary
 - human_decision
+- locked_goal_contract
 
 Human confirmation: pending
+Markdown report: outputs/ponyrace/<timestamp>-add-csv-import-to-the-admin-dashboard.md
 ```
 
 Outside agent chat, run the same discussion directly:
@@ -74,6 +106,10 @@ Outside agent chat, run the same discussion directly:
 ```bash
 npx ponyrace ponyrace "add CSV import to the admin dashboard"
 ```
+
+By default, `ponyrace ponyrace` writes a Markdown report under
+`outputs/ponyrace/`. Use `--markdown <path>` to choose a report path,
+`--skip-markdown` to skip the report, or `--json` for machine-readable output.
 
 ## Quality Metrics
 
