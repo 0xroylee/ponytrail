@@ -718,6 +718,46 @@ describe("cli", () => {
     }
   });
 
+  test("ponyrace prints the approved streaming sections in user-flow order", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
+        { from: "user" },
+      );
+      logs.splice(0);
+
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["ponyrace", "--worker", "codex", "Verify", "streaming", "order", "and", "human", "gate"],
+        { from: "user" },
+      );
+
+      const lines = stripAnsiLines(logs);
+      const orderedSections = [
+        "Pony race",
+        "Round 1",
+        "Visible thinking transcript",
+        "Judge summary",
+        "Final votes",
+        "Detailed requirement",
+        "Human confirmation: pending",
+      ].map((section) => lines.findIndex((line) => line.includes(section)));
+
+      expect(orderedSections.every((index) => index >= 0)).toBe(true);
+      expect(orderedSections).toEqual([...orderedSections].sort((left, right) => left - right));
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
   test("ponyrace JSON output includes court discussion results", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const logs: string[] = [];

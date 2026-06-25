@@ -744,14 +744,14 @@ function printRequirementCourtResult(
   }
 
   console.log("");
+  console.log(pc.cyan("Judge summary"));
+  console.log(result.judge.summary);
+
+  console.log("");
   console.log(pc.cyan("Final votes"));
   for (const vote of result.votes) {
     console.log(`${vote.botId}: ${vote.vote} (${vote.confidence})`);
   }
-
-  console.log("");
-  console.log(pc.cyan("Judge summary"));
-  console.log(result.judge.summary);
 
   console.log("");
   console.log(pc.cyan("Detailed requirement"));

@@ -5,11 +5,13 @@ import type {
   RequirementPonyRunInput,
   RequirementPonyRunner,
 } from "../runtimes/ponytrail/requirement-court";
-import type { CliProcessRunner, WorkerCliAdapter } from "./adapters/types";
+import type { CliStreamEvent, CliStreamRunner, WorkerCliAdapter } from "./adapters/types";
 
 export interface CliRequirementPonyRunnerOptions {
   adapter: WorkerCliAdapter;
-  runner: CliProcessRunner;
+  streamRunner: CliStreamRunner;
+  writeStdout?: ((chunk: string) => void) | undefined;
+  writeStderr?: ((chunk: string) => void) | undefined;
 }
 
 const CliRequirementPonyResponseSchema = z.object({
@@ -28,7 +30,10 @@ export function createCliRequirementPonyRunner(
   options: CliRequirementPonyRunnerOptions,
 ): RequirementPonyRunner {
   return async (input) => {
-    const result = await options.adapter.runGoal(buildRequirementPonyPrompt(input), options.runner);
+    const result = await collectStreamingPonyResult(
+      options.adapter.streamGoal(buildRequirementPonyPrompt(input), options.streamRunner),
+      options,
+    );
 
     if (result.exitCode !== 0) {
       const detail = result.stderr.trim() || result.stdout.trim() || "no output";
@@ -38,6 +43,51 @@ export function createCliRequirementPonyRunner(
     }
 
     return parseRequirementPonyResponse(result.stdout);
+  };
+}
+
+interface StreamingPonyResult {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+}
+
+async function collectStreamingPonyResult(
+  events: AsyncIterable<CliStreamEvent>,
+  options: CliRequirementPonyRunnerOptions,
+): Promise<StreamingPonyResult> {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const writeStdout = options.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));
+  const writeStderr = options.writeStderr ?? ((chunk: string) => process.stderr.write(chunk));
+  let exitCode: number | undefined;
+
+  for await (const event of events) {
+    if (event.type === "stdout") {
+      stdout.push(event.chunk);
+      writeStdout(event.chunk);
+      continue;
+    }
+
+    if (event.type === "stderr") {
+      stderr.push(event.chunk);
+      writeStderr(event.chunk);
+      continue;
+    }
+
+    if (event.type === "exit") {
+      exitCode = event.exitCode;
+    }
+  }
+
+  if (exitCode === undefined) {
+    throw new Error("Requirement pony stream ended before the subprocess exit event.");
+  }
+
+  return {
+    exitCode,
+    stdout: stdout.join(""),
+    stderr: stderr.join(""),
   };
 }
 

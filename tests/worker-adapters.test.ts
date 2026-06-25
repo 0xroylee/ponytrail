@@ -195,18 +195,19 @@ describe("worker CLI adapters", () => {
     ]);
   });
 
-  test("creates a CLI-backed pony runner that prompts one sub-agent and parses its vote", async () => {
+  test("creates a streaming CLI-backed pony runner that prompts one sub-agent and parses its vote", async () => {
     const manifest = createDefaultManifest();
     const contract = draftGoalContract("Add CSV import to admin dashboard", { manifest });
     const bot = manifest.bots.find((candidate) => candidate.id === "engineer_bot");
     const model = manifest.models.find((candidate) => candidate.id === bot?.model);
     const invocations: CliInvocation[] = [];
-    const runner: CliProcessRunner = async (invocation) => {
+    const streamRunner: CliStreamRunner = async function* (invocation) {
       invocations.push(invocation);
-      return {
-        invocation,
-        exitCode: 0,
-        stdout: JSON.stringify({
+
+      yield { type: "start", invocation };
+      yield {
+        type: "stdout",
+        chunk: JSON.stringify({
           message: "Engineering approves with a smoke test.",
           visibleThinking: {
             focus: "Check implementation and verification shape.",
@@ -217,8 +218,8 @@ describe("worker CLI adapters", () => {
           confidence: 0.92,
           requiredChanges: [],
         }),
-        stderr: "",
       };
+      yield { type: "exit", exitCode: 0 };
     };
 
     if (!bot || !model) {
@@ -227,7 +228,9 @@ describe("worker CLI adapters", () => {
 
     const ponyRunner = createCliRequirementPonyRunner({
       adapter: getCliWorkerAdapter("codex-cli"),
-      runner,
+      streamRunner,
+      writeStdout() {},
+      writeStderr() {},
     });
 
     const response = await ponyRunner({
@@ -255,5 +258,70 @@ describe("worker CLI adapters", () => {
     expect(invocations[0]?.args.join(" ")).toContain("Pony: Engineer Bot (engineer_bot)");
     expect(invocations[0]?.args.join(" ")).toContain("visibleThinking");
     expect(invocations[0]?.args.join(" ")).toContain("Return only JSON");
+  });
+
+  test("streams CLI-backed pony stdout and stderr chunks while collecting the JSON vote", async () => {
+    const manifest = createDefaultManifest();
+    const contract = draftGoalContract("Add CSV import to admin dashboard", { manifest });
+    const bot = manifest.bots.find((candidate) => candidate.id === "testing_bot");
+    const model = manifest.models.find((candidate) => candidate.id === bot?.model);
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
+    const order: string[] = [];
+    const streamRunner: CliStreamRunner = async function* (invocation) {
+      yield { type: "start", invocation };
+      yield { type: "stdout", chunk: "sub-agent working\n" };
+      order.push("stream resumed after stdout");
+      yield { type: "stderr", chunk: "sub-agent warning\n" };
+      yield {
+        type: "stdout",
+        chunk: JSON.stringify({
+          message: "Testing approves the smoke evidence.",
+          visibleThinking: {
+            focus: "Check observable verification.",
+            concern: "The smoke path must prove the request.",
+            recommendation: "Approve with explicit evidence.",
+          },
+          vote: "approve",
+          confidence: 0.86,
+          requiredChanges: [],
+        }),
+      };
+      yield { type: "exit", exitCode: 0 };
+    };
+
+    if (!bot || !model) {
+      throw new Error("Default manifest is missing the testing bot or model.");
+    }
+
+    const ponyRunner = createCliRequirementPonyRunner({
+      adapter: getCliWorkerAdapter("claude-cli"),
+      streamRunner,
+      writeStdout(chunk) {
+        stdoutChunks.push(chunk);
+        order.push(`stdout:${chunk.trim()}`);
+      },
+      writeStderr(chunk) {
+        stderrChunks.push(chunk);
+      },
+    });
+
+    const response = await ponyRunner({
+      manifest,
+      bot,
+      model,
+      contract,
+      round: 1,
+      priorDiscussion: [],
+    });
+
+    expect(order.slice(0, 2)).toEqual(["stdout:sub-agent working", "stream resumed after stdout"]);
+    expect(stdoutChunks.join("")).toContain("sub-agent working");
+    expect(stderrChunks.join("")).toContain("sub-agent warning");
+    expect(response).toMatchObject({
+      message: "Testing approves the smoke evidence.",
+      vote: "approve",
+      confidence: 0.86,
+    });
   });
 });
