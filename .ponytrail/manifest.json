@@ -101,7 +101,7 @@
   "deliberation": {
     "panelId": "requirement_court",
     "purpose": "Decide whether the proposed requirement direction is clear, valuable, feasible, plannable, and verifiable.",
-    "maxRounds": 3,
+    "maxRounds": 10,
     "stages": [
       {
         "id": "brainstorm",

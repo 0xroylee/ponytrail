@@ -342,7 +342,7 @@ export function createDefaultManifest(options: DefaultManifestOptions = {}): Man
       panelId: "requirement_court",
       purpose:
         "Decide whether the proposed requirement direction is clear, valuable, feasible, plannable, and verifiable.",
-      maxRounds: 3,
+      maxRounds: 10,
       stages: [
         { id: "brainstorm", actor: "requirements_brainstorm_bot", output: "clarifying_questions" },
         { id: "draft", actor: "goal_draft_bot", output: "requirement_contract_draft" },

@@ -18,7 +18,7 @@ describe("manifest", () => {
     const parsed = ManifestSchema.parse(manifest);
 
     expect(parsed.kind).toBe("ai-work-runtime.ponytrail");
-    expect(parsed.deliberation.maxRounds).toBe(3);
+    expect(parsed.deliberation.maxRounds).toBe(10);
     expect(parsed.deliberation.decisionRule.voters).toBe(4);
     expect(parsed.deliberation.decisionRule.requiredApprovals).toBe(3);
     expect(parsed.deliberation.decisionRule.voterIds).toEqual([
@@ -282,7 +282,7 @@ describe("manifest", () => {
       const loaded = await loadManifest(manifestPath);
 
       expect(loaded.metadata.name).toBe("Compact Setup");
-      expect(loaded.deliberation.maxRounds).toBe(3);
+      expect(loaded.deliberation.maxRounds).toBe(10);
       expect(loaded.deliberation.decisionRule.voterIds).toEqual(["product_bot", "engineering_bot"]);
       expect(loaded.deliberation.decisionRule.requiredApprovals).toBe(2);
       expect(loaded.bots.map((bot) => bot.id)).toEqual([
@@ -311,7 +311,7 @@ describe("setup manifest", () => {
     const manifest = ManifestSchema.parse(createSetupManifest({ name: "Setup Court" }));
 
     expect(manifest.metadata.name).toBe("Setup Court");
-    expect(manifest.deliberation.maxRounds).toBe(3);
+    expect(manifest.deliberation.maxRounds).toBe(10);
     expect(manifest.deliberation.decisionRule.voters).toBe(4);
     expect(manifest.deliberation.decisionRule.requiredApprovals).toBe(3);
     expect(manifest.deliberation.decisionRule.voterIds).toEqual([
