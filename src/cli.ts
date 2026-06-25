@@ -640,9 +640,12 @@ async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Pro
       return;
     }
 
-    printRequirementCourtResult(runRequirementCourt(clarifiedDiscussion.contract, { manifest }), {
-      discussionHeading: input.discussionHeading,
-    });
+    printRequirementCourtResult(
+      await runRequirementCourt(clarifiedDiscussion.contract, { manifest }),
+      {
+        discussionHeading: input.discussionHeading,
+      },
+    );
     return;
   }
 
@@ -651,9 +654,12 @@ async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Pro
     return;
   }
 
-  printRequirementCourtResult(runRequirementCourt(preparedDiscussion.contract, { manifest }), {
-    discussionHeading: input.discussionHeading,
-  });
+  printRequirementCourtResult(
+    await runRequirementCourt(preparedDiscussion.contract, { manifest }),
+    {
+      discussionHeading: input.discussionHeading,
+    },
+  );
 }
 
 interface RequirementCourtOutputOptions {

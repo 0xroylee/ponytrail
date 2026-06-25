@@ -5,14 +5,17 @@ import {
   createDefaultSetupReviewBots,
   createSetupManifest,
 } from "../src/runtimes/ponytrail/manifest";
-import { runRequirementCourt } from "../src/runtimes/ponytrail/requirement-court";
+import {
+  type RequirementPonyRunner,
+  runRequirementCourt,
+} from "../src/runtimes/ponytrail/requirement-court";
 
 describe("requirement court", () => {
-  test("creates visible role-bot discussion entries before the Judge summary", () => {
+  test("creates visible role-bot discussion entries before the Judge summary", async () => {
     const manifest = createDefaultManifest();
     const contract = draftGoalContract("Add CSV import to admin dashboard", { manifest });
 
-    const result = runRequirementCourt(contract, { manifest });
+    const result = await runRequirementCourt(contract, { manifest });
 
     expect(result.discussion.map((entry) => entry.botId)).toEqual([
       "product_manager_bot",
@@ -32,11 +35,11 @@ describe("requirement court", () => {
     expect(result.detailedRequirement.title).toBe("Add CSV import to admin dashboard");
   });
 
-  test("uses the manifest vote rule and does not count the Judge as a voter", () => {
+  test("uses the manifest vote rule and does not count the Judge as a voter", async () => {
     const manifest = createDefaultManifest();
     const contract = draftGoalContract("Add CSV import to admin dashboard", { manifest });
 
-    const result = runRequirementCourt(contract, { manifest });
+    const result = await runRequirementCourt(contract, { manifest });
 
     expect(result.votes.map((vote) => vote.botId)).toEqual([
       "product_manager_bot",
@@ -47,7 +50,7 @@ describe("requirement court", () => {
     expect(result.votes.some((vote) => vote.botId === "requirement_judge_bot")).toBe(false);
   });
 
-  test("creates discussion entries for setup-defined voter bots", () => {
+  test("creates discussion entries for setup-defined voter bots", async () => {
     const manifest = createSetupManifest({
       reviewBots: [
         ...createDefaultSetupReviewBots(),
@@ -65,7 +68,7 @@ describe("requirement court", () => {
     });
     const contract = draftGoalContract("Add CSV import to admin dashboard", { manifest });
 
-    const result = runRequirementCourt(contract, { manifest });
+    const result = await runRequirementCourt(contract, { manifest });
 
     expect(result.discussion.map((entry) => entry.botId)).toEqual(
       manifest.deliberation.decisionRule.voterIds,
@@ -78,5 +81,100 @@ describe("requirement court", () => {
       expect.stringContaining("security_bot: I think"),
     ]);
     expect(result.judge.summary).toContain("Approvals: 5/5");
+  });
+
+  test("runs one pony runner for each manifest voter with bot and model context", async () => {
+    const manifest = createSetupManifest({
+      reviewBots: [
+        ...createDefaultSetupReviewBots(),
+        {
+          id: "security_bot",
+          displayName: "Security Bot",
+          role: "Security",
+          panel: "requirement_court",
+          instruction: "Review data, permission, and security risk before voting.",
+          modelId: "security_model",
+          modelName: "security-review-model",
+          votes: true,
+        },
+      ],
+    });
+    const contract = draftGoalContract("Add CSV import to admin dashboard", { manifest });
+    const calls: Array<{
+      botId: string;
+      modelId: string;
+      round: number;
+      priorDiscussionCount: number;
+    }> = [];
+    const ponyRunner: RequirementPonyRunner = async ({ bot, model, round, priorDiscussion }) => {
+      calls.push({
+        botId: bot.id,
+        modelId: model.id,
+        round,
+        priorDiscussionCount: priorDiscussion.length,
+      });
+
+      return {
+        message: `${bot.id} approves with ${model.id}`,
+        vote: "approve",
+        confidence: 0.9,
+        requiredChanges: [],
+      };
+    };
+
+    const result = await runRequirementCourt(contract, { manifest, ponyRunner });
+
+    expect(calls.map((call) => call.botId)).toEqual(manifest.deliberation.decisionRule.voterIds);
+    expect(calls.every((call) => call.round === 1)).toBe(true);
+    expect(calls.every((call) => call.priorDiscussionCount === 0)).toBe(true);
+    expect(calls.map((call) => call.modelId)).toContain("security_model");
+    expect(result.discussion).toHaveLength(manifest.deliberation.decisionRule.voters);
+    expect(result.discussion.at(-1)).toMatchObject({
+      botId: "security_bot",
+      displayName: "Security Bot",
+      message: "security_bot approves with security_model",
+      round: 1,
+      vote: "approve",
+    });
+  });
+
+  test("iterates pony runners until a later round reaches the approval rule", async () => {
+    const manifest = createDefaultManifest();
+    const contract = draftGoalContract("Add CSV import to admin dashboard", { manifest });
+    const calls: Array<{ botId: string; round: number; priorDiscussionCount: number }> = [];
+    const ponyRunner: RequirementPonyRunner = async ({ bot, round, priorDiscussion }) => {
+      calls.push({ botId: bot.id, round, priorDiscussionCount: priorDiscussion.length });
+
+      if (round === 1 && ["engineer_bot", "testing_bot"].includes(bot.id)) {
+        return {
+          message: `${bot.id} needs clearer evidence before approval.`,
+          vote: "amend",
+          confidence: 0.7,
+          requiredChanges: [`Clarify evidence for ${bot.id}.`],
+        };
+      }
+
+      return {
+        message: `${bot.id} approves round ${round}.`,
+        vote: "approve",
+        confidence: 0.9,
+        requiredChanges: [],
+      };
+    };
+
+    const result = await runRequirementCourt(contract, { manifest, ponyRunner });
+
+    expect(result.rounds).toHaveLength(2);
+    expect(result.rounds[0]?.verdict.approved).toBe(false);
+    expect(result.rounds[1]?.verdict.approved).toBe(true);
+    expect(result.discussion).toHaveLength(8);
+    expect(calls.filter((call) => call.round === 2)).toEqual([
+      { botId: "product_manager_bot", round: 2, priorDiscussionCount: 4 },
+      { botId: "project_manager_bot", round: 2, priorDiscussionCount: 4 },
+      { botId: "engineer_bot", round: 2, priorDiscussionCount: 4 },
+      { botId: "testing_bot", round: 2, priorDiscussionCount: 4 },
+    ]);
+    expect(result.votes.every((vote) => vote.vote === "approve")).toBe(true);
+    expect(result.judge.summary).toContain("Approvals: 4/4");
   });
 });

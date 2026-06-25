@@ -6,6 +6,7 @@ export interface RequirementDiscussionEntry {
   botId: string;
   displayName: string;
   role: string;
+  round: number;
   message: string;
   line: string;
   vote: ReviewVote["vote"];
@@ -30,10 +31,18 @@ export interface DetailedRequirement {
   openQuestions: string[];
 }
 
+export interface RequirementCourtRound {
+  round: number;
+  discussion: RequirementDiscussionEntry[];
+  votes: ReviewVote[];
+  verdict: VoteVerdict;
+}
+
 export interface RequirementCourtResult {
   rawRequest: string;
   clarifiedRequest: string;
   draft: GoalContract;
+  rounds: RequirementCourtRound[];
   discussion: RequirementDiscussionEntry[];
   votes: ReviewVote[];
   verdict: VoteVerdict;
@@ -44,7 +53,28 @@ export interface RequirementCourtResult {
 
 export interface RunRequirementCourtInput {
   manifest: Manifest;
+  ponyRunner?: RequirementPonyRunner;
 }
+
+export interface RequirementPonyRunInput {
+  manifest: Manifest;
+  bot: Manifest["bots"][number];
+  model: Manifest["models"][number];
+  contract: GoalContract;
+  round: number;
+  priorDiscussion: readonly RequirementDiscussionEntry[];
+}
+
+export interface RequirementPonyResponse {
+  message: string;
+  vote: ReviewVote["vote"];
+  confidence: number;
+  requiredChanges: string[];
+}
+
+export type RequirementPonyRunner = (
+  input: RequirementPonyRunInput,
+) => RequirementPonyResponse | Promise<RequirementPonyResponse>;
 
 type DiscussionMessageFactory = (contract: GoalContract, bot: Manifest["bots"][number]) => string;
 
@@ -69,24 +99,69 @@ const ROLE_LABELS: Record<string, string> = {
   testing_bot: "testing",
 };
 
-export function runRequirementCourt(
+export const deterministicRequirementPonyRunner: RequirementPonyRunner = ({ bot, contract }) =>
+  createDeterministicPonyResponse(bot, contract);
+
+export async function runRequirementCourt(
   contract: GoalContract,
   input: RunRequirementCourtInput,
-): RequirementCourtResult {
-  const discussion = input.manifest.deliberation.decisionRule.voterIds.map((botId) =>
-    createDiscussionEntry(botId, contract, input.manifest),
+): Promise<RequirementCourtResult> {
+  const ponyRunner = input.ponyRunner ?? deterministicRequirementPonyRunner;
+  const discussion: RequirementDiscussionEntry[] = [];
+  const rounds: RequirementCourtRound[] = [];
+
+  for (let round = 1; round <= input.manifest.deliberation.maxRounds; round += 1) {
+    const priorDiscussion = [...discussion];
+    const roundDiscussion = await Promise.all(
+      input.manifest.deliberation.decisionRule.voterIds.map(async (botId) => {
+        const bot = findRequirementCourtBot(botId, input.manifest);
+        const model = findRequirementCourtModel(bot, input.manifest);
+        const response = await ponyRunner({
+          manifest: input.manifest,
+          bot,
+          model,
+          contract,
+          round,
+          priorDiscussion,
+        });
+
+        return createDiscussionEntry(bot, response, round);
+      }),
+    );
+    const votes = roundDiscussion.map(toVote);
+    const verdict = tallyVotes(votes, input.manifest.deliberation.decisionRule);
+
+    discussion.push(...roundDiscussion);
+    rounds.push({
+      round,
+      discussion: roundDiscussion,
+      votes,
+      verdict,
+    });
+
+    if (verdict.approved) {
+      break;
+    }
+  }
+
+  const finalRound = rounds.at(-1);
+  if (!finalRound) {
+    throw new Error("Requirement court did not run any voting rounds.");
+  }
+
+  const judge = createJudgeResult(
+    finalRound.verdict,
+    input.manifest.deliberation.decisionRule.voters,
   );
-  const votes = discussion.map(toVote);
-  const verdict = tallyVotes(votes, input.manifest.deliberation.decisionRule);
-  const judge = createJudgeResult(verdict, input.manifest.deliberation.decisionRule.voters);
 
   return {
     rawRequest: contract.rawRequest,
     clarifiedRequest: contract.intent,
     draft: contract,
+    rounds,
     discussion,
-    votes,
-    verdict,
+    votes: finalRound.votes,
+    verdict: finalRound.verdict,
     judge,
     detailedRequirement: {
       title: contract.title,
@@ -103,24 +178,36 @@ export function runRequirementCourt(
 }
 
 function createDiscussionEntry(
-  botId: string,
-  contract: GoalContract,
-  manifest: Manifest,
+  bot: Manifest["bots"][number],
+  response: RequirementPonyResponse,
+  round: number,
 ): RequirementDiscussionEntry {
-  const bot = manifest.bots.find((candidate) => candidate.id === botId);
-  if (!bot) {
-    throw new Error(`Missing requirement court bot ${botId}`);
+  const message = response.message.trim();
+  if (!message) {
+    throw new Error(`Requirement pony ${bot.id} returned an empty discussion message.`);
   }
 
-  const messageFactory = ROLE_MESSAGES[botId] ?? createGenericDiscussionMessage;
-  const message = messageFactory(contract, bot);
+  return {
+    botId: bot.id,
+    displayName: bot.displayName,
+    role: ROLE_LABELS[bot.id] ?? createRoleLabel(bot),
+    round,
+    message,
+    line: `${bot.id}: ${message}`,
+    vote: response.vote,
+    confidence: response.confidence,
+    requiredChanges: response.requiredChanges,
+  };
+}
+
+function createDeterministicPonyResponse(
+  bot: Manifest["bots"][number],
+  contract: GoalContract,
+): RequirementPonyResponse {
+  const messageFactory = ROLE_MESSAGES[bot.id] ?? createGenericDiscussionMessage;
 
   return {
-    botId,
-    displayName: bot.displayName,
-    role: ROLE_LABELS[botId] ?? createRoleLabel(bot),
-    message,
-    line: `${botId}: ${message}`,
+    message: messageFactory(contract, bot),
     vote: "approve",
     confidence: 0.8,
     requiredChanges: [],
@@ -136,6 +223,27 @@ function createGenericDiscussionMessage(
 
 function createRoleLabel(bot: Manifest["bots"][number]): string {
   return bot.displayName.replace(/\s+Bot$/u, "").toLowerCase();
+}
+
+function findRequirementCourtBot(botId: string, manifest: Manifest): Manifest["bots"][number] {
+  const bot = manifest.bots.find((candidate) => candidate.id === botId);
+  if (!bot) {
+    throw new Error(`Missing requirement court bot ${botId}`);
+  }
+
+  return bot;
+}
+
+function findRequirementCourtModel(
+  bot: Manifest["bots"][number],
+  manifest: Manifest,
+): Manifest["models"][number] {
+  const model = manifest.models.find((candidate) => candidate.id === bot.model);
+  if (!model) {
+    throw new Error(`Requirement court bot ${bot.id} references missing model ${bot.model}`);
+  }
+
+  return model;
 }
 
 function toVote(entry: RequirementDiscussionEntry): ReviewVote {
