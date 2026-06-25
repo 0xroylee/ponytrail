@@ -21,6 +21,7 @@ const CliRequirementPonyResponseSchema = z.object({
     concern: z.string().min(1),
     recommendation: z.string().min(1),
   }),
+  evidence: z.array(z.string().min(1)).min(1),
   vote: VoteValueSchema,
   confidence: z.number().min(0).max(1),
   requiredChanges: z.array(z.string().min(1)),
@@ -94,6 +95,7 @@ async function collectStreamingPonyResult(
 function buildRequirementPonyPrompt(input: RequirementPonyRunInput): string {
   const approvalConditions = formatList(input.bot.approvalConditions ?? []);
   const rejectOrAmendConditions = formatList(input.bot.rejectOrAmendConditions ?? []);
+  const skillDescriptions = formatSkillDescriptions(input);
   const priorDiscussion =
     input.priorDiscussion.length === 0
       ? "none"
@@ -107,6 +109,7 @@ function buildRequirementPonyPrompt(input: RequirementPonyRunInput): string {
     `Model: ${input.model.name} (${input.model.id})`,
     `Round: ${input.round} of ${input.manifest.deliberation.maxRounds}`,
     `Instruction: ${input.bot.instruction}`,
+    `Pony skills:\n${skillDescriptions}`,
     `Approval conditions:\n${approvalConditions}`,
     `Reject or amend conditions:\n${rejectOrAmendConditions}`,
     "Requirement:",
@@ -119,8 +122,13 @@ function buildRequirementPonyPrompt(input: RequirementPonyRunInput): string {
     `Risks: ${formatInlineList(input.contract.risks)}`,
     `Open questions: ${formatInlineList(input.contract.openQuestions)}`,
     `Prior discussion:\n${priorDiscussion}`,
+    "Research contract:",
+    "- Use the pony skills above as review lenses before voting.",
+    "- Cite concrete evidence from the requirement, manifest skills, prior discussion, repo/tool context you inspected, or a named unknown.",
+    "- Do not approve without at least one concrete evidence item.",
+    "- Vote amend when the evidence is missing, unverifiable, or too thin for your role.",
     "Do not reveal private chain-of-thought. Summarize only visible rationale.",
-    'Return only JSON: {"message": string, "visibleThinking": {"focus": string, "concern": string, "recommendation": string}, "vote": "approve" | "amend" | "reject", "confidence": number, "requiredChanges": string[]}',
+    'Return only JSON: {"message": string, "visibleThinking": {"focus": string, "concern": string, "recommendation": string}, "evidence": string[], "vote": "approve" | "amend" | "reject", "confidence": number, "requiredChanges": string[]}',
   ].join("\n");
 }
 
@@ -131,10 +139,25 @@ function parseRequirementPonyResponse(rawOutput: string): RequirementPonyRespons
   return {
     message: parsed.message,
     visibleThinking: parsed.visibleThinking,
+    evidence: parsed.evidence,
     vote: parsed.vote,
     confidence: parsed.confidence,
     requiredChanges: parsed.requiredChanges,
   };
+}
+
+function formatSkillDescriptions(input: RequirementPonyRunInput): string {
+  if (input.bot.skills.length === 0) {
+    return "- none";
+  }
+
+  return input.bot.skills
+    .map((skillId) => {
+      const skill = input.manifest.skills[skillId];
+      const description = skill?.description ?? "No manifest description configured.";
+      return `- ${skillId}: ${description}`;
+    })
+    .join("\n");
 }
 
 function extractJsonObject(rawOutput: string): string {

@@ -214,6 +214,7 @@ describe("worker CLI adapters", () => {
             concern: "The plan needs a smoke test before approval.",
             recommendation: "Approve with a focused CLI smoke check.",
           },
+          evidence: ["The engineer skill requires feasibility and verification evidence."],
           vote: "approve",
           confidence: 0.92,
           requiredChanges: [],
@@ -249,6 +250,7 @@ describe("worker CLI adapters", () => {
         concern: "The plan needs a smoke test before approval.",
         recommendation: "Approve with a focused CLI smoke check.",
       },
+      evidence: ["The engineer skill requires feasibility and verification evidence."],
       vote: "approve",
       confidence: 0.92,
       requiredChanges: [],
@@ -256,7 +258,15 @@ describe("worker CLI adapters", () => {
     expect(invocations).toHaveLength(1);
     expect(invocations[0]?.args.join(" ")).toContain("Requirement pony review");
     expect(invocations[0]?.args.join(" ")).toContain("Pony: Engineer Bot (engineer_bot)");
+    expect(invocations[0]?.args.join(" ")).toContain("Pony skills:");
+    expect(invocations[0]?.args.join(" ")).toContain(
+      "Check whether the goal can be implemented by the chosen worker agent",
+    );
+    expect(invocations[0]?.args.join(" ")).toContain(
+      "Do not approve without at least one concrete evidence item.",
+    );
     expect(invocations[0]?.args.join(" ")).toContain("visibleThinking");
+    expect(invocations[0]?.args.join(" ")).toContain('"evidence": string[]');
     expect(invocations[0]?.args.join(" ")).toContain("Return only JSON");
   });
 
@@ -282,6 +292,7 @@ describe("worker CLI adapters", () => {
             concern: "The smoke path must prove the request.",
             recommendation: "Approve with explicit evidence.",
           },
+          evidence: ["The testing skill requires observable acceptance evidence."],
           vote: "approve",
           confidence: 0.86,
           requiredChanges: [],
@@ -320,6 +331,7 @@ describe("worker CLI adapters", () => {
     expect(stderrChunks.join("")).toContain("sub-agent warning");
     expect(response).toMatchObject({
       message: "Testing approves the smoke evidence.",
+      evidence: ["The testing skill requires observable acceptance evidence."],
       vote: "approve",
       confidence: 0.86,
     });

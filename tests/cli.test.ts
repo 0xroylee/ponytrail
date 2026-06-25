@@ -9,6 +9,7 @@ import {
   type SetupPrompter,
   type SetupPromptIo,
 } from "../src/cli";
+import type { CliInvocation, CliStreamRunner } from "../src/plugins";
 import type { RequirementPonyRunner } from "../src/runtimes/ponytrail";
 import { createDefaultSetupReviewBots } from "../src/runtimes/ponytrail/manifest";
 
@@ -52,6 +53,7 @@ describe("cli", () => {
     expect(ponyraceCommand?.options.map((option) => option.long)).toEqual([
       "--manifest",
       "--worker",
+      "--research",
       "--json",
       "--markdown",
       "--skip-markdown",
@@ -714,6 +716,66 @@ describe("cli", () => {
       expect(stripAnsiLines(logs)).toContain("Final votes");
       expect(logs.some((line) => line.includes("product_manager_bot: approve (0.91)"))).toBe(true);
       expect(logs.some((line) => line.includes("Human confirmation: pending"))).toBe(true);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  test("ponyrace research mode runs each pony through the selected worker adapter and prints evidence", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const logs: string[] = [];
+    const invocations: CliInvocation[] = [];
+    const originalLog = console.log;
+    const streamRunner: CliStreamRunner = async function* (invocation) {
+      invocations.push(invocation);
+      yield { type: "start", invocation };
+      yield {
+        type: "stdout",
+        chunk: JSON.stringify({
+          message: "Researched approval with role evidence.",
+          visibleThinking: {
+            focus: "Use role skills before voting.",
+            concern: "Approval must be backed by concrete evidence.",
+            recommendation: "Approve after checking the skill-guided evidence.",
+          },
+          evidence: ["Skill-guided evidence from the researched pony prompt."],
+          vote: "approve",
+          confidence: 0.93,
+          requiredChanges: [],
+        }),
+      };
+      yield { type: "exit", exitCode: 0 };
+    };
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
+        { from: "user" },
+      );
+      logs.splice(0);
+
+      await buildProgram({ cwd: rootDir, streamRunner }).parseAsync(
+        ["ponyrace", "--research", "--worker", "codex", "Add", "CSV", "import", "to", "admin"],
+        { from: "user" },
+      );
+
+      const prompt = invocations[0]?.args.join(" ") ?? "";
+      expect(invocations).toHaveLength(4);
+      expect(invocations.every((invocation) => invocation.executable === "codex")).toBe(true);
+      expect(prompt).toContain("Requirement pony review");
+      expect(prompt).toContain("Pony skills:");
+      expect(prompt).toContain("Compare the draft goal against the user's raw request");
+      expect(prompt).toContain("Do not approve without at least one concrete evidence item.");
+      expect(stripAnsiLines(logs)).toContain("Pony race");
+      expect(stripAnsiLines(logs)).toContain("Visible thinking transcript");
+      expect(stripAnsiLines(logs)).toContain("Evidence:");
+      expect(logs.some((line) => line.includes("Skill-guided evidence"))).toBe(true);
+      expect(logs.some((line) => line.includes("product_manager_bot: approve (0.93)"))).toBe(true);
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });

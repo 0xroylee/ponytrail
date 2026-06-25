@@ -27,6 +27,7 @@ export function renderRequirementCourtMarkdown(result: RequirementCourtResult): 
         `Vote: ${entry.vote} (${Math.round(entry.confidence * 100)}% confidence)`,
         "",
       );
+      pushList(lines, "Evidence", entry.evidence);
       pushList(lines, "Required changes", entry.requiredChanges);
     }
   }

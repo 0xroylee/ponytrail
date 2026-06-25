@@ -12,6 +12,7 @@ export interface RequirementDiscussionEntry {
   line: string;
   vote: ReviewVote["vote"];
   confidence: number;
+  evidence: string[];
   requiredChanges: string[];
 }
 
@@ -69,6 +70,7 @@ export interface RequirementPonyRunInput {
 export interface RequirementPonyResponse {
   message: string;
   visibleThinking?: RequirementPonyVisibleThinking;
+  evidence?: string[];
   vote: ReviewVote["vote"];
   confidence: number;
   requiredChanges: string[];
@@ -210,6 +212,7 @@ function createDiscussionEntry(
     line: `${bot.id}: ${message}`,
     vote: response.vote,
     confidence: response.confidence,
+    evidence: response.evidence ?? [],
     requiredChanges: response.requiredChanges,
   };
 }

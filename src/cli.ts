@@ -6,7 +6,15 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from "node:pat
 import { confirm, intro, isCancel, outro, select, text } from "@clack/prompts";
 import { Command } from "commander";
 import pc from "picocolors";
-import { installAgentSkill, parseSkillInstallAgents, type SkillInstallResult } from "./plugins";
+import {
+  type CliStreamRunner,
+  createCliRequirementPonyRunner,
+  getCliWorkerAdapterForCommand,
+  installAgentSkill,
+  parseSkillInstallAgents,
+  type SkillInstallResult,
+  streamCliInvocation,
+} from "./plugins";
 import {
   applySnapshotRevert,
   calculateDefaultSetupRequiredApprovals,
@@ -115,6 +123,7 @@ export interface BuildProgramOptions {
   projectNamePrompter?: ProjectNamePrompter;
   setupPrompter?: SetupPrompter;
   ponyRunner?: RequirementPonyRunner | undefined;
+  streamRunner?: CliStreamRunner | undefined;
   revertApprovalPrompter?: RevertApprovalPrompter;
 }
 
@@ -133,6 +142,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
   const projectNamePrompter = options.projectNamePrompter ?? promptForProjectName;
   const setupPrompter = options.setupPrompter ?? promptForSetup;
   const ponyRunner = options.ponyRunner;
+  const streamRunner = options.streamRunner ?? streamCliInvocation;
   const revertApprovalPrompter = options.revertApprovalPrompter ?? promptForRevertApproval;
   const program = new Command();
 
@@ -294,6 +304,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
     .argument("<request...>", "raw goal request")
     .option("-m, --manifest <path>", "manifest path", defaultManifestPath)
     .option("-w, --worker <id>", "accepted for compatibility; worker execution is gated")
+    .option("--research", "run each review pony through the selected worker CLI", false)
     .option("--json", "print JSON output", false)
     .option("--markdown <path>", "write Markdown report to a path")
     .option("--skip-markdown", "skip writing the default Markdown report", false)
@@ -303,6 +314,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
         commandOptions: {
           manifest: string;
           worker?: string;
+          research: boolean;
           json: boolean;
           markdown?: string;
           skipMarkdown: boolean;
@@ -312,7 +324,10 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
           rootDir,
           clarificationPrompter,
           manifestPath: commandOptions.manifest,
+          worker: commandOptions.worker,
+          research: commandOptions.research,
           ponyRunner,
+          streamRunner,
           jsonOutput: commandOptions.json ? "court" : false,
           discussionHeading: "Pony race",
           printVisibleThinking: true,
@@ -648,7 +663,10 @@ interface RunGoalFlowInput {
   rootDir: string;
   clarificationPrompter: GoalClarificationPrompter;
   manifestPath: string;
+  worker?: string | undefined;
+  research?: boolean | undefined;
   ponyRunner?: RequirementPonyRunner | undefined;
+  streamRunner?: CliStreamRunner | undefined;
   jsonOutput: "contract" | "court" | false;
   discussionHeading?: string;
   printVisibleThinking?: boolean;
@@ -661,6 +679,7 @@ interface MarkdownReportOptions {
 
 async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Promise<void> {
   const manifest = await loadManifest(resolvePath(input.rootDir, input.manifestPath));
+  const activePonyRunner = createActivePonyRunner(manifest, input);
   const request = requestParts.join(" ");
   const preparedDiscussion = prepareGoalDiscussion(request, { manifest });
 
@@ -698,7 +717,7 @@ async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Pro
 
     const result = await runRequirementCourt(
       clarifiedDiscussion.contract,
-      createRunRequirementCourtInput(manifest, input.ponyRunner),
+      createRunRequirementCourtInput(manifest, activePonyRunner),
     );
 
     await printRequirementCourtResultAndArtifacts(result, input);
@@ -712,7 +731,7 @@ async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Pro
 
   const result = await runRequirementCourt(
     preparedDiscussion.contract,
-    createRunRequirementCourtInput(manifest, input.ponyRunner),
+    createRunRequirementCourtInput(manifest, activePonyRunner),
   );
 
   if (input.jsonOutput === "court") {
@@ -796,6 +815,47 @@ function createRunRequirementCourtInput(
   return input;
 }
 
+function createActivePonyRunner(
+  manifest: RunRequirementCourtInput["manifest"],
+  input: RunGoalFlowInput,
+): RequirementPonyRunner | undefined {
+  if (!input.research) {
+    return input.ponyRunner;
+  }
+
+  const worker = resolveResearchWorker(manifest, input.worker);
+  const adapter = getCliWorkerAdapterForCommand(worker.command);
+  const streamRunner = input.streamRunner ?? streamCliInvocation;
+
+  return createCliRequirementPonyRunner({
+    adapter,
+    streamRunner,
+    writeStdout() {},
+    writeStderr(chunk) {
+      process.stderr.write(chunk);
+    },
+  });
+}
+
+function resolveResearchWorker(
+  manifest: RunRequirementCourtInput["manifest"],
+  workerId: string | undefined,
+): RunRequirementCourtInput["manifest"]["runtime"]["workerAgents"][number] {
+  const worker =
+    workerId === undefined
+      ? manifest.runtime.workerAgents[0]
+      : manifest.runtime.workerAgents.find((candidate) => candidate.id === workerId);
+
+  if (!worker) {
+    const availableWorkers = manifest.runtime.workerAgents
+      .map((candidate) => candidate.id)
+      .join(", ");
+    throw new Error(`Unknown worker ${workerId}. Available workers: ${availableWorkers || "none"}`);
+  }
+
+  return worker;
+}
+
 interface RequirementCourtOutputOptions {
   discussionHeading?: string | undefined;
   printVisibleThinking?: boolean | undefined;
@@ -860,6 +920,7 @@ function printVisibleThinkingTranscript(result: RequirementCourtResult): void {
       console.log(`Concern: ${entry.visibleThinking.concern}`);
       console.log(`Recommendation: ${entry.visibleThinking.recommendation}`);
       console.log(`Vote: ${entry.vote} (${Math.round(entry.confidence * 100)}% confidence)`);
+      printList("Evidence", entry.evidence);
       printList("Required changes", entry.requiredChanges);
     }
   }

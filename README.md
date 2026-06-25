@@ -107,9 +107,19 @@ Outside agent chat, run the same discussion directly:
 npx ponyrace ponyrace "add CSV import to the admin dashboard"
 ```
 
+For an evidence-backed race, ask the configured worker CLI to run each review
+pony through the manifest skills before voting:
+
+```bash
+npx ponyrace ponyrace --research --worker codex "add CSV import to the admin dashboard"
+```
+
 By default, `ponyrace ponyrace` writes a Markdown report under
 `outputs/ponyrace/`. Use `--markdown <path>` to choose a report path,
 `--skip-markdown` to skip the report, or `--json` for machine-readable output.
+The default race stays offline-friendly and deterministic; `--research` uses the
+selected worker adapter, requires each pony to return evidence, and prints that
+evidence in the visible thinking transcript and Markdown report.
 
 ## Quality Metrics
 
@@ -121,6 +131,7 @@ changes begin:
 | Role coverage | Product, project, engineering, and testing perspectives all reviewed the direction. |
 | Approval tally | The default gate needs 3 of 4 approvals before the human can lock the goal. |
 | Confidence | Each pony reports a confidence score, so weak agreement is easy to spot. |
+| Evidence | Researched races show the facts, context, or named unknowns behind each pony vote. |
 | Required changes | Amend/reject votes carry concrete changes instead of vague objections. |
 | Human gate | `Human confirmation: pending` keeps implementation blocked until the owner approves. |
 
