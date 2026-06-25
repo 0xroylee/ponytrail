@@ -9,6 +9,7 @@ import {
   type SetupPrompter,
   type SetupPromptIo,
 } from "../src/cli";
+import type { RequirementPonyRunner } from "../src/runtimes/ponytrail";
 import { createDefaultSetupReviewBots } from "../src/runtimes/ponytrail/manifest";
 
 describe("cli", () => {
@@ -652,6 +653,109 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("Title: Add CSV import to admin dashboard"))).toBe(
         true,
       );
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  test("ponyrace runs the configured pony runner and prints round output", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const logs: string[] = [];
+    const ponyCalls: string[] = [];
+    const originalLog = console.log;
+    const ponyRunner: RequirementPonyRunner = async ({ bot, contract }) => {
+      ponyCalls.push(bot.id);
+
+      return {
+        message: `${bot.id} accepted ${contract.title}`,
+        visibleThinking: {
+          focus: `Evaluate as ${bot.displayName}.`,
+          concern: "Keep role-specific risks visible.",
+          recommendation: "Approve the direction.",
+        },
+        vote: "approve",
+        confidence: 0.91,
+        requiredChanges: [],
+      };
+    };
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir, ponyRunner }).parseAsync(
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
+        { from: "user" },
+      );
+
+      await buildProgram({ cwd: rootDir, ponyRunner }).parseAsync(
+        ["ponyrace", "Add", "CSV", "import", "to", "admin", "dashboard"],
+        { from: "user" },
+      );
+
+      expect(ponyCalls).toEqual([
+        "product_manager_bot",
+        "project_manager_bot",
+        "engineer_bot",
+        "testing_bot",
+      ]);
+      expect(stripAnsiLines(logs)).toContain("Pony race");
+      expect(stripAnsiLines(logs)).toContain("Round 1");
+      expect(logs.some((line) => line.includes("product_manager_bot accepted"))).toBe(true);
+      expect(stripAnsiLines(logs)).toContain("Visible thinking transcript");
+      expect(stripAnsiLines(logs)).toContain("Final votes");
+      expect(logs.some((line) => line.includes("product_manager_bot: approve (0.91)"))).toBe(true);
+      expect(logs.some((line) => line.includes("Human confirmation: pending"))).toBe(true);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  test("ponyrace JSON output includes court discussion results", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const logs: string[] = [];
+    const ponyCalls: string[] = [];
+    const originalLog = console.log;
+    const ponyRunner: RequirementPonyRunner = async ({ bot }) => {
+      ponyCalls.push(bot.id);
+
+      return {
+        message: `${bot.id} json review`,
+        vote: "approve",
+        confidence: 0.88,
+        requiredChanges: [],
+      };
+    };
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({ cwd: rootDir, ponyRunner }).parseAsync(
+        ["onboard", "--dir", ".", "--name", "CLI Court", "--home", rootDir],
+        { from: "user" },
+      );
+
+      await buildProgram({ cwd: rootDir, ponyRunner }).parseAsync(
+        ["ponyrace", "--json", "Add", "CSV", "import", "to", "admin", "dashboard"],
+        { from: "user" },
+      );
+
+      const output = JSON.parse(logs.at(-1) ?? "{}");
+      expect(ponyCalls).toEqual([
+        "product_manager_bot",
+        "project_manager_bot",
+        "engineer_bot",
+        "testing_bot",
+      ]);
+      expect(output.rounds.map((round: { round: number }) => round.round)).toEqual([1]);
+      expect(output.discussion[0].message).toBe("product_manager_bot json review");
+      expect(output.votes[0].confidence).toBe(0.88);
+      expect(output.humanConfirmation).toBe("pending");
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });

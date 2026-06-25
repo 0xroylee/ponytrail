@@ -194,6 +194,10 @@ function createDiscussionEntry(
   if (!message) {
     throw new Error(`Requirement pony ${bot.id} returned an empty discussion message.`);
   }
+  if (response.confidence < 0 || response.confidence > 1) {
+    throw new Error(`Requirement pony ${bot.id} returned confidence outside 0..1.`);
+  }
+
   const visibleThinking = response.visibleThinking ?? createDefaultVisibleThinking(bot, message);
 
   return {

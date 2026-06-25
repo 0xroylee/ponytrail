@@ -32,7 +32,8 @@ src/
 - create project onboarding files
 - run the requirements brainstorm gate
 - draft a goal contract from a raw request
-- run the 4-bot / 3-approval requirement court plus a non-voting Judge
+- run each requirement-court pony through a `RequirementPonyRunner`
+- tally the requirement court with the manifest decision rule plus a non-voting Judge
 - read Pony Trail snapshot history and plan file-level reverts
 - print visible role-bot discussion before worker execution is allowed
 
@@ -45,6 +46,8 @@ The CLI should call this runtime through its exported interface instead of knowi
 `manifest.models` declares named AI model configurations for the court. Each bot references one of those model IDs through `bot.model`, and manifest validation rejects any bot that points at a missing model.
 
 The runtime treats `provider` and `name` as configuration values. This keeps goal discussion model selection editable in `.ponytrail/manifest.json` without coupling the core runtime to a specific vendor SDK or CLI flag shape.
+
+`requirement-court.ts` exposes a `RequirementPonyRunner` seam. The deterministic default keeps the CLI offline-friendly, while tests and future plugins can inject process-backed or model-backed ponies. The court invokes the runner for each configured voter in each round until the manifest decision rule approves the direction or the maximum round count is reached.
 
 ## Plugins
 
@@ -107,9 +110,9 @@ Human request
   -> ponytrail runtime
   -> requirements brainstorm
   -> ask human for details when unclear
-  -> Product Manager, Project Manager, Engineer, and Testing ponies discuss
-  -> visible role-pony discussion is printed
-  -> 3 of 4 voting ponies approve the direction
+  -> Product Manager, Project Manager, Engineer, and Testing ponies discuss by round
+  -> visible round discussion is printed
+  -> manifest-defined voting ponies approve the direction
   -> Requirement Judge summarizes and merges one detailed requirement
   -> human confirms the direction
   -> worker adapter execution remains gated
