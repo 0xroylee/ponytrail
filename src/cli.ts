@@ -9,9 +9,9 @@ import { installAgentSkill, parseSkillInstallAgents, type SkillInstallResult } f
 import {
   applySnapshotRevert,
   calculateDefaultSetupRequiredApprovals,
+  createCompactSetupManifest,
   createDefaultSetupReviewBots,
   createOnboardingFiles,
-  createSetupManifest,
   type InstructionContext,
   loadManifest,
   planSnapshotRevert,
@@ -113,6 +113,15 @@ export interface BuildProgramOptions {
   revertApprovalPrompter?: RevertApprovalPrompter;
 }
 
+const CLI_VERSION = "0.2.0";
+
+interface CommanderVersionInternals {
+  _outputConfiguration: {
+    writeOut: (value: string) => void;
+  };
+  _exit: (exitCode: number, code: string, message: string) => never;
+}
+
 export function buildProgram(options: BuildProgramOptions = {}): Command {
   const rootDir = options.cwd ?? process.cwd();
   const clarificationPrompter = options.clarificationPrompter ?? promptForGoalClarifications;
@@ -124,7 +133,12 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
   program
     .name("ponytrail")
     .description("Requirement-first runtime for supervising Codex, Claude, and other AI workers.")
-    .version("0.1.0");
+    .version(CLI_VERSION)
+    .option("-v", "output the version number");
+
+  program.on("option:v", () => {
+    outputVersionAndExit(program, CLI_VERSION);
+  });
 
   program
     .command("setup")
@@ -151,7 +165,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
           agents: commandOptions.agents,
         });
         const installAgents = parseSkillInstallAgents(setup.agents);
-        const manifest = createSetupManifest({
+        const manifest = createCompactSetupManifest({
           name: setup.projectName,
           reviewBots: setup.bots,
           requiredApprovals: setup.requiredApprovals,
@@ -188,7 +202,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
 
   program
     .command("onboard")
-    .description("Create local .ponytrail files and install the default Pony Trail skill.")
+    .description("Create local .ponytrail files and install the default Pony Trail skills.")
     .option("-d, --dir <dir>", "target directory", rootDir)
     .option("-n, --name <name>", "project name")
     .option(
@@ -210,19 +224,23 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
         console.log(pc.green("Ponytrail onboarding complete"));
         console.log(pc.dim(`Manifest: ${result.manifestPath}`));
 
-        const skillResult = await installSkillWithLocalHistory({
-          rootDir: targetDir,
-          operation: "install",
-          source: "pony-trail",
-          homeDir: resolveHomePath(commandOptions.home),
-          agents: parseSkillInstallAgents(commandOptions.agents),
-          dryRun: false,
-          force: false,
-          refreshExisting: true,
-          installPrehook: false,
-        });
+        const installAgents = parseSkillInstallAgents(commandOptions.agents);
 
-        printSkillInstallResult(skillResult.skillInstall, skillResult.history, "install");
+        for (const source of ["pony-trail", "ponyrace"]) {
+          const skillResult = await installSkillWithLocalHistory({
+            rootDir: targetDir,
+            operation: "install",
+            source,
+            homeDir: resolveHomePath(commandOptions.home),
+            agents: installAgents,
+            dryRun: false,
+            force: false,
+            refreshExisting: true,
+            installPrehook: false,
+          });
+
+          printSkillInstallResult(skillResult.skillInstall, skillResult.history, "install");
+        }
       },
     );
 
@@ -279,6 +297,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
           manifestPath: commandOptions.manifest,
           printJson: commandOptions.json,
           discussionHeading: "Pony race",
+          printVisibleThinking: true,
         });
       },
     );
@@ -409,6 +428,13 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
   );
 
   return program;
+}
+
+function outputVersionAndExit(program: Command, version: string): never {
+  const command = program as Command & CommanderVersionInternals;
+
+  command._outputConfiguration.writeOut(`${version}\n`);
+  return command._exit(0, "commander.version", version);
 }
 
 export async function promptForSetup(
@@ -601,6 +627,7 @@ interface RunGoalFlowInput {
   manifestPath: string;
   printJson: boolean;
   discussionHeading?: string;
+  printVisibleThinking?: boolean;
 }
 
 async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Promise<void> {
@@ -644,6 +671,7 @@ async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Pro
       await runRequirementCourt(clarifiedDiscussion.contract, { manifest }),
       {
         discussionHeading: input.discussionHeading,
+        printVisibleThinking: input.printVisibleThinking,
       },
     );
     return;
@@ -658,12 +686,14 @@ async function runGoalFlow(requestParts: string[], input: RunGoalFlowInput): Pro
     await runRequirementCourt(preparedDiscussion.contract, { manifest }),
     {
       discussionHeading: input.discussionHeading,
+      printVisibleThinking: input.printVisibleThinking,
     },
   );
 }
 
 interface RequirementCourtOutputOptions {
   discussionHeading?: string | undefined;
+  printVisibleThinking?: boolean | undefined;
 }
 
 function printRequirementCourtResult(
@@ -673,6 +703,10 @@ function printRequirementCourtResult(
   console.log(pc.cyan(options.discussionHeading ?? "Requirement discussion"));
   for (const entry of result.discussion) {
     console.log(entry.line);
+  }
+
+  if (options.printVisibleThinking) {
+    printVisibleThinkingTranscript(result);
   }
 
   console.log("");
@@ -687,6 +721,22 @@ function printRequirementCourtResult(
   printList("Evidence required", result.detailedRequirement.evidenceRequired);
   printList("Risks", result.detailedRequirement.risks);
   console.log(`Human confirmation: ${result.humanConfirmation}`);
+}
+
+function printVisibleThinkingTranscript(result: RequirementCourtResult): void {
+  console.log("");
+  console.log(pc.cyan("Visible thinking transcript"));
+  for (const round of result.rounds) {
+    console.log(`Round ${round.round}`);
+    for (const entry of round.discussion) {
+      console.log(`${entry.displayName} (${entry.botId})`);
+      console.log(`Focus: ${entry.visibleThinking.focus}`);
+      console.log(`Concern: ${entry.visibleThinking.concern}`);
+      console.log(`Recommendation: ${entry.visibleThinking.recommendation}`);
+      console.log(`Vote: ${entry.vote} (${Math.round(entry.confidence * 100)}% confidence)`);
+      printList("Required changes", entry.requiredChanges);
+    }
+  }
 }
 
 function printList(label: string, values: string[]): void {

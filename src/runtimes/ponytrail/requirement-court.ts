@@ -8,6 +8,7 @@ export interface RequirementDiscussionEntry {
   role: string;
   round: number;
   message: string;
+  visibleThinking: RequirementPonyVisibleThinking;
   line: string;
   vote: ReviewVote["vote"];
   confidence: number;
@@ -67,9 +68,16 @@ export interface RequirementPonyRunInput {
 
 export interface RequirementPonyResponse {
   message: string;
+  visibleThinking?: RequirementPonyVisibleThinking;
   vote: ReviewVote["vote"];
   confidence: number;
   requiredChanges: string[];
+}
+
+export interface RequirementPonyVisibleThinking {
+  focus: string;
+  concern: string;
+  recommendation: string;
 }
 
 export type RequirementPonyRunner = (
@@ -186,6 +194,7 @@ function createDiscussionEntry(
   if (!message) {
     throw new Error(`Requirement pony ${bot.id} returned an empty discussion message.`);
   }
+  const visibleThinking = response.visibleThinking ?? createDefaultVisibleThinking(bot, message);
 
   return {
     botId: bot.id,
@@ -193,6 +202,7 @@ function createDiscussionEntry(
     role: ROLE_LABELS[bot.id] ?? createRoleLabel(bot),
     round,
     message,
+    visibleThinking,
     line: `${bot.id}: ${message}`,
     vote: response.vote,
     confidence: response.confidence,
@@ -221,8 +231,27 @@ function createGenericDiscussionMessage(
   return `I think this requirement can proceed from the ${bot.displayName} perspective if the worker keeps the scope tied to: ${contract.title}. Any role-specific risk should be raised before execution.`;
 }
 
+function createDefaultVisibleThinking(
+  bot: Manifest["bots"][number],
+  message: string,
+): RequirementPonyVisibleThinking {
+  return {
+    focus: bot.instruction,
+    concern: formatVisibleThinkingList(
+      bot.rejectOrAmendConditions ?? [
+        `No blocking ${createRoleLabel(bot)} concern was raised for this round.`,
+      ],
+    ),
+    recommendation: message,
+  };
+}
+
 function createRoleLabel(bot: Manifest["bots"][number]): string {
   return bot.displayName.replace(/\s+Bot$/u, "").toLowerCase();
+}
+
+function formatVisibleThinkingList(values: string[]): string {
+  return values.join(" ");
 }
 
 function findRequirementCourtBot(botId: string, manifest: Manifest): Manifest["bots"][number] {

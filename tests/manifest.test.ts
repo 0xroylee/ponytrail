@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -18,6 +18,7 @@ describe("manifest", () => {
     const parsed = ManifestSchema.parse(manifest);
 
     expect(parsed.kind).toBe("ai-work-runtime.ponytrail");
+    expect(parsed.deliberation.maxRounds).toBe(3);
     expect(parsed.deliberation.decisionRule.voters).toBe(4);
     expect(parsed.deliberation.decisionRule.requiredApprovals).toBe(3);
     expect(parsed.deliberation.decisionRule.voterIds).toEqual([
@@ -77,10 +78,49 @@ describe("manifest", () => {
       const manifest = createDefaultManifest({ name: "Custom Court" });
 
       await writeManifest(manifestPath, manifest);
+      const rawManifest = JSON.parse(await readFile(manifestPath, "utf8"));
       const loaded = await loadManifest(manifestPath);
 
       expect(loaded.metadata.name).toBe("Custom Court");
       expect(loaded.runtime.workerAgents.map((agent) => agent.id)).toEqual(["codex", "claude"]);
+      expect(
+        rawManifest.runtime.workerAgents.every((agent: object) => !("goalCommand" in agent)),
+      ).toBe(true);
+      expect(loaded.runtime.workerAgents.every((agent) => !("goalCommand" in agent))).toBe(true);
+    } finally {
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  test("loads legacy worker agents with goal commands without exposing them", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-manifest-"));
+    const manifestPath = join(rootDir, "manifest.json");
+
+    try {
+      const manifest = createDefaultManifest({ name: "Legacy Worker Agents" });
+
+      await writeFile(
+        manifestPath,
+        `${JSON.stringify(
+          {
+            ...manifest,
+            runtime: {
+              ...manifest.runtime,
+              workerAgents: manifest.runtime.workerAgents.map((agent) => ({
+                ...agent,
+                goalCommand: agent.id === "codex" ? "exec" : "/goal",
+              })),
+            },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+
+      const loaded = await loadManifest(manifestPath);
+
+      expect(loaded.runtime.workerAgents.map((agent) => agent.id)).toEqual(["codex", "claude"]);
+      expect(loaded.runtime.workerAgents.every((agent) => !("goalCommand" in agent))).toBe(true);
     } finally {
       await rm(rootDir, { recursive: true, force: true });
     }
@@ -187,6 +227,77 @@ describe("manifest", () => {
       await rm(rootDir, { recursive: true, force: true });
     }
   });
+
+  test("loads compact setup manifests by expanding pony definitions", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-manifest-"));
+    const manifestPath = join(rootDir, "manifest.json");
+
+    try {
+      await writeFile(
+        manifestPath,
+        `${JSON.stringify(
+          {
+            manifestVersion: "0.1",
+            kind: "ai-work-runtime.ponytrail.setup",
+            metadata: {
+              name: "Compact Setup",
+              description: "A compact Ponytrail setup manifest.",
+              owner: "human_owner",
+            },
+            ponies: [
+              {
+                id: "product_bot",
+                displayName: "Product Bot",
+                role: "Product",
+                modelId: "product_model",
+                modelName: "product-review-model",
+                votes: true,
+              },
+              {
+                id: "engineering_bot",
+                displayName: "Engineering Bot",
+                role: "Engineering",
+                modelId: "engineering_model",
+                modelName: "engineering-review-model",
+                votes: true,
+              },
+              {
+                id: "observer_bot",
+                displayName: "Observer Bot",
+                role: "Observer",
+                modelId: "observer_model",
+                modelName: "observer-review-model",
+                votes: false,
+              },
+            ],
+            approvalRule: {
+              requiredApprovals: 2,
+            },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+
+      const loaded = await loadManifest(manifestPath);
+
+      expect(loaded.metadata.name).toBe("Compact Setup");
+      expect(loaded.deliberation.maxRounds).toBe(3);
+      expect(loaded.deliberation.decisionRule.voterIds).toEqual(["product_bot", "engineering_bot"]);
+      expect(loaded.deliberation.decisionRule.requiredApprovals).toBe(2);
+      expect(loaded.bots.map((bot) => bot.id)).toEqual([
+        "requirements_brainstorm_bot",
+        "goal_draft_bot",
+        "product_bot",
+        "engineering_bot",
+        "observer_bot",
+        "requirement_judge_bot",
+      ]);
+      expect(loaded.models.map((model) => model.id)).toContain("observer_model");
+    } finally {
+      await rm(rootDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("setup manifest", () => {
@@ -200,6 +311,7 @@ describe("setup manifest", () => {
     const manifest = ManifestSchema.parse(createSetupManifest({ name: "Setup Court" }));
 
     expect(manifest.metadata.name).toBe("Setup Court");
+    expect(manifest.deliberation.maxRounds).toBe(3);
     expect(manifest.deliberation.decisionRule.voters).toBe(4);
     expect(manifest.deliberation.decisionRule.requiredApprovals).toBe(3);
     expect(manifest.deliberation.decisionRule.voterIds).toEqual([

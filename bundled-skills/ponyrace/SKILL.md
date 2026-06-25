@@ -18,6 +18,7 @@ Core principle: discuss and approve the requirement direction before implementat
 3. If the user gives a manifest path, pass it with `--manifest <path>` instead of appending it to the request text.
 4. Preserve the important CLI output when reporting back:
    - pony discussion lines
+   - visible thinking transcript
    - Judge summary
    - approval tally
    - detailed requirement

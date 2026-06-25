@@ -14,6 +14,11 @@ export interface CliRequirementPonyRunnerOptions {
 
 const CliRequirementPonyResponseSchema = z.object({
   message: z.string().min(1),
+  visibleThinking: z.object({
+    focus: z.string().min(1),
+    concern: z.string().min(1),
+    recommendation: z.string().min(1),
+  }),
   vote: VoteValueSchema,
   confidence: z.number().min(0).max(1),
   requiredChanges: z.array(z.string().min(1)),
@@ -64,7 +69,8 @@ function buildRequirementPonyPrompt(input: RequirementPonyRunInput): string {
     `Risks: ${formatInlineList(input.contract.risks)}`,
     `Open questions: ${formatInlineList(input.contract.openQuestions)}`,
     `Prior discussion:\n${priorDiscussion}`,
-    'Return only JSON: {"message": string, "vote": "approve" | "amend" | "reject", "confidence": number, "requiredChanges": string[]}',
+    "Do not reveal private chain-of-thought. Summarize only visible rationale.",
+    'Return only JSON: {"message": string, "visibleThinking": {"focus": string, "concern": string, "recommendation": string}, "vote": "approve" | "amend" | "reject", "confidence": number, "requiredChanges": string[]}',
   ].join("\n");
 }
 
@@ -74,6 +80,7 @@ function parseRequirementPonyResponse(rawOutput: string): RequirementPonyRespons
 
   return {
     message: parsed.message,
+    visibleThinking: parsed.visibleThinking,
     vote: parsed.vote,
     confidence: parsed.confidence,
     requiredChanges: parsed.requiredChanges,

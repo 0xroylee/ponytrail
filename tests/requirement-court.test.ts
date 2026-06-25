@@ -29,6 +29,11 @@ describe("requirement court", () => {
       expect.stringContaining("engineer_bot: I think"),
       expect.stringContaining("testing_bot: I think"),
     ]);
+    expect(result.discussion[0]?.visibleThinking).toEqual({
+      focus: expect.stringContaining("product"),
+      concern: expect.stringContaining("product"),
+      recommendation: expect.stringContaining("preserves the user's product intent"),
+    });
     expect(result.verdict.approved).toBe(true);
     expect(result.judge.botId).toBe("requirement_judge_bot");
     expect(result.judge.summary).toContain("Approvals: 4/4");
@@ -116,6 +121,11 @@ describe("requirement court", () => {
 
       return {
         message: `${bot.id} approves with ${model.id}`,
+        visibleThinking: {
+          focus: `Evaluate as ${bot.displayName}.`,
+          concern: "Make sure the role-specific risk is surfaced.",
+          recommendation: "Approve the direction.",
+        },
         vote: "approve",
         confidence: 0.9,
         requiredChanges: [],
@@ -133,6 +143,11 @@ describe("requirement court", () => {
       botId: "security_bot",
       displayName: "Security Bot",
       message: "security_bot approves with security_model",
+      visibleThinking: {
+        focus: "Evaluate as Security Bot.",
+        concern: "Make sure the role-specific risk is surfaced.",
+        recommendation: "Approve the direction.",
+      },
       round: 1,
       vote: "approve",
     });

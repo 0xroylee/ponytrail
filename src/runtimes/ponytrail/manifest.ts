@@ -8,7 +8,6 @@ export const WorkerAgentSchema = z.object({
   id: z.string().min(1),
   adapter: z.literal("cli"),
   command: z.string().min(1),
-  goalCommand: z.string().min(1),
   notes: z.string().min(1),
 });
 
@@ -41,6 +40,36 @@ export const BotSchema = z.object({
   outputs: z.array(z.string().min(1)).optional(),
   approvalConditions: z.array(z.string().min(1)).optional(),
   rejectOrAmendConditions: z.array(z.string().min(1)).optional(),
+});
+
+const ManifestMetadataSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  owner: z.string().min(1),
+});
+
+const SetupReviewBotInputSchema = z.object({
+  id: z.string().min(1),
+  displayName: z.string().min(1),
+  role: z.string().min(1),
+  panel: z.string().min(1).optional(),
+  instruction: z.string().min(1).optional(),
+  modelId: z.string().min(1),
+  modelName: z.string().min(1),
+  votes: z.boolean().optional(),
+  skills: z.array(z.string().min(1)).optional(),
+  approvalConditions: z.array(z.string().min(1)).optional(),
+  rejectOrAmendConditions: z.array(z.string().min(1)).optional(),
+});
+
+export const CompactSetupManifestSchema = z.object({
+  manifestVersion: z.string().min(1),
+  kind: z.literal("ai-work-runtime.ponytrail.setup"),
+  metadata: ManifestMetadataSchema,
+  ponies: z.array(SetupReviewBotInputSchema).min(1),
+  approvalRule: z.object({
+    requiredApprovals: z.number().int().positive(),
+  }),
 });
 
 const DEFAULT_MODEL_CONFIGS = [
@@ -129,11 +158,7 @@ const RESERVED_SETUP_BOT_IDS = new Set([
 const ManifestBaseSchema = z.object({
   manifestVersion: z.string().min(1),
   kind: z.union([z.literal("ai-work-runtime.ponytrail"), z.literal("ai-work-runtime.goal-court")]),
-  metadata: z.object({
-    name: z.string().min(1),
-    description: z.string().min(1),
-    owner: z.string().min(1),
-  }),
+  metadata: ManifestMetadataSchema,
   runtime: z.object({
     mode: z.literal("requirement_first"),
     defaultLanguage: z.string().min(1),
@@ -240,6 +265,7 @@ export const ManifestSchema = ManifestBaseSchema.superRefine((manifest, context)
 });
 
 export type Manifest = z.infer<typeof ManifestSchema>;
+export type CompactSetupManifest = z.infer<typeof CompactSetupManifestSchema>;
 export type DecisionRule = z.infer<typeof DecisionRuleSchema>;
 export type VoteValue = z.infer<typeof VoteValueSchema>;
 
@@ -247,23 +273,18 @@ export interface DefaultManifestOptions {
   name?: string;
 }
 
-export interface SetupReviewBotInput {
-  id: string;
-  displayName: string;
-  role: string;
-  panel?: string;
-  instruction?: string;
-  modelId: string;
-  modelName: string;
-  votes?: boolean;
-  skills?: string[];
-  approvalConditions?: string[];
-  rejectOrAmendConditions?: string[];
-}
+export type SetupReviewBotInput = z.infer<typeof SetupReviewBotInputSchema>;
 
 export interface SetupManifestOptions extends DefaultManifestOptions {
   reviewBots?: SetupReviewBotInput[];
   requiredApprovals?: number;
+}
+
+interface NormalizedSetupManifestOptions {
+  defaultManifest: Manifest;
+  setupReviewBots: SetupReviewBotInput[];
+  voterIds: string[];
+  requiredApprovals: number;
 }
 
 export function createDefaultManifest(options: DefaultManifestOptions = {}): Manifest {
@@ -286,14 +307,12 @@ export function createDefaultManifest(options: DefaultManifestOptions = {}): Man
           id: "codex",
           adapter: "cli",
           command: "codex",
-          goalCommand: "exec",
           notes: "Pass the locked goal contract into a non-interactive Codex exec session.",
         },
         {
           id: "claude",
           adapter: "cli",
           command: "claude",
-          goalCommand: "/goal",
           notes: "Pass the locked goal contract into the Claude session before implementation.",
         },
       ],
@@ -323,7 +342,7 @@ export function createDefaultManifest(options: DefaultManifestOptions = {}): Man
       panelId: "requirement_court",
       purpose:
         "Decide whether the proposed requirement direction is clear, valuable, feasible, plannable, and verifiable.",
-      maxRounds: 2,
+      maxRounds: 3,
       stages: [
         { id: "brainstorm", actor: "requirements_brainstorm_bot", output: "clarifying_questions" },
         { id: "draft", actor: "goal_draft_bot", output: "requirement_contract_draft" },
@@ -617,31 +636,30 @@ export function calculateDefaultSetupRequiredApprovals(voterCount: number): numb
   return Math.floor(voterCount * 0.6) + 1;
 }
 
+export function createCompactSetupManifest(
+  options: SetupManifestOptions = {},
+): CompactSetupManifest {
+  const { defaultManifest, setupReviewBots, requiredApprovals } =
+    normalizeSetupManifestOptions(options);
+
+  return CompactSetupManifestSchema.parse({
+    manifestVersion: defaultManifest.manifestVersion,
+    kind: "ai-work-runtime.ponytrail.setup",
+    metadata: {
+      ...defaultManifest.metadata,
+      description:
+        "A compact Ponytrail setup manifest. Define ponies here; Ponytrail expands the runtime details when commands run.",
+    },
+    ponies: setupReviewBots,
+    approvalRule: {
+      requiredApprovals,
+    },
+  });
+}
+
 export function createSetupManifest(options: SetupManifestOptions = {}): Manifest {
-  const defaultManifest = createDefaultManifest(
-    options.name === undefined ? {} : { name: options.name },
-  );
-  const setupReviewBots = (options.reviewBots ?? createDefaultSetupReviewBots()).map(
-    normalizeSetupReviewBotInput,
-  );
-  assertNoReservedSetupBotIds(setupReviewBots);
-  assertUniqueSetupBotIds(setupReviewBots);
-  const voterIds = setupReviewBots.filter((bot) => bot.votes !== false).map((bot) => bot.id);
-
-  if (voterIds.length === 0) {
-    throw new Error("At least one voting setup bot is required.");
-  }
-
-  const requiredApprovals =
-    options.requiredApprovals ?? calculateDefaultSetupRequiredApprovals(voterIds.length);
-
-  if (
-    !Number.isInteger(requiredApprovals) ||
-    requiredApprovals < 1 ||
-    requiredApprovals > voterIds.length
-  ) {
-    throw new Error(`Required approvals must be between 1 and ${voterIds.length}.`);
-  }
+  const { defaultManifest, setupReviewBots, voterIds, requiredApprovals } =
+    normalizeSetupManifestOptions(options);
 
   const setupReviewManifestBots = setupReviewBots.map(createSetupReviewManifestBot);
   const setupJudgeBots = defaultManifest.bots
@@ -691,14 +709,27 @@ export function createSetupManifest(options: SetupManifestOptions = {}): Manifes
   });
 }
 
-export async function writeManifest(path: string, manifest: Manifest): Promise<void> {
+export async function writeManifest(
+  path: string,
+  manifest: Manifest | CompactSetupManifest,
+): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, `${JSON.stringify(ManifestSchema.parse(manifest), null, 2)}\n`);
+  await writeFile(path, `${JSON.stringify(parseManifestFileForWrite(manifest), null, 2)}\n`);
 }
 
 export async function loadManifest(path: string): Promise<Manifest> {
   const raw = await readFile(path, "utf8");
   return ManifestSchema.parse(upgradeManifestInput(JSON.parse(raw)));
+}
+
+function parseManifestFileForWrite(
+  manifest: Manifest | CompactSetupManifest,
+): Manifest | CompactSetupManifest {
+  if (manifest.kind === "ai-work-runtime.ponytrail.setup") {
+    return CompactSetupManifestSchema.parse(manifest);
+  }
+
+  return ManifestSchema.parse(manifest);
 }
 
 function upgradeManifestInput(input: unknown): unknown {
@@ -707,6 +738,16 @@ function upgradeManifestInput(input: unknown): unknown {
   }
 
   const manifest = { ...input };
+
+  if (manifest.kind === "ai-work-runtime.ponytrail.setup") {
+    const compactManifest = CompactSetupManifestSchema.parse(manifest);
+    return createSetupManifest({
+      name: compactManifest.metadata.name,
+      reviewBots: compactManifest.ponies,
+      requiredApprovals: compactManifest.approvalRule.requiredApprovals,
+    });
+  }
+
   const hadModelRegistry = Array.isArray(manifest.models);
 
   if (!hadModelRegistry) {
@@ -760,6 +801,42 @@ function isLegacyDefaultCourt(bots: unknown[]): boolean {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeSetupManifestOptions(
+  options: SetupManifestOptions,
+): NormalizedSetupManifestOptions {
+  const defaultManifest = createDefaultManifest(
+    options.name === undefined ? {} : { name: options.name },
+  );
+  const setupReviewBots = (options.reviewBots ?? createDefaultSetupReviewBots()).map(
+    normalizeSetupReviewBotInput,
+  );
+  assertNoReservedSetupBotIds(setupReviewBots);
+  assertUniqueSetupBotIds(setupReviewBots);
+  const voterIds = setupReviewBots.filter((bot) => bot.votes !== false).map((bot) => bot.id);
+
+  if (voterIds.length === 0) {
+    throw new Error("At least one voting setup bot is required.");
+  }
+
+  const requiredApprovals =
+    options.requiredApprovals ?? calculateDefaultSetupRequiredApprovals(voterIds.length);
+
+  if (
+    !Number.isInteger(requiredApprovals) ||
+    requiredApprovals < 1 ||
+    requiredApprovals > voterIds.length
+  ) {
+    throw new Error(`Required approvals must be between 1 and ${voterIds.length}.`);
+  }
+
+  return {
+    defaultManifest,
+    setupReviewBots,
+    voterIds,
+    requiredApprovals,
+  };
 }
 
 function normalizeSetupReviewBotInput(bot: SetupReviewBotInput): SetupReviewBotInput {

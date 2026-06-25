@@ -1,11 +1,16 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { createDefaultManifest, type Manifest, writeManifest } from "./manifest";
+import {
+  type CompactSetupManifest,
+  createDefaultManifest,
+  type Manifest,
+  writeManifest,
+} from "./manifest";
 
 export interface CreateOnboardingFilesInput {
   rootDir: string;
   projectName: string;
-  manifest?: Manifest;
+  manifest?: Manifest | CompactSetupManifest;
 }
 
 export interface CreateOnboardingFilesResult {

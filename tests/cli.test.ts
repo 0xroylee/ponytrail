@@ -61,6 +61,27 @@ describe("cli", () => {
     expect(skillsCommand?.commands.map((command) => command.name())).toEqual(["install", "update"]);
   });
 
+  test("prints the CLI version with -v", async () => {
+    const program = buildProgram();
+    const expectedVersion = "0.2.0";
+    const output: string[] = [];
+
+    expect(program.version()).toBe(expectedVersion);
+
+    program.exitOverride();
+    program.configureOutput({
+      writeOut: (value) => output.push(value),
+      writeErr: (value) => output.push(value),
+    });
+
+    await expect(program.parseAsync(["-v"], { from: "user" })).rejects.toMatchObject({
+      code: "commander.version",
+      exitCode: 0,
+      message: expectedVersion,
+    });
+    expect(output.join("")).toBe(`${expectedVersion}\n`);
+  });
+
   test("runs onboarding and manifest-backed commands", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const logs: string[] = [];
@@ -137,7 +158,7 @@ describe("cli", () => {
     }
   });
 
-  test("onboard prompts for the workspace name and installs the bundled skill", async () => {
+  test("onboard prompts for the workspace name and installs the bundled skills", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
     const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
     const logs: string[] = [];
@@ -157,21 +178,25 @@ describe("cli", () => {
         },
       }).parseAsync(["onboard", "--home", homeDir], { from: "user" });
 
-      await expect(
-        stat(join(homeDir, ".claude", "skills", "pony-trail", "SKILL.md")),
-      ).resolves.toBeTruthy();
-      await expect(
-        stat(join(homeDir, ".agents", "skills", "pony-trail", "SKILL.md")),
-      ).resolves.toBeTruthy();
-      await expect(
-        stat(join(homeDir, ".codex", "skills", "pony-trail", "SKILL.md")),
-      ).resolves.toBeTruthy();
+      for (const skill of ["pony-trail", "ponyrace"]) {
+        await expect(
+          stat(join(homeDir, ".claude", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+        await expect(
+          stat(join(homeDir, ".agents", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+        await expect(
+          stat(join(homeDir, ".codex", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+      }
       const manifest = JSON.parse(
         await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
       );
       expect(manifest.metadata.name).toBe("Prompted Workspace");
       expect(promptedDefaults).toEqual([rootDir.slice(rootDir.lastIndexOf("/") + 1)]);
       expect(logs.some((line) => line.includes("Skill install result"))).toBe(true);
+      expect(logs.some((line) => line.includes("Skill: pony-trail"))).toBe(true);
+      expect(logs.some((line) => line.includes("Skill: ponyrace"))).toBe(true);
       expect(logs.some((line) => line.includes("Ponytrail onboarding complete"))).toBe(true);
       expect(stripAnsiLines(logs)).toContain("Welcome to Ponytrail.");
       expect(logs.some((line) => line.includes("Restart your agent IDE"))).toBe(true);
@@ -232,13 +257,17 @@ describe("cli", () => {
         await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
       );
       expect(manifest.metadata.name).toBe("Setup Court");
-      expect(manifest.deliberation.decisionRule.voterIds).toEqual([
+      expect(manifest.kind).toBe("ai-work-runtime.ponytrail.setup");
+      expect(manifest).not.toHaveProperty("bots");
+      expect(manifest).not.toHaveProperty("models");
+      expect(manifest).not.toHaveProperty("deliberation");
+      expect(manifest.ponies.map((pony: { id: string }) => pony.id)).toEqual([
         "product_manager_bot",
         "project_manager_bot",
         "senior_engineer_bot",
         "testing_bot",
       ]);
-      expect(manifest.deliberation.decisionRule.requiredApprovals).toBe(3);
+      expect(manifest.approvalRule.requiredApprovals).toBe(3);
       expect(promptedDefaults).toContainEqual({
         projectName: rootDir.slice(rootDir.lastIndexOf("/") + 1),
         agents: "codex,claude,cursor",
@@ -457,20 +486,25 @@ describe("cli", () => {
         await readFile(join(rootDir, ".ponytrail", "manifest.json"), "utf8"),
       );
       expect(manifest.metadata.name).toBe("Custom Setup");
-      expect(manifest.deliberation.decisionRule.voterIds).toEqual([
-        "product_bot",
-        "engineering_bot",
-      ]);
-      expect(manifest.deliberation.decisionRule.requiredApprovals).toBe(2);
-      expect(manifest.bots.some((bot: { id: string }) => bot.id === "observer_bot")).toBe(true);
+      expect(manifest.kind).toBe("ai-work-runtime.ponytrail.setup");
+      expect(manifest).not.toHaveProperty("bots");
+      expect(manifest).not.toHaveProperty("models");
+      expect(manifest).not.toHaveProperty("deliberation");
       expect(
-        manifest.bots.find((bot: { id: string; model?: string }) => bot.id === "observer_bot")
-          ?.model,
+        manifest.ponies
+          .filter((pony: { votes?: boolean }) => pony.votes !== false)
+          .map((pony: { id: string }) => pony.id),
+      ).toEqual(["product_bot", "engineering_bot"]);
+      expect(manifest.approvalRule.requiredApprovals).toBe(2);
+      expect(manifest.ponies.some((pony: { id: string }) => pony.id === "observer_bot")).toBe(true);
+      expect(
+        manifest.ponies.find((pony: { id: string; modelId?: string }) => pony.id === "observer_bot")
+          ?.modelId,
       ).toBe("observer_model");
       expect(
-        manifest.models.some(
-          (model: { id: string; name: string }) =>
-            model.id === "observer_model" && model.name === "observer-review-model",
+        manifest.ponies.some(
+          (pony: { modelId: string; modelName: string }) =>
+            pony.modelId === "observer_model" && pony.modelName === "observer-review-model",
         ),
       ).toBe(true);
       expect(logs.some((line) => line.includes("Skill: pony-trail"))).toBe(true);
@@ -603,6 +637,15 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("project_manager_bot: I think"))).toBe(true);
       expect(logs.some((line) => line.includes("engineer_bot: I think"))).toBe(true);
       expect(logs.some((line) => line.includes("testing_bot: I think"))).toBe(true);
+      expect(stripAnsiLines(logs)).toContain("Visible thinking transcript");
+      expect(stripAnsiLines(logs)).toContain("Round 1");
+      expect(logs.some((line) => line.includes("Product Manager Bot (product_manager_bot)"))).toBe(
+        true,
+      );
+      expect(logs.some((line) => line.includes("Focus:"))).toBe(true);
+      expect(logs.some((line) => line.includes("Concern:"))).toBe(true);
+      expect(logs.some((line) => line.includes("Recommendation:"))).toBe(true);
+      expect(logs.some((line) => line.includes("Vote: approve"))).toBe(true);
       expect(stripAnsiLines(logs)).toContain("Judge summary");
       expect(logs.some((line) => line.includes("Approvals: 4/4"))).toBe(true);
       expect(stripAnsiLines(logs)).toContain("Detailed requirement");

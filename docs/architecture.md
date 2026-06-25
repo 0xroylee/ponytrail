@@ -69,7 +69,7 @@ Each worker adapter folder uses the same shape:
 - `utils.ts` stores adapter-local constants and config.
 - `index.ts` exports the public adapter surface.
 
-The adapter modules build invocation descriptions, run them through injected process runners, and stream them through injected stream runners. Worker execution remains behind this seam and is gated by requirement-court approval plus human confirmation. `goal`, `ponyrace`, and the compatibility `stream-goal` command now focus on requirement discussion by default instead of launching a worker. The default Bun-backed stream runner is `src/plugins/adapters/stream-runner.ts`; process spawning must stay behind this seam, not inside `src/cli.ts`.
+The adapter modules build invocation descriptions, run them through injected process runners, and stream them through injected stream runners. Worker execution remains behind this seam and is gated by requirement-court approval plus human confirmation. `goal` and `ponyrace` focus on requirement discussion by default instead of launching a worker. The default Bun-backed stream runner is `src/plugins/adapters/stream-runner.ts`; process spawning must stay behind this seam, not inside `src/cli.ts`.
 
 ## Skills
 

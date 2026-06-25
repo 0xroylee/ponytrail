@@ -208,6 +208,11 @@ describe("worker CLI adapters", () => {
         exitCode: 0,
         stdout: JSON.stringify({
           message: "Engineering approves with a smoke test.",
+          visibleThinking: {
+            focus: "Check implementation and verification shape.",
+            concern: "The plan needs a smoke test before approval.",
+            recommendation: "Approve with a focused CLI smoke check.",
+          },
           vote: "approve",
           confidence: 0.92,
           requiredChanges: [],
@@ -236,6 +241,11 @@ describe("worker CLI adapters", () => {
 
     expect(response).toEqual({
       message: "Engineering approves with a smoke test.",
+      visibleThinking: {
+        focus: "Check implementation and verification shape.",
+        concern: "The plan needs a smoke test before approval.",
+        recommendation: "Approve with a focused CLI smoke check.",
+      },
       vote: "approve",
       confidence: 0.92,
       requiredChanges: [],
@@ -243,6 +253,7 @@ describe("worker CLI adapters", () => {
     expect(invocations).toHaveLength(1);
     expect(invocations[0]?.args.join(" ")).toContain("Requirement pony review");
     expect(invocations[0]?.args.join(" ")).toContain("Pony: Engineer Bot (engineer_bot)");
+    expect(invocations[0]?.args.join(" ")).toContain("visibleThinking");
     expect(invocations[0]?.args.join(" ")).toContain("Return only JSON");
   });
 });

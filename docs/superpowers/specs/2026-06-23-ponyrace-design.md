@@ -44,7 +44,7 @@ agreement" rule. The Judge remains a non-voting summarizer.
 
 ## CLI Surface
 
-Add `ponyrace` next to `goal` and `stream-goal`.
+Add `ponyrace` next to `goal`.
 
 The command should accept:
 
