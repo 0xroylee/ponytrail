@@ -55,6 +55,10 @@ export interface RequirementCourtResult {
 export interface RunRequirementCourtInput {
   manifest: Manifest;
   ponyRunner?: RequirementPonyRunner;
+  onRoundStart?: (round: number, botIds: string[]) => void | Promise<void>;
+  onRoundComplete?: (round: RequirementCourtRound) => void | Promise<void>;
+  onPonyStart?: (botId: string, displayName: string, round: number) => void | Promise<void>;
+  onPonyComplete?: (entry: RequirementDiscussionEntry) => void | Promise<void>;
 }
 
 export interface RequirementPonyRunInput {
@@ -119,23 +123,21 @@ export async function runRequirementCourt(
   const rounds: RequirementCourtRound[] = [];
 
   for (let round = 1; round <= input.manifest.deliberation.maxRounds; round += 1) {
+    const voterIds = input.manifest.deliberation.decisionRule.voterIds;
+    await input.onRoundStart?.(round, voterIds);
     const priorDiscussion = [...discussion];
-    const roundDiscussion = await Promise.all(
-      input.manifest.deliberation.decisionRule.voterIds.map(async (botId) => {
-        const bot = findRequirementCourtBot(botId, input.manifest);
-        const model = findRequirementCourtModel(bot, input.manifest);
-        const response = await ponyRunner({
-          manifest: input.manifest,
-          bot,
-          model,
-          contract,
-          round,
-          priorDiscussion,
-        });
 
-        return createDiscussionEntry(bot, response, round);
-      }),
+    // Run bots sequentially when per-pony animation callbacks are present,
+    // otherwise run in parallel for faster execution.
+    const roundDiscussion = await runPonies(
+      voterIds,
+      round,
+      input,
+      contract,
+      priorDiscussion,
+      ponyRunner,
     );
+
     const votes = roundDiscussion.map(toVote);
     const verdict = tallyVotes(votes, input.manifest.deliberation.decisionRule);
 
@@ -146,6 +148,8 @@ export async function runRequirementCourt(
       votes,
       verdict,
     });
+
+    await input.onRoundComplete?.(rounds.at(-1) as RequirementCourtRound);
 
     if (verdict.approved) {
       break;
@@ -183,6 +187,53 @@ export async function runRequirementCourt(
     },
     humanConfirmation: "pending",
   };
+}
+
+// Run all voter ponies for a round — sequentially when per-pony callbacks exist, in parallel otherwise.
+async function runPonies(
+  voterIds: string[],
+  round: number,
+  input: RunRequirementCourtInput,
+  contract: GoalContract,
+  priorDiscussion: readonly RequirementDiscussionEntry[],
+  ponyRunner: RequirementPonyRunner,
+): Promise<RequirementDiscussionEntry[]> {
+  if (!input.onPonyStart && !input.onPonyComplete) {
+    return Promise.all(
+      voterIds.map(async (botId) => {
+        const bot = findRequirementCourtBot(botId, input.manifest);
+        const model = findRequirementCourtModel(bot, input.manifest);
+        const response = await ponyRunner({
+          manifest: input.manifest,
+          bot,
+          model,
+          contract,
+          round,
+          priorDiscussion,
+        });
+        return createDiscussionEntry(bot, response, round);
+      }),
+    );
+  }
+
+  const entries: RequirementDiscussionEntry[] = [];
+  for (const botId of voterIds) {
+    const bot = findRequirementCourtBot(botId, input.manifest);
+    const model = findRequirementCourtModel(bot, input.manifest);
+    await input.onPonyStart?.(botId, bot.displayName, round);
+    const response = await ponyRunner({
+      manifest: input.manifest,
+      bot,
+      model,
+      contract,
+      round,
+      priorDiscussion,
+    });
+    const entry = createDiscussionEntry(bot, response, round);
+    await input.onPonyComplete?.(entry);
+    entries.push(entry);
+  }
+  return entries;
 }
 
 function createDiscussionEntry(
