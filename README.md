@@ -2,7 +2,7 @@
 
 # Ponyrace Workflows
 
-Install reusable AI-agent workflows made from multiple skills.
+Install reusable AI-agent workflow bundles made from multiple skills.
 
 The first bundled workflow is `product-dev`. It composes Superpowers
 brainstorming, Ponyrace requirement review, Superpowers writing-plans, and
@@ -36,18 +36,36 @@ Or inspect the checked-in example:
 
 ```bash
 npx ponyrace bundle validate examples/workflows/release-review
+npx ponyrace bundle validate examples/workflows/real-engineering
 ```
 
 New workflow authors can follow the step-by-step guide in
 [`docs/workflow-author-guide.md`](docs/workflow-author-guide.md).
+
+The `real-engineering` example combines RTK command discipline, `pony-trail`,
+Superpowers process skills, and Matt Pocock engineering skills. Install Matt's
+skills first with `npx skills@latest add mattpocock/skills`, then run
+`/setup-matt-pocock-skills` in your agent app.
 
 Restart your agent IDE so Codex, Claude, Cursor, or GitHub Copilot loads any
 newly installed skills.
 
 ## Workflow Bundles
 
-A workflow bundle is a folder with a `workflow.json` manifest plus optional
-local skills:
+A **Workflow Bundle** is the shareable artifact: a folder with a `workflow.json`
+manifest plus optional local skills. In Chinese, use **工作流包**.
+
+A **Skill Tree** is the ordered flow inside the bundle. In Chinese, use
+**技能树**. Each node in the skill tree is a step, and each step uses one skill.
+
+```text
+Workflow Bundle / 工作流包
+  -> Skill Tree / 技能树
+    -> Step / 步骤
+      -> Skill / 技能
+```
+
+Example bundle layout:
 
 ```text
 release-review/
@@ -58,8 +76,9 @@ release-review/
       SKILL.md
 ```
 
-`workflow.json` names skill dependencies and ordered steps. V1 uses JSON so the
-runtime can validate bundles without adding another parser dependency.
+`workflow.json` names skill dependencies and ordered steps. Those steps form the
+bundle's skill tree. V1 uses JSON so the runtime can validate bundles without
+adding another parser dependency.
 
 ```json
 {

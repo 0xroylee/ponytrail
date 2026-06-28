@@ -3,6 +3,13 @@
 This guide shows the shortest path from an idea to a workflow bundle that other
 Ponyrace users can install.
 
+Vocabulary:
+
+- **Workflow Bundle / 工作流包**: the folder users create, share, and install.
+- **Skill Tree / 技能树**: the ordered flow inside the bundle.
+- **Step / 步骤**: one node in the skill tree.
+- **Skill / 技能**: one reusable capability used by a step.
+
 Command note:
 
 - In a cloned Ponyrace repo, use `bun run dev -- <command>`.
@@ -17,6 +24,7 @@ Good examples:
 - `support-triage`: classify a support issue, plan a fix, record evidence
 - `release-review`: review release risk before implementation
 - `bugfix-with-tests`: clarify a bug, plan the fix, verify regression coverage
+- `real-engineering`: combine RTK, Ponytrail, Superpowers, and Matt Pocock skills
 
 Use a lowercase name with hyphens:
 
@@ -50,7 +58,7 @@ Open `examples/workflows/support-triage/workflow.json`.
 Each workflow has two important lists:
 
 - `skills`: the skills the workflow needs
-- `steps`: the order a user or agent should follow
+- `steps`: the skill tree order a user or agent should follow
 
 Example:
 
@@ -213,3 +221,31 @@ Before sharing, check:
 - Local skills have a `SKILL.md` with frontmatter.
 - The README explains when to use the workflow.
 - The workflow is narrow enough to run repeatedly.
+
+## Example: Combine RTK, Ponytrail, Superpowers, And Matt Pocock Skills
+
+The checked-in `real-engineering` workflow shows how to combine local workflow
+guidance with external skill packs:
+
+```bash
+bun run dev -- bundle validate examples/workflows/real-engineering
+```
+
+It uses:
+
+- `./skills/rtk-command-discipline` for repo command rules
+- `pony-trail` for file-change snapshots
+- `superpowers:brainstorming`
+- `superpowers:writing-plans`
+- `mattpocock:grill-with-docs`
+- `mattpocock:tdd`
+- `mattpocock:codebase-design`
+- `mattpocock:diagnosing-bugs`
+
+Before installing that workflow, install Matt Pocock's skills:
+
+```bash
+npx skills@latest add mattpocock/skills
+```
+
+Then run `/setup-matt-pocock-skills` in your agent app.

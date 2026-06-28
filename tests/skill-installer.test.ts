@@ -230,6 +230,44 @@ describe("skill installer", () => {
     }
   });
 
+  test("resolves mattpocock skills from installed local skill folders", async () => {
+    const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
+    const sourceDir = join(homeDir, ".agents", "skills", "tdd");
+
+    try {
+      await writeSuperpowersSkill(sourceDir, {
+        name: "tdd",
+        description: "Test-driven development.",
+      });
+
+      const aliasSource = await resolveInstallSkillSource("mattpocock:tdd", { homeDir });
+      const githubSource = await resolveInstallSkillSource("github:mattpocock/skills/skills/tdd", {
+        homeDir,
+      });
+
+      expect(aliasSource).toEqual({
+        kind: "path",
+        name: "tdd",
+        path: sourceDir,
+      });
+      expect(githubSource).toEqual(aliasSource);
+    } finally {
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
+  test("explains how to install mattpocock skills when they are missing", async () => {
+    const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
+
+    try {
+      await expect(resolveInstallSkillSource("mattpocock:tdd", { homeDir })).rejects.toThrow(
+        "Matt Pocock tdd skill not found. Install Matt Pocock skills first: npx skills@latest add mattpocock/skills && /setup-matt-pocock-skills",
+      );
+    } finally {
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
   test("installs superpowers brainstorming into directory and Cursor targets", async () => {
     const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
     const sourceDir = join(

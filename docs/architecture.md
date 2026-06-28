@@ -95,9 +95,11 @@ CLI-backed ponies receive the descriptions for their configured manifest skills 
 
 ## Workflow Bundles
 
-Workflow bundles are the primary product direction. A bundle is a directory with
-a `workflow.json` manifest, a README, and optional local skills. The manifest
-declares skill dependencies and ordered workflow steps.
+Workflow bundles are the primary product direction. A **Workflow Bundle** is the
+shareable artifact (`工作流包`): a directory with a `workflow.json` manifest, a
+README, and optional local skills. A **Skill Tree** (`技能树`) is the ordered
+flow inside that bundle: each step is one node and each step uses one skill. The
+manifest declares skill dependencies and ordered workflow steps.
 `src/runtimes/ponytrail/workflow-bundles.ts` owns parsing, validation,
 scaffolding, bundled workflow resolution, and project-local install records
 under `.ponyrace/workflows/`.

@@ -70,6 +70,15 @@ export class MissingSuperpowersSkillError extends Error {
   }
 }
 
+export class MissingMattPocockSkillError extends Error {
+  constructor(input: { skillName: string }) {
+    super(
+      `Matt Pocock ${input.skillName} skill not found. Install Matt Pocock skills first: npx skills@latest add mattpocock/skills && /setup-matt-pocock-skills`,
+    );
+    this.name = "MissingMattPocockSkillError";
+  }
+}
+
 const DEFAULT_BUNDLED_SKILL = "pony-trail";
 
 interface SupportedSuperpowersSkill {
@@ -229,6 +238,11 @@ export async function resolveInstallSkillSource(
   sourceOrName: string,
   options: ResolveInstallSkillSourceOptions = {},
 ): Promise<ResolvedInstallSkillSource> {
+  const mattPocockSkillName = parseMattPocockSkillSource(sourceOrName);
+  if (mattPocockSkillName) {
+    return resolveMattPocockSkill(mattPocockSkillName, options);
+  }
+
   const superpowersSkill = supportedSuperpowersSkills.find(
     (skill) => skill.source === sourceOrName,
   );
@@ -255,6 +269,55 @@ export async function resolveInstallSkillSource(
   }
 
   throw new Error(`Skill source not found: ${sourceOrName}`);
+}
+
+async function resolveMattPocockSkill(
+  skillName: string,
+  options: ResolveInstallSkillSourceOptions,
+): Promise<ResolvedInstallSkillSource> {
+  const homeDir = options.homeDir ?? process.env.HOME ?? process.cwd();
+  const skillPath = await findInstalledSkillPath(homeDir, skillName);
+
+  if (!skillPath) {
+    throw new MissingMattPocockSkillError({ skillName });
+  }
+
+  return resolvePathSkill(skillPath);
+}
+
+function parseMattPocockSkillSource(source: string): string | null {
+  if (source.startsWith("mattpocock:")) {
+    const skillName = source.slice("mattpocock:".length).trim();
+    return skillName || null;
+  }
+
+  const githubPrefix = "github:mattpocock/skills/";
+  if (!source.startsWith(githubPrefix)) {
+    return null;
+  }
+
+  const suffix = source.slice(githubPrefix.length);
+  if (suffix.startsWith("skills/")) {
+    return suffix.slice("skills/".length) || null;
+  }
+
+  return suffix || null;
+}
+
+async function findInstalledSkillPath(homeDir: string, skillName: string): Promise<string | null> {
+  const candidates = [
+    join(homeDir, ".agents", "skills", skillName),
+    join(homeDir, ".codex", "skills", skillName),
+    join(homeDir, ".claude", "skills", skillName),
+  ];
+
+  for (const candidate of candidates) {
+    if (await pathExists(join(candidate, "SKILL.md"))) {
+      return candidate;
+    }
+  }
+
+  return null;
 }
 
 async function resolveBundledSkillPath(skillName: string): Promise<string | null> {

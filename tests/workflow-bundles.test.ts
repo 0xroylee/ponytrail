@@ -87,6 +87,32 @@ describe("workflow bundles", () => {
     ]);
   });
 
+  test("loads the real-engineering example workflow with mattpocock skill sources", async () => {
+    const bundle = await loadWorkflowBundle("examples/workflows/real-engineering");
+
+    expect(bundle.manifest.name).toBe("real-engineering");
+    expect(bundle.manifest.skills.map((skill) => skill.source)).toEqual([
+      "./skills/rtk-command-discipline",
+      "pony-trail",
+      "superpowers:brainstorming",
+      "superpowers:writing-plans",
+      "mattpocock:grill-with-docs",
+      "mattpocock:tdd",
+      "mattpocock:codebase-design",
+      "mattpocock:diagnosing-bugs",
+    ]);
+    expect(bundle.manifest.steps.map((step) => [step.id, step.skill])).toEqual([
+      ["command-discipline", "./skills/rtk-command-discipline"],
+      ["shape", "superpowers:brainstorming"],
+      ["grill", "mattpocock:grill-with-docs"],
+      ["plan", "superpowers:writing-plans"],
+      ["design", "mattpocock:codebase-design"],
+      ["tdd", "mattpocock:tdd"],
+      ["debug", "mattpocock:diagnosing-bugs"],
+      ["evidence", "pony-trail"],
+    ]);
+  });
+
   test("installs and lists workflow bundles under .ponyrace", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "workflow-bundle-install-"));
     const bundle = await loadWorkflowBundle("product-dev");
