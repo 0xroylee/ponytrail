@@ -1,12 +1,12 @@
-# Create Your Own Workflow Bundle
+# Create Your Own GetSuperpower
 
-This guide shows the shortest path from an idea to a workflow bundle that other
+This guide shows the shortest path from an idea to a GetSuperpower that other
 Ponyrace users can install.
 
 Vocabulary:
 
-- **Workflow Bundle / 工作流包**: the folder users create, share, and install.
-- **Skill Tree / 技能树**: the ordered flow inside the bundle.
+- **GetSuperpower / 工作流包**: the folder users create, share, and install.
+- **Skill Tree / 技能树**: the ordered flow inside the GetSuperpower.
 - **Step / 步骤**: one node in the skill tree.
 - **Skill / 技能**: one reusable capability used by a step.
 
@@ -14,6 +14,15 @@ Command note:
 
 - In a cloned Ponyrace repo, use `bun run dev -- <command>`.
 - In another project, use `npx ponyrace <command>`.
+
+Optional authoring helper:
+
+```bash
+npx ponyrace skills install creating-bundle-skills
+```
+
+Then ask your agent to use `$creating-bundle-skills` when designing a new
+bundle skill.
 
 ## 1. Pick One Job
 
@@ -32,12 +41,12 @@ Use a lowercase name with hyphens:
 support-triage
 ```
 
-## 2. Create The Bundle
+## 2. Create The GetSuperpower
 
 From the repo root:
 
 ```bash
-bun run dev -- bundle init support-triage --dir examples/workflows
+bun run dev -- getsuperpower init support-triage --dir examples/workflows
 ```
 
 This creates:
@@ -47,9 +56,14 @@ examples/workflows/support-triage/
   workflow.json
   README.md
   skills/
+    support-triage/
+      SKILL.md
     custom-review/
       SKILL.md
 ```
+
+`skills/support-triage/SKILL.md` is the entry skill: the one users call to run
+the whole skill tree.
 
 ## 3. Edit `workflow.json`
 
@@ -69,6 +83,7 @@ Example:
   "version": "0.1.0",
   "description": "Clarify, review, plan, and preserve evidence for support fixes.",
   "skills": [
+    { "source": "./skills/support-triage" },
     { "source": "superpowers:brainstorming" },
     { "source": "./skills/support-review" },
     { "source": "superpowers:writing-plans" },
@@ -104,7 +119,24 @@ Example:
 Keep every `steps[].skill` value exactly equal to one of the `skills[].source`
 values.
 
-## 4. Add Local Skill Guidance
+The entry skill itself belongs in `skills[]`, but it does not need its own step.
+It is the callable wrapper that instructs the agent to run the declared steps.
+
+## 4. Edit The Entry Skill
+
+Open:
+
+```text
+examples/workflows/support-triage/skills/support-triage/SKILL.md
+```
+
+Keep its required sub-skills in the same order as `workflow.json` steps. This is
+what lets a user call one skill and have the agent follow the N-skill workflow.
+
+The generated entry skill should say what happens when a dependency is missing:
+stop, name the missing skill, and tell the user which install command to run.
+
+## 5. Add Local Skill Guidance
 
 If your workflow has its own local skill, create or rename a skill folder:
 
@@ -139,34 +171,40 @@ Then update `workflow.json` to use:
 { "source": "./skills/support-review" }
 ```
 
-## 5. Validate The Bundle
+## 6. Validate The GetSuperpower
 
 Run:
 
 ```bash
-bun run dev -- bundle validate examples/workflows/support-triage
+bun run dev -- getsuperpower validate examples/workflows/support-triage
 ```
 
 Expected output:
 
 ```text
-Workflow bundle valid: support-triage@0.1.0
+GetSuperpower valid: support-triage@0.1.0
 Steps: 4
-Skills: 4
+Skills: 5
 ```
 
-## 6. Test Local Install
+## 7. Inspect And Test Local Install
+
+Show the dependencies before installing:
+
+```bash
+bun run dev -- getsuperpower deps examples/workflows/support-triage
+```
 
 Install it into a project:
 
 ```bash
-bun run dev -- workflow install examples/workflows/support-triage
+bun run dev -- getsuperpower install examples/workflows/support-triage
 ```
 
-Then list installed workflows:
+Then list installed GetSuperpowers:
 
 ```bash
-bun run dev -- workflow list
+bun run dev -- getsuperpower list
 ```
 
 You should see:
@@ -178,7 +216,13 @@ support-triage 0.1.0
 Restart your agent app after installing, so Codex, Claude, Cursor, or GitHub
 Copilot reloads the installed skills.
 
-## 7. Share It On GitHub
+After restart, the user can invoke the entry skill, for example:
+
+```text
+$support-triage fix this support issue
+```
+
+## 8. Share It On GitHub
 
 Ponyrace lives at:
 
@@ -211,12 +255,14 @@ In the pull request, include:
 - the command you ran to validate it
 - whether it includes local skills
 
-## 8. Bundle Review Checklist
+## 9. GetSuperpower Review Checklist
 
 Before sharing, check:
 
 - The workflow name is lowercase and hyphenated.
-- `workflow.json` passes `bundle validate`.
+- `workflow.json` passes `getsuperpower validate`.
+- The entry skill exists at `skills/<workflow-name>/SKILL.md`.
+- The entry skill lists required sub-skills in step order.
 - Every step references a declared skill source.
 - Local skills have a `SKILL.md` with frontmatter.
 - The README explains when to use the workflow.
@@ -228,7 +274,7 @@ The checked-in `real-engineering` workflow shows how to combine local workflow
 guidance with external skill packs:
 
 ```bash
-bun run dev -- bundle validate examples/workflows/real-engineering
+bun run dev -- getsuperpower validate examples/workflows/real-engineering
 ```
 
 It uses:
@@ -242,10 +288,10 @@ It uses:
 - `mattpocock:codebase-design`
 - `mattpocock:diagnosing-bugs`
 
-Before installing that workflow, install Matt Pocock's skills:
+When installing that workflow, GetSuperpower automatically uses the Skills CLI
+to fetch missing `mattpocock:*` dependencies. If that automatic bootstrap fails,
+run the same package install through Ponyrace and retry:
 
 ```bash
-npx skills@latest add mattpocock/skills
+bun run dev -- skills install mattpocock/skills
 ```
-
-Then run `/setup-matt-pocock-skills` in your agent app.

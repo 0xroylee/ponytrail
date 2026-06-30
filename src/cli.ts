@@ -7,6 +7,12 @@ import { confirm, intro, isCancel, outro, select, text } from "@clack/prompts";
 import { Command } from "commander";
 import pc from "picocolors";
 import {
+  configureGetSuperpowerCommand,
+  type GetSuperpowerExternalSkillDependencyInstaller,
+  getSkillsCliPackageForSource,
+  installExternalSkillDependencyWithSkillsCli,
+} from "../getsuperpower-command";
+import {
   type CliStreamRunner,
   createCliRequirementPonyRunner,
   createLocalRequirementPonyRunner,
@@ -28,16 +34,11 @@ import {
   createOnboardingFiles,
   createRequirementCourtHtmlReportPath,
   createRequirementCourtMarkdownReportPath,
-  createWorkflowBundleScaffold,
   draftGoalFromBrainstorm,
   formatRequirementCourtReportPathForOutput,
   type GoalContract,
-  getWorkflowSkillInstallSources,
   type InstructionContext,
-  installWorkflowBundle,
-  listInstalledWorkflowBundles,
   loadManifest,
-  loadWorkflowBundle,
   planSnapshotRevert,
   prepareGoalDiscussion,
   type RecordedSnapshotCommit,
@@ -155,6 +156,7 @@ export interface BuildProgramOptions {
   ponyRunner?: RequirementPonyRunner | undefined;
   streamRunner?: CliStreamRunner | undefined;
   revertApprovalPrompter?: RevertApprovalPrompter;
+  installExternalSkillDependency?: GetSuperpowerExternalSkillDependencyInstaller;
 }
 
 const CLI_VERSION = "0.2.0";
@@ -175,6 +177,8 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
   const ponyRunner = options.ponyRunner;
   const streamRunner = options.streamRunner ?? streamCliInvocation;
   const revertApprovalPrompter = options.revertApprovalPrompter ?? promptForRevertApproval;
+  const installExternalSkillDependency =
+    options.installExternalSkillDependency ?? installExternalSkillDependencyWithSkillsCli;
   const program = new Command();
 
   program
@@ -523,99 +527,12 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
       },
     );
 
-  const bundleCommand = program.command("bundle").description("Author workflow bundles.");
-
-  bundleCommand
-    .command("init")
-    .description("Create a local workflow bundle scaffold.")
-    .argument("<name>", "workflow bundle name")
-    .option("--dir <dir>", "directory that will contain the bundle", rootDir)
-    .action(async (name: string, commandOptions: { dir: string }) => {
-      const scaffold = await createWorkflowBundleScaffold({
-        rootDir: resolvePath(rootDir, commandOptions.dir),
-        name,
-      });
-
-      console.log(`Workflow bundle created: ${scaffold.bundleDir}`);
-      console.log(`${pc.dim("Manifest:")} ${scaffold.manifestPath}`);
-      console.log(`${pc.dim("README:")} ${scaffold.readmePath}`);
-    });
-
-  bundleCommand
-    .command("validate")
-    .description("Validate a workflow bundle manifest.")
-    .argument("<path>", "workflow bundle directory or workflow.json path")
-    .action(async (path: string) => {
-      const bundle = await loadWorkflowBundle(path, { cwd: rootDir });
-
-      console.log(`Workflow bundle valid: ${bundle.manifest.name}@${bundle.manifest.version}`);
-      console.log(`${pc.dim("Steps:")} ${bundle.manifest.steps.length}`);
-      console.log(`${pc.dim("Skills:")} ${bundle.manifest.skills.length}`);
-    });
-
-  const workflowCommand = program.command("workflow").description("Install and inspect workflows.");
-
-  workflowCommand
-    .command("install")
-    .description("Install a bundled or local workflow bundle and its skills.")
-    .argument("<source>", "bundled workflow name or local workflow bundle path")
-    .option("--dir <dir>", "project directory that receives .ponyrace/workflows", rootDir)
-    .option(
-      "--agents <agents>",
-      "comma-separated skill install targets: codex,claude,cursor",
-      "codex,claude,cursor",
-    )
-    .option("--home <dir>", "home directory that contains agent config folders", homedir())
-    .action(
-      async (source: string, commandOptions: { dir: string; agents: string; home: string }) => {
-        const targetDir = resolvePath(rootDir, commandOptions.dir);
-        const bundle = await loadWorkflowBundle(source, { cwd: rootDir });
-        const installAgents = parseSkillInstallAgents(commandOptions.agents);
-        const homeDir = resolveHomePath(commandOptions.home);
-
-        for (const skillSource of getWorkflowSkillInstallSources(bundle)) {
-          const skillResult = await installSkillWithLocalHistory({
-            rootDir: targetDir,
-            operation: "install",
-            source: skillSource,
-            homeDir,
-            agents: installAgents,
-            dryRun: false,
-            force: false,
-            refreshExisting: true,
-            installPrehook: false,
-          });
-
-          printSkillInstallResult(skillResult.skillInstall, skillResult.history, "install", {
-            showPostSkillChangeWelcome: false,
-          });
-        }
-
-        const install = await installWorkflowBundle({ rootDir: targetDir, bundle });
-
-        console.log(`Workflow installed: ${install.workflow.name}`);
-        console.log(`${pc.dim("Workflow file:")} ${install.path}`);
-      },
-    );
-
-  workflowCommand
-    .command("list")
-    .description("List installed workflow bundles.")
-    .option("--dir <dir>", "project directory with .ponyrace/workflows", rootDir)
-    .action(async (commandOptions: { dir: string }) => {
-      const workflows = await listInstalledWorkflowBundles({
-        rootDir: resolvePath(rootDir, commandOptions.dir),
-      });
-
-      if (workflows.length === 0) {
-        console.log(pc.dim("No workflows installed."));
-        return;
-      }
-
-      for (const workflow of workflows) {
-        console.log(`${workflow.name} ${workflow.version}`);
-      }
-    });
+  configureGetSuperpowerCommand(program, {
+    rootDir,
+    installSkillWithLocalHistory,
+    printSkillInstallResult,
+    installExternalSkillDependency,
+  });
 
   const skillsCommand = program.command("skills").description("Manage agent skills.");
 
@@ -624,6 +541,7 @@ export function buildProgram(options: BuildProgramOptions = {}): Command {
       .command("install")
       .description("Install a bundled or local skill for Claude, GitHub Copilot, and Codex."),
     rootDir,
+    installExternalSkillDependency,
   );
   configureSkillChangeCommand(
     skillsCommand
@@ -1366,18 +1284,24 @@ function resolvePath(rootDir: string, path: string): string {
   return isAbsolute(path) ? path : resolve(join(rootDir, path));
 }
 
-function configureSkillInstallCommand(command: Command, rootDir: string): Command {
-  return configureSkillChangeCommand(command, rootDir, "install").option(
-    "-f, --force",
-    "overwrite existing installed skill folders",
-    false,
-  );
+function configureSkillInstallCommand(
+  command: Command,
+  rootDir: string,
+  installExternalSkillDependency: GetSuperpowerExternalSkillDependencyInstaller,
+): Command {
+  return configureSkillChangeCommand(
+    command,
+    rootDir,
+    "install",
+    installExternalSkillDependency,
+  ).option("-f, --force", "overwrite existing installed skill folders", false);
 }
 
 function configureSkillChangeCommand(
   command: Command,
   rootDir: string,
   operation: SkillChangeOperation,
+  installExternalSkillDependency?: GetSuperpowerExternalSkillDependencyInstaller,
 ): Command {
   return command
     .argument("[source-or-name]", "bundled skill name or local skill directory", "pony-trail")
@@ -1400,11 +1324,26 @@ function configureSkillChangeCommand(
           force?: boolean;
         },
       ) => {
+        const homeDir = resolveHomePath(commandOptions.home);
+        const externalSkillsPackage = getExternalSkillsPackageInstallSource(sourceOrName);
+        if (operation === "install" && externalSkillsPackage && installExternalSkillDependency) {
+          const result = await installExternalSkillsPackageWithLocalHistory({
+            rootDir,
+            source: sourceOrName,
+            packageName: externalSkillsPackage,
+            homeDir,
+            dryRun: commandOptions.dryRun,
+            installExternalSkillDependency,
+          });
+          printExternalSkillsPackageInstallResult(result);
+          return;
+        }
+
         const result = await installSkillWithLocalHistory({
           rootDir,
           operation,
           source: sourceOrName,
-          homeDir: resolveHomePath(commandOptions.home),
+          homeDir,
           agents: parseSkillInstallAgents(commandOptions.agents),
           dryRun: commandOptions.dryRun,
           force: operation === "install" ? commandOptions.force === true : false,
@@ -1436,6 +1375,23 @@ interface InstallSkillWithLocalHistoryResult {
 
 interface SkillInstallPrintOptions {
   showPostSkillChangeWelcome?: boolean;
+}
+
+interface InstallExternalSkillsPackageWithLocalHistoryInput {
+  rootDir: string;
+  source: string;
+  packageName: string;
+  homeDir: string;
+  dryRun: boolean;
+  installExternalSkillDependency: GetSuperpowerExternalSkillDependencyInstaller;
+}
+
+interface InstallExternalSkillsPackageWithLocalHistoryResult {
+  source: string;
+  packageName: string;
+  homeDir: string;
+  dryRun: boolean;
+  history?: RecordedSnapshotCommit | undefined;
 }
 
 async function installSkillWithLocalHistory(
@@ -1501,6 +1457,72 @@ async function installSkillWithLocalHistory(
     }
     throw error;
   }
+}
+
+async function installExternalSkillsPackageWithLocalHistory(
+  input: InstallExternalSkillsPackageWithLocalHistoryInput,
+): Promise<InstallExternalSkillsPackageWithLocalHistoryResult> {
+  if (input.dryRun) {
+    return {
+      source: input.source,
+      packageName: input.packageName,
+      homeDir: input.homeDir,
+      dryRun: true,
+    };
+  }
+
+  let history = await recordSnapshotPre({
+    rootDir: input.rootDir,
+    sessionId: skillInstallHistorySessionId,
+    idPrefix: "skills-package-install",
+    action: "install skills package",
+    purpose: `Install ${input.packageName} skills package through the Skills CLI`,
+    reason: "Keep project-local history before changing agent skill files.",
+    expected: `The ${input.packageName} skills package is available under the configured home directory.`,
+    verify: "ponyrace history --details",
+    rollback: "Remove the affected installed skill folders, then record another snapshot.",
+  });
+
+  try {
+    await input.installExternalSkillDependency({
+      source: input.source,
+      homeDir: input.homeDir,
+    });
+
+    history = await recordSnapshotPost({
+      rootDir: input.rootDir,
+      sessionId: history.sessionId,
+      snapshotId: history.snapshotId,
+      summary: `Installed ${input.packageName} skills package`,
+      checks: formatExternalSkillsPackageInstallCommand(input),
+      result: `installed:${input.packageName}`,
+    });
+
+    return {
+      source: input.source,
+      packageName: input.packageName,
+      homeDir: input.homeDir,
+      dryRun: false,
+      history,
+    };
+  } catch (error) {
+    await recordSnapshotPost({
+      rootDir: input.rootDir,
+      sessionId: history.sessionId,
+      snapshotId: history.snapshotId,
+      summary: `Failed to install ${input.packageName} skills package`,
+      checks: formatExternalSkillsPackageInstallCommand(input),
+      result: `fail: ${formatErrorMessage(error)}`,
+    });
+    throw error;
+  }
+}
+
+function getExternalSkillsPackageInstallSource(source: string): string | null {
+  if (source.includes(":")) {
+    return null;
+  }
+  return getSkillsCliPackageForSource(source);
 }
 
 type OptionalSuperpowersProcessSkillInstall =
@@ -1652,6 +1674,36 @@ function formatSkillInstallCommand(input: InstallSkillWithLocalHistoryInput): st
     input.installPrehook ? "--prehook" : "",
   ].filter(Boolean);
   return ["ponyrace skills", input.operation, input.source, ...flags].join(" ");
+}
+
+function formatExternalSkillsPackageInstallCommand(input: {
+  source: string;
+  homeDir: string;
+}): string {
+  return `ponyrace skills install ${input.source} --home ${input.homeDir}`;
+}
+
+function printExternalSkillsPackageInstallResult(
+  result: InstallExternalSkillsPackageWithLocalHistoryResult,
+): void {
+  console.log(
+    pc.cyan(result.dryRun ? "Skills package install plan" : "Skills package install result"),
+  );
+  console.log(`Package: ${result.packageName}`);
+  console.log(`${pc.dim("Home:")} ${result.homeDir}`);
+  console.log(`${pc.dim("Internal command:")} npx --yes skills@latest add ${result.packageName}`);
+
+  if (result.history) {
+    console.log("");
+    console.log(`${pc.dim("Local history:")} ${result.history.snapshotId}`);
+    console.log(`${pc.dim("History log:")} ${result.history.logPath}`);
+  }
+
+  if (!result.dryRun) {
+    console.log("");
+    console.log(pc.green("Welcome to Ponyrace."));
+    console.log("Restart your agent IDE so it loads the latest Ponyrace skills.");
+  }
 }
 
 function formatSkillInstallSummary(

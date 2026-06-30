@@ -1,203 +1,158 @@
 <img src="/assets/ponyrace.png" alt="Ponyrace" width="640" />
 
-# Ponyrace Workflows
+# Ponyrace GetSuperpowers
 
-Install reusable AI-agent workflow bundles made from multiple skills.
+Ponyrace installs reusable AI-agent workflows.
 
-The first bundled workflow is `product-dev`. It composes Superpowers
-brainstorming, Ponyrace requirement review, Superpowers writing-plans, and
-Ponytrail file-change evidence.
-
-The original `/ponyrace` requirement review remains available as a lower-level
-primitive. Workflow bundles are now the main direction.
+A **GetSuperpower** is a workflow bundle made from several skills. It can install the skills a project needs, record the workflow under `.ponyrace/`, and give users one entry skill to call when the bundle provides one.
 
 ## Quick Start
 
-Install the first bundled workflow in the project where your agent will work:
+Install the default product-development GetSuperpower:
 
 ```bash
-npx ponyrace workflow install product-dev
+npx ponyrace getsuperpower install product-dev
 ```
 
-List installed workflows:
+See what it will install:
 
 ```bash
-npx ponyrace workflow list
+npx ponyrace getsuperpower deps product-dev
 ```
 
-Create your own workflow bundle:
+List installed GetSuperpowers:
 
 ```bash
-npx ponyrace bundle init release-review
-npx ponyrace bundle validate release-review
+npx ponyrace getsuperpower list
 ```
 
-Or inspect the checked-in example:
+Restart Codex, Claude, Cursor, or GitHub Copilot after installing skills so the agent reloads them.
+
+## Try A Callable Workflow
+
+Some GetSuperpowers include an entry skill. That is the one skill a user calls to run the whole skill tree.
+
+From a cloned Ponyrace repo, the OpenSpec + Superpowers example installs `$openspec-superpowers`:
 
 ```bash
-npx ponyrace bundle validate examples/workflows/release-review
-npx ponyrace bundle validate examples/workflows/real-engineering
+npx ponyrace getsuperpower install examples/workflows/openspec-superpowers
 ```
 
-New workflow authors can follow the step-by-step guide in
-[`docs/workflow-author-guide.md`](docs/workflow-author-guide.md).
-
-The `real-engineering` example combines RTK command discipline, `pony-trail`,
-Superpowers process skills, and Matt Pocock engineering skills. Install Matt's
-skills first with `npx skills@latest add mattpocock/skills`, then run
-`/setup-matt-pocock-skills` in your agent app.
-
-Restart your agent IDE so Codex, Claude, Cursor, or GitHub Copilot loads any
-newly installed skills.
-
-## Workflow Bundles
-
-A **Workflow Bundle** is the shareable artifact: a folder with a `workflow.json`
-manifest plus optional local skills. In Chinese, use **工作流包**.
-
-A **Skill Tree** is the ordered flow inside the bundle. In Chinese, use
-**技能树**. Each node in the skill tree is a step, and each step uses one skill.
+Then restart your agent app and invoke:
 
 ```text
-Workflow Bundle / 工作流包
-  -> Skill Tree / 技能树
-    -> Step / 步骤
-      -> Skill / 技能
+$openspec-superpowers implement this OpenSpec change
 ```
 
-Example bundle layout:
+The entry skill tells the agent to use the required sub-skills in order. The CLI handles installation, validation, and local workflow records.
+
+## Create Your Own
+
+Create a new GetSuperpower:
+
+```bash
+npx ponyrace getsuperpower init release-review
+```
+
+This creates:
 
 ```text
 release-review/
   workflow.json
   README.md
   skills/
+    release-review/
+      SKILL.md
     custom-review/
       SKILL.md
 ```
 
-`workflow.json` names skill dependencies and ordered steps. Those steps form the
-bundle's skill tree. V1 uses JSON so the runtime can validate bundles without
-adding another parser dependency.
+`skills/release-review/SKILL.md` is the entry skill. Edit it when you want users to call one skill that coordinates many sub-skills.
 
-```json
-{
-  "schemaVersion": "0.1",
-  "name": "release-review",
-  "version": "0.1.0",
-  "description": "Review and plan release changes.",
-  "skills": [
-    { "source": "superpowers:brainstorming" },
-    { "source": "./skills/custom-review" },
-    { "source": "superpowers:writing-plans" },
-    { "source": "pony-trail" }
-  ],
-  "steps": [
-    {
-      "id": "shape",
-      "title": "Shape the request",
-      "skill": "superpowers:brainstorming",
-      "gate": "human_approval"
-    },
-    {
-      "id": "custom-review",
-      "title": "Run the bundle-specific review",
-      "skill": "./skills/custom-review",
-      "gate": "human_approval"
-    },
-    {
-      "id": "plan",
-      "title": "Write the implementation plan",
-      "skill": "superpowers:writing-plans"
-    },
-    {
-      "id": "evidence",
-      "title": "Record evidence and rollback context",
-      "skill": "pony-trail"
-    }
-  ]
-}
+Install the authoring helper if you want an agent to help design bundle skills:
+
+```bash
+npx ponyrace skills install creating-bundle-skills
 ```
 
-Workflow install writes normalized project state under `.ponyrace/workflows/`
-and installs the listed skills for the selected agent targets.
+Then ask your agent to use:
 
-Automatic workflow step execution is intentionally deferred while the bundle
-contract stabilizes.
+```text
+$creating-bundle-skills create a GetSuperpower for release review
+```
+
+Validate before sharing:
+
+```bash
+npx ponyrace getsuperpower validate release-review
+npx ponyrace getsuperpower deps release-review
+```
+
+The full guide is in [`docs/workflow-author-guide.md`](docs/workflow-author-guide.md).
+
+## Vocabulary
+
+| Term | Meaning |
+| --- | --- |
+| GetSuperpower / 工作流包 | The folder users create, share, and install. |
+| Skill Tree / 技能树 | The ordered workflow inside a GetSuperpower. |
+| Entry Skill | The callable skill, usually `skills/<name>/SKILL.md`. |
+| Sub-skill | A required skill used by one workflow phase. |
+| Step | One node in the skill tree. |
+
+An entry skill is instruction-level orchestration. It tells the agent which skills to load and in what order. Fully automatic shell-driven step execution is still deferred while the contract settles.
+
+## Examples
+
+| Example | Use it for | Notes |
+| --- | --- | --- |
+| `product-dev` | Product changes with brainstorm, requirement review, planning, and evidence. | Bundled default. |
+| `examples/workflows/openspec-superpowers` | OpenSpec proposal -> Superpowers planning/TDD -> archive. | Includes `$openspec-superpowers`. |
+| `examples/workflows/real-engineering` | RTK, `pony-trail`, Superpowers, and Matt Pocock skills together. | Fetches Matt Pocock skills if missing. |
+| `examples/workflows/release-review` | Small release-risk review workflow. | Good starter example. |
+
+GetSuperpower install automatically uses the Skills CLI to fetch missing `mattpocock:*` dependencies. If that automatic bootstrap fails, run the same package install through Ponyrace and retry:
+
+```bash
+npx ponyrace skills install mattpocock/skills
+```
 
 ## Ponyrace Primitive
 
-The requirement-review primitive is still available from chat:
+The lower-level `/ponyrace` requirement review is still available.
+
+Use it when you want role-based requirement discussion before implementation:
 
 ```text
-/ponyrace add CSV import to the admin dashboard. Scope: admin import only. Evidence: tests and one smoke import.
+/ponyrace add CSV import to the admin dashboard. Scope: admin import only. Evidence: parser tests and one smoke import.
 ```
 
-Or from a shell:
+Or from the shell:
 
 ```bash
-npx ponyrace ponyrace "add CSV import to the admin dashboard. Scope: admin import only. Evidence: tests and one smoke import."
+npx ponyrace ponyrace "add CSV import to the admin dashboard. Scope: admin import only. Evidence: parser tests and one smoke import."
 ```
 
-## Good Requests
-
-Use this shape:
-
-```text
-/ponyrace <outcome>. Scope: <what is included or excluded>. Evidence: <checks that prove it works>.
-```
-
-Examples:
-
-```text
-/ponyrace fix the login redirect loop. Scope: redirect handling only. Evidence: regression test and auth smoke check.
-```
-
-```text
-/ponyrace add CSV import to the admin dashboard. Scope: upload, parse, validation, and result UI. Evidence: parser tests, validation tests, and one smoke import.
-```
-
-Ponyrace uses local deterministic pony review by default. To run external
-worker-backed research, opt in with `--research` and pick the worker CLI that
-may receive the requirement plus private repo, tool, and dirty-worktree context:
-
-```bash
-npx ponyrace ponyrace --research --worker codex "review the refund webhook plan. Scope: tests only, no live refunds. Evidence: refund fixture and dry-run smoke output."
-```
-
-Use `--no-research` when you want to make the local-only choice explicit.
-
-## What Ponyrace Prints
-
-You should see:
-
-- role pony discussion
-- approval tally
-- Judge summary
-- final votes
-- detailed requirement
-- `Human confirmation: pending`
-
-`Human confirmation: pending` means implementation is still blocked until you
-explicitly approve the detailed requirement.
-
-By default, Markdown reports are saved under `.ponyrace/ponyrace/`.
+Ponyrace uses local deterministic review by default. Add `--research --worker codex` only when you explicitly want a worker CLI to inspect the repo.
 
 ## Common Commands
 
 | Command | Purpose |
 | --- | --- |
-| `npx ponyrace workflow install product-dev` | Install the bundled product development workflow and its skills. |
-| `npx ponyrace workflow list` | Show installed workflow bundles. |
-| `npx ponyrace bundle init <name>` | Create a workflow bundle scaffold. |
-| `npx ponyrace bundle validate <path>` | Validate a workflow bundle manifest. |
-| `npx ponyrace onboard` | Create `.ponyrace/` files and install default skills. |
-| `npx ponyrace setup` | Configure ponies, models, approval threshold, and skills. |
-| `npx ponyrace ponyrace "<request>"` | Run a requirement race from the shell. |
+| `npx ponyrace getsuperpower install product-dev` | Install the default GetSuperpower. |
+| `npx ponyrace getsuperpower deps <source>` | Show required skills before install. |
+| `npx ponyrace getsuperpower list` | Show installed GetSuperpowers. |
+| `npx ponyrace getsuperpower init <name>` | Create a GetSuperpower scaffold. |
+| `npx ponyrace getsuperpower validate <path>` | Validate a workflow manifest. |
+| `npx ponyrace skills install mattpocock/skills` | Install an external skills package through the Skills CLI. |
+| `npx ponyrace skills install creating-bundle-skills` | Install the GetSuperpower authoring skill. |
 | `npx ponyrace skills install pony-trail` | Install only the file-change history skill. |
+| `npx ponyrace ponyrace "<request>"` | Run requirement review directly. |
 | `npx ponyrace history` | Show local snapshot history. |
 | `npx ponyrace history --details` | Show detailed snapshot metadata. |
 | `npx ponyrace revert <snapshot-id> --dry-run` | Preview restoring files from a snapshot. |
+
+The older `bundle` and `workflow` commands still work as compatibility aliases.
 
 ## Local Files
 
@@ -212,8 +167,7 @@ Ponyrace writes local project state under `.ponyrace/`:
   sessions/
 ```
 
-Keep `.ponyrace/` out of git unless you intentionally want to share project
-policy or generated reports.
+Keep `.ponyrace/` out of git unless you intentionally want to share project policy or generated reports.
 
 ## Local Development
 
@@ -226,8 +180,7 @@ bun run check
 
 ## Migration: 0.2.0
 
-Version `0.2.0` renames the package and CLI binary from `ponytrail` to
-`ponyrace`.
+Version `0.2.0` renamed the package and CLI binary from `ponytrail` to `ponyrace`.
 
 ```bash
 npx ponytrail onboard

@@ -65,6 +65,7 @@ export interface WorkflowBundleScaffold {
   bundleDir: string;
   manifestPath: string;
   readmePath: string;
+  entrySkillPath: string;
 }
 
 export interface InstalledWorkflowBundle extends WorkflowBundleManifest {
@@ -104,32 +105,37 @@ export async function createWorkflowBundleScaffold(input: {
   name: string;
 }): Promise<WorkflowBundleScaffold> {
   const bundleDir = join(input.rootDir, input.name);
+  const entrySkillDir = join(bundleDir, "skills", input.name);
   const localSkillDir = join(bundleDir, "skills", "custom-review");
   const manifestPath = join(bundleDir, workflowFileName);
   const readmePath = join(bundleDir, "README.md");
+  const entrySkillPath = join(entrySkillDir, "SKILL.md");
+  const manifest = createScaffoldManifest(input.name);
 
+  await mkdir(entrySkillDir, { recursive: true });
   await mkdir(localSkillDir, { recursive: true });
-  await writeFile(manifestPath, `${JSON.stringify(createScaffoldManifest(input.name), null, 2)}\n`);
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(
     readmePath,
-    `# ${input.name}\n\nA workflow bundle that composes reusable agent skills.\n`,
+    `# ${input.name}\n\nA GetSuperpower that composes reusable agent skills.\n`,
   );
+  await writeFile(entrySkillPath, createScaffoldEntrySkill(input.name, manifest));
   await writeFile(
     join(localSkillDir, "SKILL.md"),
     [
       "---",
       "name: custom-review",
-      'description: "Review this workflow from the bundle author perspective."',
+      'description: "Review this GetSuperpower from the author perspective."',
       "---",
       "",
       "# Custom Review",
       "",
-      "Check whether the workflow output matches the bundle author's stated outcome.",
+      "Check whether the workflow output matches the GetSuperpower author's stated outcome.",
       "",
     ].join("\n"),
   );
 
-  return { bundleDir, manifestPath, readmePath };
+  return { bundleDir, manifestPath, readmePath, entrySkillPath };
 }
 
 export async function installWorkflowBundle(input: {
@@ -191,8 +197,9 @@ function createScaffoldManifest(name: string): WorkflowBundleManifest {
     schemaVersion: "0.1",
     name,
     version: "0.1.0",
-    description: `Workflow bundle for ${name}.`,
+    description: `GetSuperpower for ${name}.`,
     skills: [
+      { source: `./skills/${name}` },
       { source: "superpowers:brainstorming" },
       { source: "./skills/custom-review" },
       { source: "superpowers:writing-plans" },
@@ -223,6 +230,53 @@ function createScaffoldManifest(name: string): WorkflowBundleManifest {
       },
     ],
   });
+}
+
+function createScaffoldEntrySkill(name: string, manifest: WorkflowBundleManifest): string {
+  return [
+    "---",
+    `name: ${name}`,
+    `description: "Use when running the ${name} GetSuperpower workflow, bundle skill, skill tree, or orchestrated multi-skill workflow."`,
+    "---",
+    "",
+    `# ${name} GetSuperpower`,
+    "",
+    `This is the entry skill for the ${name} GetSuperpower.`,
+    "",
+    "When this skill is used, run the workflow below in order. Load/use every required sub-skill before doing the work for its phase.",
+    "",
+    "## Required Sub-Skills",
+    "",
+    ...manifest.steps.flatMap((step, index) => [
+      `${index + 1}. ${formatEntrySkillSource(step.skill)} - ${step.title}`,
+    ]),
+    "",
+    "If any required sub-skill is unavailable, stop and tell the user which dependency is missing.",
+    "",
+    "## Workflow",
+    "",
+    ...manifest.steps.flatMap((step, index) => [
+      `${index + 1}. ${step.title}`,
+      `   - Skill: ${formatEntrySkillSource(step.skill)}`,
+      ...(step.gate === "human_approval" ? ["   - Gate: wait for explicit human approval."] : []),
+    ]),
+    "",
+    "## Author Notes",
+    "",
+    "- Keep this entry skill, `workflow.json`, and `README.md` aligned when adding or removing steps.",
+    "- The entry skill orchestrates through required instructions; GetSuperpower installs and validates the dependency skills.",
+    "- Do not silently skip a missing sub-skill.",
+    "",
+  ].join("\n");
+}
+
+function formatEntrySkillSource(source: string): string {
+  if (source.startsWith("./skills/")) {
+    const skillName = source.slice("./skills/".length);
+    return `${skillName} (${source})`;
+  }
+
+  return source;
 }
 
 function resolveWorkflowBundleSource(source: string, cwd: string): string {

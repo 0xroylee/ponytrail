@@ -35,7 +35,7 @@ src/
 - draft a goal contract from a raw request
 - run each requirement-court pony through a `RequirementPonyRunner`
 - tally the requirement court with the manifest decision rule plus a non-voting Judge
-- load, validate, scaffold, install, and list workflow bundles
+- load, validate, scaffold, install, and list GetSuperpowers
 - read Pony Trail snapshot history and plan file-level reverts
 - print visible role-bot discussion before worker execution is allowed
 
@@ -93,22 +93,22 @@ Skills should describe review behavior and instructions. Bots can compose skills
 
 CLI-backed ponies receive the descriptions for their configured manifest skills in the review prompt. This keeps the manifest as the source of truth for role lenses while making the model-backed review explain what evidence it used.
 
-## Workflow Bundles
+## GetSuperpowers
 
-Workflow bundles are the primary product direction. A **Workflow Bundle** is the
+GetSuperpowers are the primary product direction. A **GetSuperpower** is the
 shareable artifact (`工作流包`): a directory with a `workflow.json` manifest, a
 README, and optional local skills. A **Skill Tree** (`技能树`) is the ordered
-flow inside that bundle: each step is one node and each step uses one skill. The
-manifest declares skill dependencies and ordered workflow steps.
-`src/runtimes/ponytrail/workflow-bundles.ts` owns parsing, validation,
-scaffolding, bundled workflow resolution, and project-local install records
-under `.ponyrace/workflows/`.
+flow inside that artifact: each step is one node and each step uses one skill.
+The manifest declares skill dependencies and ordered workflow steps.
+`src/runtimes/ponytrail/workflow-bundles.ts` keeps the older internal module name
+while owning parsing, validation, scaffolding, bundled source resolution, and
+project-local install records under `.ponyrace/workflows/`.
 
-The bundled `product-dev` workflow composes `superpowers:brainstorming`,
+The bundled `product-dev` GetSuperpower composes `superpowers:brainstorming`,
 `ponyrace`, `superpowers:writing-plans`, and `pony-trail`. Installing a
-workflow uses the existing skill installer seam for every declared skill,
-including bundle-local `./skills/...` paths. Automatic step execution is
-intentionally deferred until the bundle contract is stable.
+GetSuperpower uses the existing skill installer seam for every declared skill,
+including local `./skills/...` paths. Automatic step execution is intentionally
+deferred until the GetSuperpower contract is stable.
 
 ## Project Onboarding Layout
 

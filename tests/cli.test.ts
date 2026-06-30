@@ -69,6 +69,7 @@ describe("cli", () => {
       "stream-goal",
       "history",
       "revert",
+      "getsuperpower",
       "bundle",
       "workflow",
       "skills",
@@ -79,6 +80,9 @@ describe("cli", () => {
     const ponyraceCommand = program.commands.find((command) => command.name() === "ponyrace");
     const streamGoalCommand = program.commands.find((command) => command.name() === "stream-goal");
     const revertCommand = program.commands.find((command) => command.name() === "revert");
+    const getsuperpowerCommand = program.commands.find(
+      (command) => command.name() === "getsuperpower",
+    );
     const bundleCommand = program.commands.find((command) => command.name() === "bundle");
     const workflowCommand = program.commands.find((command) => command.name() === "workflow");
     const skillsCommand = program.commands.find((command) => command.name() === "skills");
@@ -109,6 +113,17 @@ describe("cli", () => {
       "--worker",
     ]);
     expect(revertCommand?.options.map((option) => option.long)).toEqual(["--dry-run"]);
+    expect(getsuperpowerCommand?.commands.map((command) => command.name())).toEqual([
+      "init",
+      "validate",
+      "install",
+      "list",
+      "deps",
+    ]);
+    expect(getsuperpowerCommand?.commands.at(-1)?.aliases()).toEqual([
+      "dependencies",
+      "dependence",
+    ]);
     expect(bundleCommand?.commands.map((command) => command.name())).toEqual(["init", "validate"]);
     expect(workflowCommand?.commands.map((command) => command.name())).toEqual(["install", "list"]);
     expect(skillsCommand?.commands.map((command) => command.name())).toEqual(["install", "update"]);
@@ -349,7 +364,7 @@ describe("cli", () => {
     }
   });
 
-  test("bundle init creates an authorable workflow bundle and validate accepts it", async () => {
+  test("bundle init creates an authorable GetSuperpower and validate accepts it", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-bundle-cli-"));
     const logs: string[] = [];
     const originalLog = console.log;
@@ -375,16 +390,16 @@ describe("cli", () => {
         stat(join(rootDir, "bundles", "release-review", "skills", "custom-review", "SKILL.md")),
       ).resolves.toBeTruthy();
       expect(stripAnsiLines(logs)).toContain(
-        `Workflow bundle created: ${join(rootDir, "bundles", "release-review")}`,
+        `GetSuperpower created: ${join(rootDir, "bundles", "release-review")}`,
       );
-      expect(stripAnsiLines(logs)).toContain("Workflow bundle valid: release-review@0.1.0");
+      expect(stripAnsiLines(logs)).toContain("GetSuperpower valid: release-review@0.1.0");
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });
     }
   });
 
-  test("workflow install installs product-dev skills and lists the installed workflow", async () => {
+  test("workflow install installs product-dev skills and lists the installed GetSuperpower", async () => {
     const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-workflow-cli-"));
     const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-workflow-home-"));
     const logs: string[] = [];
@@ -416,12 +431,36 @@ describe("cli", () => {
           stat(join(homeDir, ".agents", "skills", skill, "SKILL.md")),
         ).resolves.toBeTruthy();
       }
-      expect(stripAnsiLines(logs)).toContain("Workflow installed: product-dev");
+      expect(stripAnsiLines(logs)).toContain("GetSuperpower installed: product-dev");
       expect(stripAnsiLines(logs)).toContain("product-dev 0.1.0");
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });
       await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
+  test("getsuperpower deps prints the skill dependencies for a GetSuperpower", async () => {
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram().parseAsync(
+        ["getsuperpower", "deps", "examples/workflows/real-engineering"],
+        { from: "user" },
+      );
+
+      expect(stripAnsiLines(logs)).toContain("GetSuperpower dependencies: real-engineering");
+      expect(stripAnsiLines(logs)).toContain("- ./skills/rtk-command-discipline");
+      expect(stripAnsiLines(logs)).toContain("- pony-trail");
+      expect(stripAnsiLines(logs)).toContain("- superpowers:brainstorming");
+      expect(stripAnsiLines(logs)).toContain("- mattpocock:tdd");
+    } finally {
+      console.log = originalLog;
     }
   });
 
@@ -1529,6 +1568,44 @@ describe("cli", () => {
       expect(logs.some((line) => line.includes("claude: would install"))).toBe(true);
     } finally {
       console.log = originalLog;
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
+  test("skills install can delegate external skills packages to the Skills CLI", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-skill-home-"));
+    const logs: string[] = [];
+    const externalInstalls: Array<{ source: string; homeDir: string }> = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await buildProgram({
+        cwd: rootDir,
+        installExternalSkillDependency: async (input) => {
+          externalInstalls.push({ source: input.source, homeDir: input.homeDir });
+        },
+      }).parseAsync(["skills", "install", "mattpocock/skills", "--home", homeDir], {
+        from: "user",
+      });
+
+      expect(externalInstalls).toEqual([{ source: "mattpocock/skills", homeDir }]);
+      expect(stripAnsiLines(logs)).toContain("Skills package install result");
+      expect(logs.some((line) => line.includes("Package: mattpocock/skills"))).toBe(true);
+      expect(
+        logs.some((line) =>
+          line.includes("Internal command: npx --yes skills@latest add mattpocock/skills"),
+        ),
+      ).toBe(true);
+      expect(logs.some((line) => line.includes(homeDir))).toBe(true);
+      expect(logs.some((line) => line.includes("Restart your agent IDE"))).toBe(true);
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
       await rm(homeDir, { recursive: true, force: true });
     }
   });

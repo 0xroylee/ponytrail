@@ -66,10 +66,25 @@ describe("workflow bundles", () => {
     await expect(
       stat(join(scaffold.bundleDir, "skills", "custom-review", "SKILL.md")),
     ).resolves.toBeTruthy();
+    await expect(
+      stat(join(scaffold.bundleDir, "skills", "release-review", "SKILL.md")),
+    ).resolves.toBeTruthy();
 
     const bundle = await loadWorkflowBundle(scaffold.bundleDir);
     expect(bundle.manifest.name).toBe("release-review");
+    expect(bundle.manifest.skills.map((skill) => skill.source)).toContain(
+      "./skills/release-review",
+    );
     expect(bundle.manifest.skills.map((skill) => skill.source)).toContain("./skills/custom-review");
+    await expect(readFile(scaffold.readmePath, "utf8")).resolves.toContain(
+      "A GetSuperpower that composes reusable agent skills.",
+    );
+    await expect(
+      readFile(join(scaffold.bundleDir, "skills", "release-review", "SKILL.md"), "utf8"),
+    ).resolves.toContain("This is the entry skill for the release-review GetSuperpower.");
+    await expect(
+      readFile(join(scaffold.bundleDir, "skills", "custom-review", "SKILL.md"), "utf8"),
+    ).resolves.toContain("Review this GetSuperpower from the author perspective.");
   });
 
   test("loads the release-review example workflow with its local skill", async () => {
@@ -111,6 +126,44 @@ describe("workflow bundles", () => {
       ["debug", "mattpocock:diagnosing-bugs"],
       ["evidence", "pony-trail"],
     ]);
+  });
+
+  test("loads the openspec-superpowers example workflow from the handoff diagram", async () => {
+    const bundle = await loadWorkflowBundle("examples/workflows/openspec-superpowers");
+
+    expect(bundle.manifest.name).toBe("openspec-superpowers");
+    expect(bundle.manifest.skills.map((skill) => skill.source)).toEqual([
+      "./skills/openspec-superpowers",
+      "./skills/opsx-handoff-review",
+      "superpowers:brainstorming",
+      "superpowers:writing-plans",
+      "mattpocock:tdd",
+      "pony-trail",
+    ]);
+    expect(bundle.manifest.steps.map((step) => [step.id, step.skill])).toEqual([
+      ["opsx-propose", "./skills/opsx-handoff-review"],
+      ["opsx-review", "./skills/opsx-handoff-review"],
+      ["design-deepening", "superpowers:brainstorming"],
+      ["implementation-plan", "superpowers:writing-plans"],
+      ["task-by-task-build", "mattpocock:tdd"],
+      ["verification", "pony-trail"],
+      ["opsx-archive", "./skills/opsx-handoff-review"],
+    ]);
+    await expect(
+      readFile(
+        join(
+          import.meta.dir,
+          "..",
+          "examples",
+          "workflows",
+          "openspec-superpowers",
+          "skills",
+          "openspec-superpowers",
+          "SKILL.md",
+        ),
+        "utf8",
+      ),
+    ).resolves.toContain("This is the entry skill for the openspec-superpowers GetSuperpower.");
   });
 
   test("installs and lists workflow bundles under .ponyrace", async () => {

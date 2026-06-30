@@ -50,6 +50,17 @@ describe("skill installer", () => {
     );
   });
 
+  test("resolves the bundled creating bundle skills authoring skill by name", async () => {
+    const source = await resolveInstallSkillSource("creating-bundle-skills");
+
+    expect(source.name).toBe("creating-bundle-skills");
+    expect(source.kind).toBe("bundled");
+    expect(source.path.endsWith(join("bundled-skills", "creating-bundle-skills"))).toBe(true);
+    expect(await readFile(join(source.path, "SKILL.md"), "utf8")).toContain(
+      "Use this skill to create a GetSuperpower bundle skill",
+    );
+  });
+
   test("installs the bundled review past decisions skill into directory and Cursor targets", async () => {
     const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
 
@@ -256,12 +267,40 @@ describe("skill installer", () => {
     }
   });
 
+  test("refreshes a skill that is already installed at the target path without deleting it", async () => {
+    const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
+    const sourceDir = join(homeDir, ".agents", "skills", "tdd");
+
+    try {
+      await writeSuperpowersSkill(sourceDir, {
+        name: "tdd",
+        description: "Test-driven development.",
+      });
+
+      const result = await installAgentSkill({
+        source: "mattpocock:tdd",
+        homeDir,
+        agents: ["codex"],
+        refreshExisting: true,
+      });
+
+      expect(result.skillName).toBe("tdd");
+      expect(result.targets).toMatchObject([{ agent: "codex", status: "updated" }]);
+      await expect(stat(join(sourceDir, "SKILL.md"))).resolves.toBeTruthy();
+      await expect(
+        stat(join(homeDir, ".codex", "skills", "tdd", "SKILL.md")),
+      ).resolves.toBeTruthy();
+    } finally {
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
   test("explains how to install mattpocock skills when they are missing", async () => {
     const homeDir = await mkdtemp(join(tmpdir(), "skill-installer-home-"));
 
     try {
       await expect(resolveInstallSkillSource("mattpocock:tdd", { homeDir })).rejects.toThrow(
-        "Matt Pocock tdd skill not found. Install Matt Pocock skills first: npx skills@latest add mattpocock/skills && /setup-matt-pocock-skills",
+        `Matt Pocock tdd skill not found under ${homeDir}. Install or refresh Matt Pocock skills with: ponyrace skills install mattpocock/skills. Then retry this command. /setup-matt-pocock-skills configures repo metadata after the skills are installed; it does not install tdd.`,
       );
     } finally {
       await rm(homeDir, { recursive: true, force: true });

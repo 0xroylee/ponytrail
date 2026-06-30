@@ -71,9 +71,10 @@ export class MissingSuperpowersSkillError extends Error {
 }
 
 export class MissingMattPocockSkillError extends Error {
-  constructor(input: { skillName: string }) {
+  constructor(input: { skillName: string; homeDir?: string | undefined }) {
+    const location = input.homeDir ? ` under ${input.homeDir}` : "";
     super(
-      `Matt Pocock ${input.skillName} skill not found. Install Matt Pocock skills first: npx skills@latest add mattpocock/skills && /setup-matt-pocock-skills`,
+      `Matt Pocock ${input.skillName} skill not found${location}. Install or refresh Matt Pocock skills with: ponyrace skills install mattpocock/skills. Then retry this command. /setup-matt-pocock-skills configures repo metadata after the skills are installed; it does not install ${input.skillName}.`,
     );
     this.name = "MissingMattPocockSkillError";
   }
@@ -159,10 +160,7 @@ export async function installAgentSkill(
         handledStatus !== "already_present"
       ) {
         for (const mirrorDestination of mirrorDestinations) {
-          if (await pathExists(mirrorDestination)) {
-            await rm(mirrorDestination, { recursive: true, force: true });
-          }
-          await installSkillTarget({ agent, source, destination: mirrorDestination });
+          await refreshSkillTarget({ agent, source, destination: mirrorDestination });
         }
       }
       targets.push({ agent, destination, status: handledStatus });
@@ -198,15 +196,9 @@ export async function installAgentSkill(
     });
 
     if (!input.dryRun && status !== "skipped_exists" && status !== "already_present") {
-      if (exists) {
-        await rm(destination, { recursive: true, force: true });
-      }
-      await installSkillTarget({ agent, source, destination });
+      await refreshSkillTarget({ agent, source, destination });
       for (const mirrorDestination of mirrorDestinations) {
-        if (await pathExists(mirrorDestination)) {
-          await rm(mirrorDestination, { recursive: true, force: true });
-        }
-        await installSkillTarget({ agent, source, destination: mirrorDestination });
+        await refreshSkillTarget({ agent, source, destination: mirrorDestination });
       }
     }
 
@@ -279,7 +271,7 @@ async function resolveMattPocockSkill(
   const skillPath = await findInstalledSkillPath(homeDir, skillName);
 
   if (!skillPath) {
-    throw new MissingMattPocockSkillError({ skillName });
+    throw new MissingMattPocockSkillError({ skillName, homeDir });
   }
 
   return resolvePathSkill(skillPath);
@@ -469,6 +461,25 @@ async function installSkillTarget(input: {
   }
 
   await cp(input.source.path, input.destination, { recursive: true });
+}
+
+async function refreshSkillTarget(input: {
+  agent: SkillInstallAgent;
+  source: ResolvedInstallSkillSource;
+  destination: string;
+}): Promise<void> {
+  if (isSourceDestination(input.source, input.destination)) {
+    return;
+  }
+
+  if (await pathExists(input.destination)) {
+    await rm(input.destination, { recursive: true, force: true });
+  }
+  await installSkillTarget(input);
+}
+
+function isSourceDestination(source: ResolvedInstallSkillSource, destination: string): boolean {
+  return resolve(source.path) === resolve(destination);
 }
 
 async function skillTargetsMatchSource(input: {
