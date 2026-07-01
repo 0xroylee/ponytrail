@@ -7,7 +7,10 @@ Install it from the repo root:
 
 ```bash
 ponyrace getsuperpower install examples/workflows/release-review
+ponyrace getsuperpower clone examples/workflows/release-review
 ```
+
+`getsuperpower clone <source>` is equivalent to `getsuperpower install <source>`.
 
 Validate it while authoring:
 

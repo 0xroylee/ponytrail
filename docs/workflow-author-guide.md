@@ -1,7 +1,7 @@
 # Create Your Own GetSuperpower
 
 This guide shows the shortest path from an idea to a GetSuperpower that other
-Ponyrace users can install.
+users can install or clone.
 
 Vocabulary:
 
@@ -195,11 +195,15 @@ Show the dependencies before installing:
 bun run dev -- getsuperpower deps examples/workflows/support-triage
 ```
 
-Install it into a project:
+Install or clone it into a project:
 
 ```bash
 bun run dev -- getsuperpower install examples/workflows/support-triage
+bun run dev -- getsuperpower clone examples/workflows/support-triage
 ```
+
+`clone` is the same operation as `install`; it exists so shared GetSuperpowers
+feel natural to adopt from another author.
 
 Then list installed GetSuperpowers:
 

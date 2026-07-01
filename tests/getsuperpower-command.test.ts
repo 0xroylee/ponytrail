@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
@@ -79,6 +79,7 @@ describe("getsuperpower command module", () => {
       "init",
       "validate",
       "install",
+      "clone",
       "list",
       "deps",
     ]);
@@ -86,6 +87,95 @@ describe("getsuperpower command module", () => {
       "dependencies",
       "dependence",
     ]);
+  });
+
+  test("clone installs a GetSuperpower through the same install path", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "getsuperpower-command-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "getsuperpower-home-"));
+    const bundleDir = join(rootDir, "clone-bundle");
+    const localSkillDir = join(bundleDir, "skills", "clone-entry");
+    const skillInstalls: string[] = [];
+    const printedSkills: string[] = [];
+    const logs: string[] = [];
+    const originalLog = console.log;
+    const program = new Command();
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await mkdir(localSkillDir, { recursive: true });
+      await writeFile(
+        join(localSkillDir, "SKILL.md"),
+        [
+          "---",
+          "name: clone-entry",
+          'description: "Entry skill for clone behavior test."',
+          "---",
+          "",
+          "# clone-entry",
+        ].join("\n"),
+      );
+      await writeFile(
+        join(bundleDir, "workflow.json"),
+        JSON.stringify(
+          {
+            schemaVersion: "0.1",
+            name: "clone-bundle",
+            version: "0.1.0",
+            description: "Uses one local skill.",
+            skills: [{ source: "./skills/clone-entry" }],
+            steps: [{ id: "entry", title: "Entry", skill: "./skills/clone-entry" }],
+          },
+          null,
+          2,
+        ),
+      );
+
+      configureGetSuperpowerCommand(program, {
+        rootDir,
+        installSkillWithLocalHistory: async (input) => {
+          skillInstalls.push(input.source);
+          return {
+            skillInstall: fakeSkillInstallResult({
+              source: input.source,
+              skillName: "clone-entry",
+              destination: join(homeDir, ".agents", "skills", "clone-entry"),
+            }),
+          };
+        },
+        printSkillInstallResult: (result) => {
+          printedSkills.push(result.skillName);
+        },
+      });
+
+      await program.parseAsync(
+        [
+          "getsuperpower",
+          "clone",
+          bundleDir,
+          "--dir",
+          rootDir,
+          "--home",
+          homeDir,
+          "--agents",
+          "codex",
+        ],
+        { from: "user" },
+      );
+
+      expect(skillInstalls).toEqual([localSkillDir]);
+      expect(printedSkills).toEqual(["clone-entry"]);
+      expect(logs).toContain("GetSuperpower installed: clone-bundle");
+      await expect(
+        stat(join(rootDir, ".ponyrace", "workflows", "clone-bundle.json")),
+      ).resolves.toBeTruthy();
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
   });
 
   test("uses the skills CLI by default before retrying missing external skill installs", async () => {

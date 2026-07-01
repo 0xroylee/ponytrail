@@ -4,14 +4,17 @@
 
 GetSuperpower installs reusable AI-agent workflows.
 
-A **GetSuperpower** is a workflow bundle made from several skills. It can install the skills a project needs, record the workflow under `.ponyrace/`, and give users one entry skill to call when the bundle provides one.
+A **GetSuperpower** is a deployable bundle skills set for an AI agent workflow.
+It installs the skills a project needs, records the workflow under `.ponyrace/`,
+and can give users one entry skill to call when the workflow provides one.
 
 ## Quick Start
 
-Install the default product-development GetSuperpower:
+Install or clone the default product-development GetSuperpower:
 
 ```bash
 npx ponyrace getsuperpower install product-dev
+npx ponyrace getsuperpower clone product-dev
 ```
 
 See what it will install:
@@ -122,7 +125,8 @@ npx ponyrace skills install mattpocock/skills
 | Command | Purpose |
 | --- | --- |
 | `npx ponyrace getsuperpower install product-dev` | Install the default GetSuperpower. |
-| `npx ponyrace getsuperpower deps <source>` | Show required skills before install. |
+| `npx ponyrace getsuperpower clone product-dev` | Same as install; deploy a GetSuperpower by name or source. |
+| `npx ponyrace getsuperpower deps <source>` | Show required skills before install or clone. |
 | `npx ponyrace getsuperpower list` | Show installed GetSuperpowers. |
 | `npx ponyrace getsuperpower init <name>` | Create a GetSuperpower scaffold. |
 | `npx ponyrace getsuperpower validate <path>` | Validate a workflow manifest. |

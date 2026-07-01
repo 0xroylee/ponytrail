@@ -82,6 +82,7 @@ describe("cli", () => {
       "init",
       "validate",
       "install",
+      "clone",
       "list",
       "deps",
     ]);
@@ -186,6 +187,44 @@ describe("cli", () => {
       }
       expect(stripAnsiLines(logs)).toContain("GetSuperpower installed: product-dev");
       expect(stripAnsiLines(logs)).toContain("product-dev 0.1.0");
+    } finally {
+      console.log = originalLog;
+      await rm(rootDir, { recursive: true, force: true });
+      await rm(homeDir, { recursive: true, force: true });
+    }
+  });
+
+  test("getsuperpower clone installs product-dev skills and records the workflow", async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), "ponytrail-clone-cli-"));
+    const homeDir = await mkdtemp(join(tmpdir(), "ponytrail-clone-home-"));
+    const logs: string[] = [];
+    const originalLog = console.log;
+
+    console.log = (...values: unknown[]) => {
+      logs.push(values.join(" "));
+    };
+
+    try {
+      await writeSuperpowersProcessSkills(homeDir);
+
+      await buildProgram({ cwd: rootDir }).parseAsync(
+        ["getsuperpower", "clone", "product-dev", "--home", homeDir, "--agents", "codex"],
+        { from: "user" },
+      );
+
+      await expect(
+        stat(join(rootDir, ".ponyrace", "workflows", "product-dev.json")),
+      ).resolves.toBeTruthy();
+      for (const skill of [
+        "superpowers-brainstorming",
+        "superpowers-writing-plans",
+        "pony-trail",
+      ]) {
+        await expect(
+          stat(join(homeDir, ".agents", "skills", skill, "SKILL.md")),
+        ).resolves.toBeTruthy();
+      }
+      expect(stripAnsiLines(logs)).toContain("GetSuperpower installed: product-dev");
     } finally {
       console.log = originalLog;
       await rm(rootDir, { recursive: true, force: true });
