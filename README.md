@@ -16,6 +16,13 @@ Install or clone the default product-development GetSuperpower:
 npx getsuperpower install product-dev
 ```
 
+Install from a public git repository:
+
+```bash
+npx getsuperpower install https://github.com/acme/release-review.git
+npx getsuperpower install 'https://github.com/acme/workflows.git#examples/release-review'
+```
+
 List installed GetSuperpowers:
 
 ```bash
@@ -170,6 +177,7 @@ npx getsuperpower skills install mattpocock/skills
 | --- | --- |
 | `npx getsuperpower install product-dev` | Install the default GetSuperpower. |
 | `npx getsuperpower clone product-dev` | Same as install; deploy a GetSuperpower by name or source. |
+| `npx getsuperpower install https://github.com/acme/release-review.git` | Install a GetSuperpower from a public git repo. |
 | `npx getsuperpower deps <source>` | Show required skills before install or clone. |
 | `npx getsuperpower list` | Show installed GetSuperpowers. |
 | `npx getsuperpower init <name>` | Create a GetSuperpower scaffold. |
@@ -200,6 +208,7 @@ bun install
 bun run build
 bun test
 bun run check
+bun scripts/smoke-public-git-install.ts
 ```
 
 ## Compatibility
