@@ -12,6 +12,18 @@
     }
   },
   "files": {
-    "includes": ["**", "!node_modules", "!bun.lock", "!.*", "!coverage", "!dist", "!work"]
+    "includes": [
+      "**",
+      "!node_modules",
+      "!bun.lock",
+      "!.bun-cache",
+      "!.devos",
+      "!.ponyrace",
+      "!.ponytrail",
+      "!coverage",
+      "!dist",
+      "!work",
+      "!packages"
+    ]
   }
 }
